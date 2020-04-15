@@ -47,6 +47,14 @@
     <jackson.version>2.10.1</jackson.version>
   </properties>
 
+  <licenses>
+  	<license>
+  		<name>Apache License, Version 2.0</name>
+  		<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+  		<distribution>repo</distribution>
+  	</license>
+  </licenses>
+
   <dependencies>
 
     <!-- Spring dependencies -->
