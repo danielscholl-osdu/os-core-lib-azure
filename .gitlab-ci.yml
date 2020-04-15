@@ -1,0 +1,4 @@
+include:
+  - project: 'osdu/platform/ci-cd-pipelines'
+    ref: 'master'
+    file: 'library.gitlab-ci.yml'
