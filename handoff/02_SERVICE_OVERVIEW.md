@@ -1,9 +1,6 @@
 # OSDU R2 Services Overview
 
-_A presentation of this material was given on March 25, 2020. 
-[A recording of that recording is available here](https://msit.microsoftstream.com/video/fb68a1ff-0400-aa76-e784-f1ea6eae25b5).
-Note: the material, as it appears here, may have diverged from the material 
-as it appeared at the time of the recording._
+
 
 This session is intended to provide a broad overview of OSDU R2. The following topics are in scope:
 
