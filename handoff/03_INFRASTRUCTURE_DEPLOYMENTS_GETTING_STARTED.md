@@ -1,11 +1,7 @@
 # OSDU R2 - Infrastructure Deployments
 
-_A presentation of this material was given on April 2, 2020. 
-A recording of that recording is available [here](https://microsoft.sharepoint.com/:v:/t/SLBMicros/EZNKoQHOnmZDo8BE2KbK1NwBAe-QDfSu73H8yD0c6lFrPA?e=9GaNDa), [here](https://microsoft.sharepoint.com/:v:/t/OSDU-WiproandMicrosoft/EdnTrBCP9ZlGsxQoneSZ_M8B01F7Ln4Xd0lLChlTm8DJ2Q?e=IptZOw) and [here](https://msit.microsoftstream.com/video/e868a1ff-0400-86e8-5f30-f1ea75308133), depending on your organization.
-Note: the material, as it appears here, may have diverged from the material 
-as it appeared at the time of the recording._
 
-This session is intended to provide a closer look into how the infrastructure that hosts the OSDU R2 services in Azure is tested and deployed. The accompanying [challenge](./03_INFRASTRUCTURE_DEPLOYMENTS_CHALLENGE.md) will provide hands on experience with the OSDU R2 infrastructure release pipeline.
+This section is intended to provide a closer look into how the infrastructure that hosts the OSDU R2 services in Azure is tested and deployed. The accompanying [challenge](./03_INFRASTRUCTURE_DEPLOYMENTS_CHALLENGE.md) will provide hands on experience with the OSDU R2 infrastructure release pipeline.
 
 The following topics are in scope:
 - Overview of infrastructure used by OSDU R2 services
