@@ -182,7 +182,6 @@ The following software have components provided under the terms of this license:
 
 - ASM Core (from )
 - Apache Commons Codec (from http://commons.apache.org/proper/commons-codec/)
-- Byte Buddy (without dependencies) (from )
 - JavaBeans Activation Framework API jar (from )
 - Lucene Common Analyzers (from )
 - Lucene Core (from )
@@ -444,6 +443,7 @@ unknown
 ========================================================================
 The following software have components provided under the terms of this license:
 
+- Byte Buddy (without dependencies) (from )
 - JUnit Jupiter (Aggregator) (from https://junit.org/junit5/)
 - JavaBeans Activation Framework API jar (from )
 - JavaMail API (from )
