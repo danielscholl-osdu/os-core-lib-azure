@@ -23,12 +23,17 @@ import com.azure.cosmos.FeedOptions;
 import com.azure.cosmos.FeedResponse;
 import com.azure.cosmos.NotFoundException;
 import com.azure.cosmos.SqlQuerySpec;
+import com.azure.cosmos.internal.AsyncDocumentClient;
+import com.azure.cosmos.internal.Document;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +69,6 @@ import java.util.logging.Logger;
 public final class CosmosFacade {
 
     private static final Logger LOGGER = Logger.getLogger(CosmosFacade.class.getName());
-
     /**
      * Private constructor -- this class should never be instantiated.
      */
@@ -124,7 +128,6 @@ public final class CosmosFacade {
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
-
     /**
      * @param container Container to query
      * @param clazz     Class type of response
@@ -161,6 +164,104 @@ public final class CosmosFacade {
         }
         return results;
     }
+    /**
+     * @param client    {@link AsyncDocumentClient} used to configure/execute requests against database service
+     * @param dbName    Cosmos DB name
+     * @param container Container to query
+     * @param clazz     Class type of response
+     * @param <T>       Type of response
+     * @param pageSize  Number of items returned
+     * @param pageNum   Page number returned
+     * @return List of items found on specific page in container
+     */
+    public static <T> List<T> findAllItems(
+            final AsyncDocumentClient client,
+            final String dbName,
+            final String container,
+            final Class<T> clazz,
+            final short pageSize,
+            final int pageNum) {
+        return queryItems(client, dbName, container, new SqlQuerySpec("SELECT * FROM c"), clazz, pageSize, pageNum);
+    }
+
+    /**
+     * @param client    {@link AsyncDocumentClient} used to configure/execute requests against database service
+     * @param dbName    Cosmos DB name
+     * @param container Container to query
+     * @param query     {@link SqlQuerySpec} to execute
+     * @param clazz     Class type of response
+     * @param <T>       Type of response
+     * @param pageSize  Number of items returned
+     * @param pageNum   Page number returned
+     * @return List of items found on specific page in container
+     */
+    public static <T> List<T> queryItems(
+            final AsyncDocumentClient client,
+            final String dbName,
+            final String container,
+            final SqlQuerySpec query,
+            final Class<T> clazz,
+            final short pageSize,
+            final int pageNum) {
+        String continuationToken = null;
+        int currentPage = 0;
+        HashMap<String, List<T>> results;
+        do {
+            String nextContinuationToken = "";
+
+            results = returnItemsWithToken(client, dbName, container, query, clazz, pageSize, continuationToken);
+            for (Map.Entry<String, List<T>> entry : results.entrySet()) {
+                nextContinuationToken = entry.getKey();
+            }
+            continuationToken = nextContinuationToken;
+            currentPage++;
+
+        } while (currentPage < pageNum && continuationToken != null);
+        return results.get(continuationToken);
+    }
+    /**
+     * @param client            {@link AsyncDocumentClient} used to configure/execute requests against database service
+     * @param dbName            Cosmos DB name
+     * @param container         Container to query
+     * @param query             {@link SqlQuerySpec} to execute
+     * @param clazz             Class type of response
+     * @param <T>               Type of response
+     * @param pageSize          Number of items returned
+     * @param continuationToken Token used to continue the enumeration
+     * @return Continuation Token and list of documents in container
+     */
+    private static <T> HashMap<String, List<T>> returnItemsWithToken(
+            final AsyncDocumentClient client,
+            final String dbName,
+            final String container,
+            final SqlQuerySpec query,
+            final Class<T> clazz,
+            final short pageSize,
+            final String continuationToken) {
+
+        HashMap<String, List<T>> map = new HashMap<>();
+        List<T> items = new ArrayList<T>();
+
+        FeedOptions feedOptions = new FeedOptions()
+                .maxItemCount((int) pageSize)
+                .setEnableCrossPartitionQuery(true)
+                .requestContinuation(continuationToken);
+
+        String collectionLink = String.format("/dbs/%s/colls/%s", dbName, container);
+        Flux<FeedResponse<Document>> queryFlux = client.queryDocuments(collectionLink, query, feedOptions);
+
+        Iterator<FeedResponse<Document>> it = queryFlux.toIterable().iterator();
+
+        FeedResponse<Document> page = it.next();
+        List<Document> results = page.getResults();
+        for (Document doc : results) {
+            T obj = doc.toObject(clazz);
+            items.add(obj);
+        }
+
+        map.put(page.getContinuationToken(), items);
+        return map;
+    }
 
     /**
      * @param container Container to query
@@ -189,5 +290,4 @@ public final class CosmosFacade {
             final String partitionKey) {
         return cosmos.getItem(id, partitionKey);
     }
-
 }

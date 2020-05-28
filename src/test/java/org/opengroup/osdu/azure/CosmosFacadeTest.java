@@ -15,14 +15,16 @@
 package org.opengroup.osdu.azure;
 
 import com.azure.cosmos.*;
+import com.azure.cosmos.internal.AsyncDocumentClient;
+import com.azure.cosmos.internal.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,7 +41,13 @@ class CosmosFacadeTest {
 
     private static final String ID = "id";
     private static final String PARTITION_KEY = "pk";
-
+    private static final String COSMOS_DB = "cosmosdb";
+    private static final String CONTAINER = "container";
+    private static final String COLLECTION_LINK = "/dbs/cosmosdb/colls/container";
+    
+    @Mock
+    private AsyncDocumentClient documentClient;
+    
     @Mock
     private CosmosContainer container;
 
@@ -54,7 +62,7 @@ class CosmosFacadeTest {
 
     @Mock
     private Iterator<FeedResponse<CosmosItemProperties>> queryResponse;
-
+    
     @BeforeEach
     void init() throws CosmosClientException {
         // mock the common cosmos request/response pattern that most tests need. because
@@ -136,6 +144,45 @@ class CosmosFacadeTest {
         assertTrue(results.contains("s2"));
         assertTrue(results.contains("s3"));
     }
+    
+    @Test
+    void findAllItems_byPageNumber() {
+        mockPaginatedQueryResponse(2, 2, "s1", "s2", "s3", "s4", "s5");
+       
+        List<String> results = CosmosFacade.findAllItems(documentClient, COSMOS_DB, CONTAINER, 
+                String.class, (short)2, 2);
+       
+        assertEquals(2, results.size());
+        assertTrue(results.contains("s3"));
+        assertTrue(results.contains("s4"));
+        
+        mockPaginatedQueryResponse(3, 2, "T1", "T2", "T3", "T4", "T5");
+        results = CosmosFacade.findAllItems(documentClient, COSMOS_DB, CONTAINER, 
+                String.class, (short)3, 2);
+        
+        assertEquals(2, results.size());
+        assertTrue(results.contains("T4"));
+        assertTrue(results.contains("T5"));
+    }
+    
+    @Test
+    void queryItems_byPageNumber() throws IOException {
+        mockPaginatedQueryResponse(3, 1, "W1", "W2", "W3", "W4", "W5");
+        List<String> results = CosmosFacade.queryItems(documentClient, COSMOS_DB, CONTAINER, 
+                new SqlQuerySpec("SELECT * FROM c"), String.class, (short)3, 1);
+
+        assertEquals(3, results.size());
+        assertTrue(results.contains("W1"));
+        assertTrue(results.contains("W2"));
+        assertTrue(results.contains("W3"));
+
+        mockPaginatedQueryResponse(2, 3, "Z1", "Z2", "Z3", "Z4", "Z5");
+        results = CosmosFacade.queryItems(documentClient, COSMOS_DB, CONTAINER, 
+                new SqlQuerySpec("SELECT * FROM c"), String.class, (short)2, 3);
+
+        assertEquals(1, results.size());
+        assertTrue(results.contains("Z5"));
+    }
 
     private void mockQueryResponse(String... responses) throws IOException {
         ArrayList<FeedResponse<CosmosItemProperties>> paginatedResponse = new ArrayList<>();
@@ -151,5 +198,33 @@ class CosmosFacadeTest {
         }
 
         doReturn(paginatedResponse.iterator()).when(container).queryItems(any(SqlQuerySpec.class), any());
+    }
+
+   private void mockPaginatedQueryResponse(int pageSize, int pageNum, String... responses) {
+        List<Document> resp = new ArrayList<>();
+        FeedResponse<Document> pageResponse = (FeedResponse<Document>) mock(FeedResponse.class);
+        
+        for (String response : responses) {
+            Document doc = mock(Document.class);
+            resp.add(doc);
+            lenient().doReturn(Collections.singletonList(doc)).when(pageResponse).getResults();
+            lenient().doReturn(response).when(doc).toObject(any());
+        }
+        
+        when(pageResponse.getResults()).thenReturn(currentPage(resp,pageSize,pageNum));
+        doReturn(Flux.just(pageResponse))
+               .when(documentClient)
+               .queryDocuments(eq(COLLECTION_LINK), any((SqlQuerySpec.class)), any());
+    }
+    
+    private static List<Document> currentPage (List<Document> dataList, int pageSize, int pageNum) {
+        List<Document> currentPageList = new ArrayList<>();
+        if (dataList != null && dataList.size() > 0) {
+            int currIdx = (pageNum > 1 ? (pageNum - 1) * pageSize : 0);
+            for (int i = 0; i < pageSize && i < dataList.size() - currIdx; i++) { 
+                currentPageList.add(dataList.get(currIdx + i));
+            }
+        }
+        return currentPageList;
     }
 }
