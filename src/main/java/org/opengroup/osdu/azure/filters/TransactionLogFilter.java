@@ -1,0 +1,119 @@
+package org.opengroup.osdu.azure.filters;
+
+import org.opengroup.osdu.azure.logging.AzureLogger;
+import org.opengroup.osdu.core.common.model.http.DpsHeaders;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * For logging start and end of request.
+ */
+@Component
+@ConditionalOnProperty(value = "logging.transaction.enabled", havingValue = "true", matchIfMissing = false)
+public final class TransactionLogFilter implements Filter {
+    private static final String LOGGER_NAME = "TxnLogger";
+    private static final List<String> WHITELIST_HEADERS = Arrays.asList(
+            DpsHeaders.CORRELATION_ID,
+            DpsHeaders.DATA_PARTITION_ID,
+            DpsHeaders.CONTENT_TYPE);
+    private static final String START_LOG_TEMPLATE = "Start Web-API %s %s %s";
+    private static final String END_LOG_TEMPLATE = "End Web-API %s %s %s timeTaken:%d";
+
+    @Inject
+    private AzureLogger azureLogger;
+
+    /**
+     * Filter logic.
+     * @param servletRequest Request object.
+     * @param servletResponse Response object.
+     * @param filterChain Filter Chain object.
+     * @throws IOException
+     * @throws ServletException
+     */
+    @Override
+    public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse,
+                         final FilterChain filterChain) throws IOException, ServletException {
+        final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+        final HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+        logTransactionStart(httpRequest);
+        final long start = System.currentTimeMillis();
+        filterChain.doFilter(servletRequest, servletResponse);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logTransactionEnd(httpRequest, httpResponse, timeTaken);
+    }
+
+    /**
+     * Logs start of a request.
+     * @param request Request Object.
+     */
+    private void logTransactionStart(final HttpServletRequest request) {
+        azureLogger.info(LOGGER_NAME, String.format(START_LOG_TEMPLATE, request.getMethod(), request.getServletPath(),
+                getRequestHeadersString(request)));
+    }
+
+    /**
+     * Logs end of a request.
+     * @param request Request object.
+     * @param response Response object.
+     * @param timeTaken timeTaken in ms taken for request to complete.
+     */
+    private void logTransactionEnd(final HttpServletRequest request, final HttpServletResponse response,
+                                   final long timeTaken) {
+        azureLogger.info(LOGGER_NAME, String.format(END_LOG_TEMPLATE, request.getMethod(), request.getServletPath(),
+                        getResponseHeadersString(response), timeTaken));
+
+    }
+
+    /**
+     * To construct string representation of request headers.
+     * @param request Request Object.
+     * @return String representation of request headers.
+     */
+    private String getRequestHeadersString(final HttpServletRequest request) {
+        return getHeadersString(s -> request.getHeader(s));
+    }
+
+    /**
+     * To construct string representation of response headers.
+     * @param response Response Object.
+     * @return String representation of response headers.
+     */
+    private String getResponseHeadersString(final HttpServletResponse response) {
+        return getHeadersString(s -> response.getHeader(s));
+    }
+
+    /**
+     * Construct string representation of headers.
+     * @param headerGetter Header value supplier
+     * @return String representation of headers
+     */
+    private String getHeadersString(final Function<String, String> headerGetter) {
+        final StringBuilder headers = new StringBuilder();
+        for (String headerName: WHITELIST_HEADERS) {
+            if (headerGetter.apply(headerName) != null) {
+                headers.append(headerName);
+                headers.append(":");
+                headers.append(headerGetter.apply(headerName));
+                headers.append(",");
+            }
+        }
+
+        if (headers.length() != 0) {
+            headers.deleteCharAt(headers.length() - 1);
+        }
+        return String.format("Headers: {%s}", headers.toString());
+    }
+}
