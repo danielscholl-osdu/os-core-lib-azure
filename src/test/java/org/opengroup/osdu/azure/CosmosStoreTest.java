@@ -14,7 +14,17 @@
 
 package org.opengroup.osdu.azure;
 
-import com.azure.cosmos.*;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientException;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosItem;
+import com.azure.cosmos.CosmosItemProperties;
+import com.azure.cosmos.CosmosItemResponse;
+import com.azure.cosmos.FeedOptions;
+import com.azure.cosmos.FeedResponse;
+import com.azure.cosmos.NotFoundException;
+import com.azure.cosmos.SqlQuerySpec;
 import com.azure.cosmos.internal.AsyncDocumentClient;
 import com.azure.cosmos.internal.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,17 +43,28 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CosmosStoreTest {
 
     private static final String ID = "id";
     private static final String PARTITION_KEY = "pk";
+    private static final String COSMOS_DB = "cosmosdb";
     private static final String COLLECTION = "collection";
-    private static final String COLLECTION_LINK = "/dbs/null/colls/collection";
+    private static final String COLLECTION_LINK = "/dbs/cosmosdb/colls/collection";
     private static final String DATA_PARTITION_ID = "data-partition-id";
 
     @Mock
@@ -93,7 +114,7 @@ class CosmosStoreTest {
     void delete_throws404_ifNotFound() throws CosmosClientException {
         doThrow(NotFoundException.class).when(cosmosItem).delete(any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.deleteItem(DATA_PARTITION_ID, COLLECTION, ID, PARTITION_KEY);
+            cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(404, exception.getError().getCode());
     }
@@ -102,7 +123,7 @@ class CosmosStoreTest {
     void delete_throws500_ifUnknownError() throws CosmosClientException {
         doThrow(CosmosClientException.class).when(cosmosItem).delete(any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.deleteItem(DATA_PARTITION_ID, COLLECTION, ID, PARTITION_KEY);
+            cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(500, exception.getError().getCode());
     }
@@ -110,20 +131,20 @@ class CosmosStoreTest {
     @Test
     void findItem_returnsEmpty_ifNotFound() throws CosmosClientException {
         doThrow(NotFoundException.class).when(cosmosItem).read(any());
-        assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COLLECTION, ID, PARTITION_KEY, String.class).isPresent());
+        assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, String.class).isPresent());
     }
 
     @Test
     void findItem_returnsEmpty_ifMalformedDocument() throws IOException {
         doThrow(IOException.class).when(cosmosItemProperties).getObject(any());
-        assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COLLECTION, ID, PARTITION_KEY, String.class).isPresent());
+        assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, String.class).isPresent());
     }
 
     @Test
     void findItem_throws500_ifUnknownError() throws CosmosClientException {
         doThrow(CosmosClientException.class).when(cosmosItem).read(any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.findItem(DATA_PARTITION_ID, COLLECTION, ID, PARTITION_KEY, String.class);
+            cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, String.class);
         });
         assertEquals(500, exception.getError().getCode());
     }
@@ -132,7 +153,7 @@ class CosmosStoreTest {
     void upsertItem_throws500_ifUnknownError() throws CosmosClientException {
         doThrow(CosmosClientException.class).when(container).upsertItem(any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.upsertItem(DATA_PARTITION_ID, COLLECTION, "some-data");
+            cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data");
         });
         assertEquals(500, exception.getError().getCode());
     }
@@ -140,7 +161,7 @@ class CosmosStoreTest {
     @Test
     void findAllItems_executesCorrectQuery() throws IOException {
         mockQueryResponse("s1");
-        cosmosStore.findAllItems(DATA_PARTITION_ID, COLLECTION, String.class);
+        cosmosStore.findAllItems(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, String.class);
 
         ArgumentCaptor<SqlQuerySpec> query = ArgumentCaptor.forClass(SqlQuerySpec.class);
         ArgumentCaptor<FeedOptions> feedOptions = ArgumentCaptor.forClass(FeedOptions.class);
@@ -154,7 +175,7 @@ class CosmosStoreTest {
     @Test
     void findAllItems_pagesCorrectly() throws IOException {
         mockQueryResponse("s1", "s2", "s3");
-        List<String> results = cosmosStore.findAllItems(DATA_PARTITION_ID, COLLECTION, String.class);
+        List<String> results = cosmosStore.findAllItems(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, String.class);
 
         assertEquals(3, results.size());
         assertTrue(results.contains("s1"));
@@ -166,7 +187,7 @@ class CosmosStoreTest {
     void findAllItems_byPageNumber() {
         mockPaginatedQueryResponse(2, 2, "s1", "s2", "s3", "s4", "s5");
 
-        List<String> results = cosmosStore.findAllItems(DATA_PARTITION_ID, COLLECTION,
+        List<String> results = cosmosStore.findAllItemsAsync(DATA_PARTITION_ID, COSMOS_DB, COLLECTION,
                 String.class, (short)2, 2);
 
         assertEquals(2, results.size());
@@ -174,7 +195,7 @@ class CosmosStoreTest {
         assertTrue(results.contains("s4"));
 
         mockPaginatedQueryResponse(3, 2, "T1", "T2", "T3", "T4", "T5");
-        results = cosmosStore.findAllItems(DATA_PARTITION_ID, COLLECTION,
+        results = cosmosStore.findAllItemsAsync(DATA_PARTITION_ID, COSMOS_DB, COLLECTION,
                 String.class, (short)3, 2);
 
         assertEquals(2, results.size());
@@ -185,7 +206,7 @@ class CosmosStoreTest {
     @Test
     void queryItems_byPageNumber() throws IOException {
         mockPaginatedQueryResponse(3, 1, "W1", "W2", "W3", "W4", "W5");
-        List<String> results = cosmosStore.queryItems(DATA_PARTITION_ID, COLLECTION,
+        List<String> results = cosmosStore.queryItemsAsync(DATA_PARTITION_ID, COSMOS_DB, COLLECTION,
                 new SqlQuerySpec("SELECT * FROM c"), String.class, (short)3, 1);
 
         assertEquals(3, results.size());
@@ -194,7 +215,7 @@ class CosmosStoreTest {
         assertTrue(results.contains("W3"));
 
         mockPaginatedQueryResponse(2, 3, "Z1", "Z2", "Z3", "Z4", "Z5");
-        results = cosmosStore.queryItems(DATA_PARTITION_ID, COLLECTION,
+        results = cosmosStore.queryItemsAsync(DATA_PARTITION_ID, COSMOS_DB, COLLECTION,
                 new SqlQuerySpec("SELECT * FROM c"), String.class, (short)2, 3);
 
         assertEquals(1, results.size());
