@@ -75,7 +75,7 @@ import java.util.logging.Logger;
 
 @Component
 @Lazy
-public final class CosmosStore {
+public class CosmosStore {
 
     private static final Logger LOGGER = Logger.getLogger(CosmosStore.class.getName());
 
