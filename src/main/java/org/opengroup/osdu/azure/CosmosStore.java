@@ -26,6 +26,9 @@ import com.azure.cosmos.SqlQuerySpec;
 import com.azure.cosmos.internal.AsyncDocumentClient;
 import com.azure.cosmos.internal.Document;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.io.IOException;
@@ -50,12 +53,12 @@ import java.util.logging.Logger;
  *      private CosmosStore cosmosStore;
  *
  *      void findItemExample() {
- *          Optional<MyObject> myItem = cosmosStore.findItem(container, "id", "partition-key", MyObject.class);
+ *          Optional<MyObject> myItem = cosmosStore.findItem("dataPartitionId", "cosmosDb", "collection", "id", "partition-key", MyObject.class);
  *          myItem.isPresent(); // true if found, false otherwise
  *      }
  *
  *      void findAllItemsExample() {
- *          List<MyObject> objects = cosmosStore.findAllItems(container, MyObject.class);
+ *          List<MyObject> objects = cosmosStore.findAllItems("dataPartitionId", "cosmosDb", "collection", MyObject.class);
  *      }
  *
  *      void queryItemsExample() {
@@ -64,26 +67,37 @@ import java.util.logging.Logger;
  *                 .setParameters(new SqlParameterList(new SqlParameter("@isFoo", true)));
  *         FeedOptions options = new FeedOptions().setEnableCrossPartitionQuery(true);
  *
- *         List<MyObject> objects = cosmosStore.queryItems(container, query, options, MyObject.class);
+ *         List<MyObject> objects = cosmosStore.queryItems("dataPartitionId", "cosmosDb", "collection", query, options, MyObject.class);
  *      }
  * }
  * </pre>
  */
-public final class CosmosStore {
+
+@Component
+@Lazy
+public class CosmosStore {
 
     private static final Logger LOGGER = Logger.getLogger(CosmosStore.class.getName());
 
+    @Autowired
+    private ICosmosClientFactory cosmosClientFactory;
+
     /**
-     * @param cosmos       Container to query
-     * @param id           ID of item
-     * @param partitionKey Partition key of item
+     * @param dataPartitionId       Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName          Database to be used
+     * @param collection            Collection to be used
+     * @param id                    ID of item
+     * @param partitionKey          Partition key of item
      */
     public void deleteItem(
-            final CosmosContainer cosmos,
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
             final String id,
             final String partitionKey) {
         try {
-            findItem(cosmos, id, partitionKey).delete(new CosmosItemRequestOptions(partitionKey));
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            findItem(cosmosContainer, id, partitionKey).delete(new CosmosItemRequestOptions(partitionKey));
         } catch (NotFoundException e) {
             String errorMessage = "Item was unexpectedly not found";
             LOGGER.log(Level.WARNING, errorMessage, e);
@@ -96,20 +110,25 @@ public final class CosmosStore {
     }
 
     /**
-     * @param cosmos       Container to query
-     * @param id           ID of item
-     * @param partitionKey Partition key of item
-     * @param clazz        Class to serialize results into
-     * @param <T>          Type to return
+     * @param dataPartitionId       Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName          Database to be used
+     * @param collection            Collection to be used
+     * @param id                    ID of item
+     * @param partitionKey          Partition key of item
+     * @param clazz                 Class to serialize results into
+     * @param <T>                   Type to return
      * @return The item that was found based on the IDs provided
      */
     public <T> Optional<T> findItem(
-            final CosmosContainer cosmos,
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
             final String id,
             final String partitionKey,
             final Class<T> clazz) {
         try {
-            T item = findItem(cosmos, id, partitionKey)
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            T item = findItem(cosmosContainer, id, partitionKey)
                     .read(new CosmosItemRequestOptions(partitionKey))
                     .getProperties()
                     .getObject(clazz);
@@ -127,28 +146,42 @@ public final class CosmosStore {
         }
     }
     /**
-     * @param container Container to query
-     * @param clazz     Class type of response
-     * @param <T>       Type of response
+     * @param dataPartitionId       Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName          Database to be used
+     * @param collection            Collection to be used
+     * @param clazz                 Class type of response
+     * @param <T>                   Type of response
      * @return List of items found in container
      */
-    public <T> List<T> findAllItems(final CosmosContainer container, final Class<T> clazz) {
+    public <T> List<T> findAllItems(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final Class<T> clazz) {
         FeedOptions options = new FeedOptions().setEnableCrossPartitionQuery(true);
-        return queryItems(container, new SqlQuerySpec("SELECT * FROM c"), options, clazz);
+        return queryItems(dataPartitionId, cosmosDBName, collection, new SqlQuerySpec("SELECT * FROM c"), options, clazz);
     }
 
     /**
-     * @param container Container to query
-     * @param clazz     Class type of response
-     * @param query     {@link SqlQuerySpec} to execute
-     * @param options   Query options
-     * @param <T>       Type of response
+     * @param dataPartitionId           Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName              Database to be used
+     * @param collection                Collection to be used
+     * @param query                     {@link SqlQuerySpec} to execute
+     * @param options                   Query options
+     * @param clazz                     Class type of response
+     * @param <T>                       Type of response
      * @return List of items found in container
      */
-    public <T> List<T> queryItems(final CosmosContainer container, final SqlQuerySpec query, final FeedOptions options, final Class<T> clazz) {
+    public <T> List<T> queryItems(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final SqlQuerySpec query,
+            final FeedOptions options,
+            final Class<T> clazz) {
         ArrayList<T> results = new ArrayList<>();
-        Iterator<FeedResponse<CosmosItemProperties>> paginatedResponse = container.queryItems(query, options);
-
+        CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+        Iterator<FeedResponse<CosmosItemProperties>> paginatedResponse = cosmosContainer.queryItems(query, options);
         while (paginatedResponse.hasNext()) {
             for (CosmosItemProperties properties : paginatedResponse.next().getResults()) {
                 try {
@@ -163,40 +196,40 @@ public final class CosmosStore {
         return results;
     }
     /**
-     * @param client    {@link AsyncDocumentClient} used to configure/execute requests against database service
-     * @param dbName    Cosmos DB name
-     * @param container Container to query
-     * @param clazz     Class type of response
-     * @param <T>       Type of response
-     * @param pageSize  Number of items returned
-     * @param pageNum   Page number returned
+     * @param dataPartitionId           Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName              Database to be used
+     * @param collection                Collection to be used
+     * @param clazz                     Class type of response
+     * @param pageSize                  Number of items returned
+     * @param pageNum                   Page number returned
+     * @param <T>                       Type of response
      * @return List of items found on specific page in container
      */
-    public <T> List<T> findAllItems(
-            final AsyncDocumentClient client,
-            final String dbName,
-            final String container,
+    public <T> List<T> findAllItemsAsync(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
             final Class<T> clazz,
             final short pageSize,
             final int pageNum) {
-        return queryItems(client, dbName, container, new SqlQuerySpec("SELECT * FROM c"), clazz, pageSize, pageNum);
+        return queryItemsAsync(dataPartitionId, cosmosDBName, collection, new SqlQuerySpec("SELECT * FROM c"), clazz, pageSize, pageNum);
     }
 
     /**
-     * @param client    {@link AsyncDocumentClient} used to configure/execute requests against database service
-     * @param dbName    Cosmos DB name
-     * @param container Container to query
-     * @param query     {@link SqlQuerySpec} to execute
-     * @param clazz     Class type of response
-     * @param <T>       Type of response
-     * @param pageSize  Number of items returned
-     * @param pageNum   Page number returned
+     * @param dataPartitionId               Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName                  Database to be used
+     * @param collection                    Collection to be used
+     * @param query                         {@link SqlQuerySpec} to execute
+     * @param clazz                         Class type of response
+     * @param pageSize                      Number of items returned
+     * @param pageNum                       Page number returned
+     * @param <T>                           Type of response
      * @return List of items found on specific page in container
      */
-    public <T> List<T> queryItems(
-            final AsyncDocumentClient client,
-            final String dbName,
-            final String container,
+    public <T> List<T> queryItemsAsync(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
             final SqlQuerySpec query,
             final Class<T> clazz,
             final short pageSize,
@@ -206,8 +239,8 @@ public final class CosmosStore {
         HashMap<String, List<T>> results;
         do {
             String nextContinuationToken = "";
-
-            results = returnItemsWithToken(client, dbName, container, query, clazz, pageSize, continuationToken);
+            AsyncDocumentClient client = cosmosClientFactory.getAsyncClient(dataPartitionId);
+            results = returnItemsWithToken(client, cosmosDBName, collection, query, clazz, pageSize, continuationToken);
             for (Map.Entry<String, List<T>> entry : results.entrySet()) {
                 nextContinuationToken = entry.getKey();
             }
@@ -262,13 +295,20 @@ public final class CosmosStore {
     }
 
     /**
-     * @param container Container to query
-     * @param item      Data object to store
-     * @param <T>       Type of response
+     * @param dataPartitionId      Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName         Database to be used
+     * @param collection           Collection to be used
+     * @param item                 Data object to store
+     * @param <T>                  Type of response
      */
-    public <T> void upsertItem(final CosmosContainer container, final T item) {
+    public <T> void upsertItem(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final T item) {
         try {
-            container.upsertItem(item);
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            cosmosContainer.upsertItem(item);
         } catch (CosmosClientException e) {
             String errorMessage = "Unexpectedly failed to put item into CosmosDB";
             LOGGER.log(Level.WARNING, errorMessage, e);
@@ -287,5 +327,27 @@ public final class CosmosStore {
             final String id,
             final String partitionKey) {
         return cosmos.getItem(id, partitionKey);
+    }
+
+    /**
+     * @param dataPartitionId   Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName      Database to be used
+     * @param collection        Collection to be used
+     * @return Cosmos container
+     */
+    private CosmosContainer getCosmosContainer(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection) {
+        try {
+            return cosmosClientFactory.getClient(dataPartitionId)
+                    .getDatabase(cosmosDBName)
+                    .getContainer(collection);
+        } catch (Exception e) {
+            String errorMessage = "Error creating creating Cosmos Client";
+            LOGGER.log(Level.WARNING, errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+
     }
 }
