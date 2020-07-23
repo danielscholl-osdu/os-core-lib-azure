@@ -1,11 +1,11 @@
 package org.opengroup.osdu.azure.filters;
 
-import org.opengroup.osdu.azure.logging.AzureLogger;
+import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -30,10 +30,10 @@ public final class TransactionLogFilter implements Filter {
             DpsHeaders.DATA_PARTITION_ID,
             DpsHeaders.CONTENT_TYPE);
     private static final String START_LOG_TEMPLATE = "Start Web-API %s %s %s";
-    private static final String END_LOG_TEMPLATE = "End Web-API %s %s %s timeTaken:%d";
+    private static final String END_LOG_TEMPLATE = "End Web-API %s %s %s status=%d time=%d ms";
 
-    @Inject
-    private AzureLogger azureLogger;
+    @Autowired
+    private JaxRsDpsLog jaxRsDpsLog;
 
     /**
      * Filter logic.
@@ -60,7 +60,7 @@ public final class TransactionLogFilter implements Filter {
      * @param request Request Object.
      */
     private void logTransactionStart(final HttpServletRequest request) {
-        azureLogger.info(LOGGER_NAME, String.format(START_LOG_TEMPLATE, request.getMethod(), request.getServletPath(),
+        jaxRsDpsLog.info(LOGGER_NAME, String.format(START_LOG_TEMPLATE, request.getMethod(), request.getServletPath(),
                 getRequestHeadersString(request)));
     }
 
@@ -72,8 +72,8 @@ public final class TransactionLogFilter implements Filter {
      */
     private void logTransactionEnd(final HttpServletRequest request, final HttpServletResponse response,
                                    final long timeTaken) {
-        azureLogger.info(LOGGER_NAME, String.format(END_LOG_TEMPLATE, request.getMethod(), request.getServletPath(),
-                        getResponseHeadersString(response), timeTaken));
+        jaxRsDpsLog.info(LOGGER_NAME, String.format(END_LOG_TEMPLATE, request.getMethod(), request.getServletPath(),
+                        getResponseHeadersString(response), response.getStatus(), timeTaken));
 
     }
 
@@ -83,7 +83,7 @@ public final class TransactionLogFilter implements Filter {
      * @return String representation of request headers.
      */
     private String getRequestHeadersString(final HttpServletRequest request) {
-        return getHeadersString(s -> request.getHeader(s));
+        return getHeadersString(request::getHeader);
     }
 
     /**
@@ -92,7 +92,7 @@ public final class TransactionLogFilter implements Filter {
      * @return String representation of response headers.
      */
     private String getResponseHeadersString(final HttpServletResponse response) {
-        return getHeadersString(s -> response.getHeader(s));
+        return getHeadersString(response::getHeader);
     }
 
     /**

@@ -7,7 +7,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.logging.AzureLogger;
+import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 
 import javax.servlet.FilterChain;
@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 public class TransactionLogFilterTest {
+    private static final int STATUS_CODE = 200;
     @Mock
     private HttpServletRequest servletRequest;
     @Mock
@@ -33,31 +34,32 @@ public class TransactionLogFilterTest {
     @Mock
     private FilterChain filterChain;
     @Mock
-    private AzureLogger azureLogger;
+    private JaxRsDpsLog jaxRsDpsLog;
 
     @InjectMocks
     private TransactionLogFilter logFilter;
 
     @BeforeEach
     public void setup() {
-
+        when(servletResponse.getStatus()).thenReturn(STATUS_CODE);
     }
 
     @Test
     public void testStartAndEndMessagesAreLoggedProperly() throws Exception {
         final String startLogMessage = "Start Web-API PUT records Headers: {correlation-id:abc}";
-        final String endMessage = "End Web-API PUT records Headers: {correlation-id:abc} timeTaken:";
+        final String endMessage = "End Web-API PUT records Headers: {correlation-id:abc} status=200 time=";
         when(servletRequest.getMethod()).thenReturn("PUT");
         when(servletRequest.getServletPath()).thenReturn("records");
         when(servletRequest.getHeader(eq(DpsHeaders.CORRELATION_ID))).thenReturn("abc");
         when(servletResponse.getHeader(eq(DpsHeaders.CORRELATION_ID))).thenReturn("abc");
         final ArgumentCaptor<String> logMessageCaptor = ArgumentCaptor.forClass(String.class);
-        doNothing().when(azureLogger).info(eq("TxnLogger"), logMessageCaptor.capture());
+        doNothing().when(jaxRsDpsLog).info(eq("TxnLogger"), logMessageCaptor.capture());
         this.logFilter.doFilter(servletRequest, servletResponse, filterChain);
         verify(servletRequest, times(2)).getMethod();
         verify(servletRequest, times(2)).getServletPath();
         verify(servletRequest, times(2)).getHeader(eq(DpsHeaders.CORRELATION_ID));
         verify(servletResponse, times(2)).getHeader(eq(DpsHeaders.CORRELATION_ID));
+        verify(servletResponse, times(1)).getStatus();
         assertEquals(2, logMessageCaptor.getAllValues().size());
         assertEquals(startLogMessage, logMessageCaptor.getAllValues().get(0));
         assertEquals(true, logMessageCaptor.getAllValues().get(1).startsWith(endMessage));
@@ -66,14 +68,15 @@ public class TransactionLogFilterTest {
     @Test
     public void testStartAndEndMessagesAreLoggedProperlyWithNoHeaders() throws Exception {
         final String startLogMessage = "Start Web-API PUT records Headers: {}";
-        final String endMessage = "End Web-API PUT records Headers: {} timeTaken:";
+        final String endMessage = "End Web-API PUT records Headers: {} status=200 time=";
         when(servletRequest.getMethod()).thenReturn("PUT");
         when(servletRequest.getServletPath()).thenReturn("records");
         final ArgumentCaptor<String> logMessageCaptor = ArgumentCaptor.forClass(String.class);
-        doNothing().when(azureLogger).info(eq("TxnLogger"), logMessageCaptor.capture());
+        doNothing().when(jaxRsDpsLog).info(eq("TxnLogger"), logMessageCaptor.capture());
         this.logFilter.doFilter(servletRequest, servletResponse, filterChain);
         verify(servletRequest, times(2)).getMethod();
         verify(servletRequest, times(2)).getServletPath();
+        verify(servletResponse, times(1)).getStatus();
         assertEquals(2, logMessageCaptor.getAllValues().size());
         assertEquals(startLogMessage, logMessageCaptor.getAllValues().get(0));
         assertEquals(true, logMessageCaptor.getAllValues().get(1).startsWith(endMessage));
