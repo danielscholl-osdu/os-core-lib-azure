@@ -23,15 +23,20 @@
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} : %m%n%ex"/>
         </Console>
         <ApplicationInsightsAppender name="aiAppender">
         </ApplicationInsightsAppender>
     </Appenders>
     <Loggers>
-        <Root level="trace">
+<!--        TODO: In future it will be changed to warn-->
+        <Root level="info">
             <AppenderRef ref="Console"  />
             <AppenderRef ref="aiAppender"  />
         </Root>
+        <logger name="TxnLogger" level="info" additivity="false">
+            <AppenderRef ref="Console"  />
+            <AppenderRef ref="aiAppender"  />
+        </logger>
     </Loggers>
 </Configuration>
