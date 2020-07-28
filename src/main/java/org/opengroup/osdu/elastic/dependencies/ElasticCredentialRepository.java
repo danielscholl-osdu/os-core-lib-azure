@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.elastic.dependencies;
 
+import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import lombok.AllArgsConstructor;
@@ -61,7 +62,8 @@ public class ElasticCredentialRepository implements IElasticRepository {
         URL esURL = getElasticURL();
         String username = getSecretWithValidation("elastic-username");
         String password = getSecretWithValidation("elastic-password");
-        return buildSettings(esURL, username, password);
+        boolean sslEnabled = Boolean.parseBoolean(getSecretWithDefault("elastic-ssl-enabled", "true"));
+        return buildSettings(esURL, username, password, sslEnabled);
     }
 
     /**
@@ -69,17 +71,28 @@ public class ElasticCredentialRepository implements IElasticRepository {
      * @param esURL URL for ES cluster
      * @param username Username for ES cluster
      * @param password Password for ES cluster
+     * @param sslEnabled ES cluster ssl communication enabled or not
      * @return {@link ClusterSettings} representing the cluster
      */
     private ClusterSettings buildSettings(
             final URL esURL,
             final String username,
-            final String password) {
-        failIfNotHTTPS(esURL);
-        return ClusterSettings.builder()
+            final String password,
+            final boolean sslEnabled) {
+        ClusterSettings.ClusterSettingsBuilder builder = ClusterSettings.builder()
                 .host(esURL.getHost())
                 .port(esURL.getPort())
-                .userNameAndPassword(String.format("%s:%s", username, password))
+                .userNameAndPassword(String.format("%s:%s", username, password));
+
+        if (!sslEnabled) {
+            return builder
+                    .https(false)
+                    .tls(false)
+                    .build();
+        }
+
+        failIfNotHTTPS(esURL);
+        return builder
                 .https(true)
                 .tls(true)
                 .build();
@@ -125,6 +138,27 @@ public class ElasticCredentialRepository implements IElasticRepository {
         String secretValue = secret.getValue();
         Validators.checkNotNullAndNotEmpty(secretValue, "Secret Value for Secret with name " + secretName);
 
-        return secretValue;
+        return secret.getValue();
     }
+
+    /**
+     * Get the secret with a default value. If the secret is not found or is null return the default value.
+     * @param secretName name of secret
+     * @param defaultValue to be used in case the secret is null or empty.
+     * @return Secret value. It is guaranteed to be returned with either default value or a non null, non empty secret.
+     */
+    private String getSecretWithDefault(final String secretName, final String defaultValue) {
+        Validators.checkNotNull(secretName, "Secret with name " + secretName);
+        KeyVaultSecret secret;
+        try {
+            secret = secretClient.getSecret(secretName);
+            if (secret == null || secret.getValue() == null || secret.getValue().isEmpty()) {
+                return defaultValue;
+            }
+        } catch (ResourceNotFoundException secretNotFound) {
+            return defaultValue;
+        }
+        return secret.getValue();
+    }
+
 }
