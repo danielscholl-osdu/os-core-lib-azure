@@ -14,7 +14,18 @@
 
 package org.opengroup.osdu.azure;
 
-import com.azure.cosmos.*;
+import com.azure.cosmos.ConflictException;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientException;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosItem;
+import com.azure.cosmos.CosmosItemProperties;
+import com.azure.cosmos.CosmosItemResponse;
+import com.azure.cosmos.FeedOptions;
+import com.azure.cosmos.FeedResponse;
+import com.azure.cosmos.NotFoundException;
+import com.azure.cosmos.SqlQuerySpec;
 import com.azure.cosmos.internal.AsyncDocumentClient;
 import com.azure.cosmos.internal.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +47,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 
 @ExtendWith(MockitoExtension.class)
 class CosmosStoreTest {
