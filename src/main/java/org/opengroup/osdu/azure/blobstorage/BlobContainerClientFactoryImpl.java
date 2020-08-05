@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 @Lazy
 public class BlobContainerClientFactoryImpl implements IBlobContainerClientFactory {
 
-    @Lazy
     @Autowired
     private BlobContainerClient blobContainerClient;
 
