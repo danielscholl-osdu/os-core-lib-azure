@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.azure;
 
+import com.azure.cosmos.ConflictException;
 import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosItem;
@@ -311,6 +312,32 @@ public class CosmosStore {
             cosmosContainer.upsertItem(item);
         } catch (CosmosClientException e) {
             String errorMessage = "Unexpectedly failed to put item into CosmosDB";
+            LOGGER.log(Level.WARNING, errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * @param dataPartitionId      Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName         Database to be used
+     * @param collection           Collection to be used
+     * @param item                 Data object to store
+     * @param <T>                  Type of response
+     */
+    public <T> void createItem(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final T item) {
+        try {
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            cosmosContainer.createItem(item);
+        } catch (ConflictException e) {
+            String errorMessage = "Resource with specified id or name already exists.";
+            LOGGER.log(Level.WARNING, errorMessage, e);
+            throw new AppException(409, errorMessage, e.getMessage(), e);
+        } catch (CosmosClientException e) {
+            String errorMessage = "Unexpectedly failed to insert item into CosmosDB";
             LOGGER.log(Level.WARNING, errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
