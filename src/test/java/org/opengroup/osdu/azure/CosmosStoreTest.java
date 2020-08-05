@@ -14,17 +14,7 @@
 
 package org.opengroup.osdu.azure;
 
-import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.CosmosClientException;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.CosmosItem;
-import com.azure.cosmos.CosmosItemProperties;
-import com.azure.cosmos.CosmosItemResponse;
-import com.azure.cosmos.FeedOptions;
-import com.azure.cosmos.FeedResponse;
-import com.azure.cosmos.NotFoundException;
-import com.azure.cosmos.SqlQuerySpec;
+import com.azure.cosmos.*;
 import com.azure.cosmos.internal.AsyncDocumentClient;
 import com.azure.cosmos.internal.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,19 +33,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CosmosStoreTest {
@@ -156,6 +137,33 @@ class CosmosStoreTest {
             cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data");
         });
         assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    void createItem_throws409_ifDuplicateDocument() throws CosmosClientException {
+        doThrow(ConflictException.class).when(container).createItem(any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data");
+        });
+        assertEquals(409, exception.getError().getCode());
+    }
+
+    @Test
+    void createItem_throws500_ifUnknownError() throws CosmosClientException {
+        doThrow(CosmosClientException.class).when(container).createItem(any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data");
+        });
+        assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    void createItem_Success() throws CosmosClientException {
+        try {
+            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data");
+        } catch (Exception ex) {
+            fail("Should not fail.");
+        }
     }
 
     @Test
