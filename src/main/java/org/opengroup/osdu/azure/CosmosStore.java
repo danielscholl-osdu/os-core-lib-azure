@@ -70,6 +70,10 @@ import java.util.logging.Logger;
  *
  *         List<MyObject> objects = cosmosStore.queryItems("dataPartitionId", "cosmosDb", "collection", query, options, MyObject.class);
  *      }
+ *
+ *      void createItemExample() {
+ *          cosmosStore.createItem("dataPartitionId", "cosmosDb", "collection", "some-data");
+ *      }
  * }
  * </pre>
  */
