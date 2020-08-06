@@ -21,7 +21,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.16</version>
+  <version>0.0.17</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -57,6 +57,12 @@
 
   <dependencies>
 
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-core-http-netty</artifactId>
+        <version>1.5.3</version>
+      </dependency>
+
     <!-- Spring dependencies -->
     <dependency>
       <groupId>org.springframework</groupId>
@@ -80,6 +86,16 @@
       <groupId>org.opengroup.osdu</groupId>
       <artifactId>os-core-common</artifactId>
       <version>0.3.4</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Azure dependencies -->
@@ -159,7 +175,6 @@
       <version>${jackson.version}</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <repositories>
