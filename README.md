@@ -74,7 +74,7 @@ Note: Below are reference PRs for exclusion and might change from service to ser
 
 Refer this [MR](https://community.opengroup.org/osdu/platform/security-and-compliance/entitlements-azure/-/merge_requests/13) as reference on how to exclude dependencies along with how to enable the 
 Enabled transaction logger and slf4jlogger
-## Environment variables required to consume the TenantFactoryImpl
+## Environment variables to be added in application.properties to consume the TenantFactoryImpl
 | name | value | description |
 | ---  | ---   | ---         |
 | `tenantInfo.container.name` | `TenantInfo` | cosmos container name |
