@@ -65,3 +65,17 @@ You need to connect to our feed on [Azure DevOps](https://slb-swt.visualstudio.c
     </dependencies>
 </project>
 ```
+
+## Changes to support newly Added transaction logger and slf4jlogger
+The consumer service might run into multiple logger bindings error on start up
+which can be fixed by excluding some of the logger dependencies.
+
+Note: Below are reference PRs for exclusion and might change from service to service
+
+Refer this [MR](https://community.opengroup.org/osdu/platform/security-and-compliance/entitlements-azure/-/merge_requests/13) as reference on how to exclude dependencies along with how to enable the 
+Enabled transaction logger and slf4jlogger
+## Environment variables required to consume the TenantFactoryImpl
+| name | value | description |
+| ---  | ---   | ---         |
+| `tenantInfo.container.name` | `TenantInfo` | cosmos container name |
+| `azure.cosmosdb.database` | ex `dev-osdu-r2-db` | cosmos databse name |
