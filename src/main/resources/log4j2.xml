@@ -18,12 +18,12 @@
 <Configuration packages="com.microsoft.applicationinsights.log4j.v2">
     <Properties>
         <Property name="LOG_PATTERN">
-            %d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} : %m%n%ex
+            %d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} correlation-id=%X{correlation-id} data-partition-id=%X{data-partition-id}: %m%n%ex
         </Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} : %m%n%ex"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} correlation-id=%X{correlation-id} data-partition-id=%X{data-partition-id}: %m%n%ex"/>
         </Console>
         <ApplicationInsightsAppender name="aiAppender">
         </ApplicationInsightsAppender>
