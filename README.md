@@ -78,4 +78,5 @@ Enabled transaction logger and slf4jlogger
 | name | value | description |
 | ---  | ---   | ---         |
 | `tenantInfo.container.name` | `TenantInfo` | cosmos container name |
-| `azure.cosmosdb.database` | ex `dev-osdu-r2-db` | cosmos databse name |
+| `azure.cosmosdb.database` | ex `dev-osdu-r2-db` | cosmos database name |
+| `storage_account` | ex `testStorage` | storage account name |
