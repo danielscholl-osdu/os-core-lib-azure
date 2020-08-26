@@ -137,9 +137,12 @@ class CosmosStoreTest {
     }
 
     @Test
-    void findItem_returnsEmpty_ifMalformedDocument() throws IOException {
+    void findItem_throws500_ifMalformedDocument() throws IOException {
         doThrow(IOException.class).when(cosmosItemProperties).getObject(any());
-        assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, String.class).isPresent());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, String.class);
+        });
+        assertEquals(500, exception.getError().getCode());
     }
 
     @Test

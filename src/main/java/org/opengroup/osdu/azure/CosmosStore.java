@@ -141,11 +141,13 @@ public class CosmosStore {
         } catch (NotFoundException e) {
             LOGGER.info(String.format("Unable to find item with ID=%s and PK=%s", id, partitionKey));
             return Optional.empty();
-        } catch (IOException e) {
-            LOGGER.warning(String.format("Malformed document for item with ID=%s and PK=%s", id, partitionKey));
-            return Optional.empty();
-        } catch (CosmosClientException e) {
-            String errorMessage = "Unexpectedly encountered error calling CosmosDB";
+        } catch (IOException | CosmosClientException e) {
+            String errorMessage;
+            if (e instanceof IOException) {
+                errorMessage = String.format("Malformed document for item with ID=%s and PK=%s", id, partitionKey);
+            } else {
+                errorMessage = "Unexpectedly encountered error calling CosmosDB";
+            }
             LOGGER.log(Level.WARNING, errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
