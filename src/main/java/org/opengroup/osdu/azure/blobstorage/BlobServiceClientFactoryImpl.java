@@ -20,28 +20,26 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 /**
  *  Implementation for IBlobServiceClientFactory.
  */
+@Component
 public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
-
-    @Autowired
-    private DefaultAzureCredential defaultAzureCredential;
-
-    @Autowired
-    @Lazy
-    private BlobStoreConfiguration blobStoreConfiguration;
 
     private BlobServiceClient blobServiceClient;
 
     /**
-     * Parameter-less constructor.
-     * This initializes the blobServiceClient.
+     * Constructor to initialize blobServiceClient.
+     * @param defaultAzureCredential            Default azure credentials.
+     * @param blobStoreConfiguration         Configuration details for blob storage.
      */
-    public BlobServiceClientFactoryImpl() {
-        Validators.checkNotNull(defaultAzureCredential, "Credential cannot be null");
+    @Autowired
+    public BlobServiceClientFactoryImpl(
+            final DefaultAzureCredential defaultAzureCredential,
+            final BlobStoreConfiguration blobStoreConfiguration) {
+        Validators.checkNotNull(defaultAzureCredential, "Default credentials");
         Validators.checkNotNullAndNotEmpty(blobStoreConfiguration.getStorageAccountName(), "Storage account name cannot be null");
 
         String endpoint = String.format("https://%s.blob.core.windows.net", blobStoreConfiguration.getStorageAccountName());
