@@ -20,12 +20,14 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
  *  Implementation for IBlobServiceClientFactory.
  */
 @Component
+@ConditionalOnProperty(value = "azure.blobStore.required", havingValue = "true", matchIfMissing = false)
 public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
 
     private BlobServiceClient blobServiceClient;

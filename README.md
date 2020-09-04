@@ -79,4 +79,9 @@ Enabled transaction logger and slf4jlogger
 | ---  | ---   | ---         |
 | `tenantInfo.container.name` | `TenantInfo` | cosmos container name |
 | `azure.cosmosdb.database` | ex `dev-osdu-r2-db` | cosmos database name |
-| `storage_account` | ex `testStorage` | storage account name |
+
+## Settings to be added in application.properties to consume the BlobStore
+| name | value | description |
+| ---  | ---   | ---         |
+| `azure.blobStore.required` | `true` | - |
+| `azure.storage.account-name` | ex `testStorage` | storage account name |
