@@ -39,8 +39,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A simpler interface for interacting with CosmosDB.
@@ -82,7 +82,7 @@ import java.util.logging.Logger;
 @Lazy
 public class CosmosStore {
 
-    private static final Logger LOGGER = Logger.getLogger(CosmosStore.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStore.class.getName());
 
     @Autowired
     private ICosmosClientFactory cosmosClientFactory;
@@ -105,11 +105,11 @@ public class CosmosStore {
             findItem(cosmosContainer, id, partitionKey).delete(new CosmosItemRequestOptions(partitionKey));
         } catch (NotFoundException e) {
             String errorMessage = "Item was unexpectedly not found";
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(404, errorMessage, e.getMessage(), e);
         } catch (CosmosClientException e) {
             String errorMessage = "Unexpectedly failed to delete item from CosmosDB";
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
@@ -139,7 +139,7 @@ public class CosmosStore {
                     .getObject(clazz);
             return Optional.ofNullable(item);
         } catch (NotFoundException e) {
-            LOGGER.info(String.format("Unable to find item with ID=%s and PK=%s", id, partitionKey));
+            LOGGER.warn(String.format("Unable to find item with ID=%s and PK=%s", id, partitionKey));
             return Optional.empty();
         } catch (IOException | CosmosClientException e) {
             String errorMessage;
@@ -148,7 +148,7 @@ public class CosmosStore {
             } else {
                 errorMessage = "Unexpectedly encountered error calling CosmosDB";
             }
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
@@ -195,7 +195,7 @@ public class CosmosStore {
                     results.add(properties.getObject(clazz));
                 } catch (IOException e) {
                     String errorMessage = String.format("Malformed document for item with ID=%s", properties.getId());
-                    LOGGER.log(Level.WARNING, errorMessage, e);
+                    LOGGER.warn(errorMessage, e);
                     throw new AppException(500, errorMessage, e.getMessage(), e);
                 }
             }
@@ -318,7 +318,7 @@ public class CosmosStore {
             cosmosContainer.upsertItem(item);
         } catch (CosmosClientException e) {
             String errorMessage = "Unexpectedly failed to put item into CosmosDB";
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
@@ -340,11 +340,11 @@ public class CosmosStore {
             cosmosContainer.createItem(item);
         } catch (ConflictException e) {
             String errorMessage = "Resource with specified id or name already exists.";
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(409, errorMessage, e.getMessage(), e);
         } catch (CosmosClientException e) {
             String errorMessage = "Unexpectedly failed to insert item into CosmosDB";
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
@@ -378,7 +378,7 @@ public class CosmosStore {
                     .getContainer(collection);
         } catch (Exception e) {
             String errorMessage = "Error creating creating Cosmos Client";
-            LOGGER.log(Level.WARNING, errorMessage, e);
+            LOGGER.warn(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
 
