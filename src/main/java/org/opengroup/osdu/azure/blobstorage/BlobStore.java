@@ -40,23 +40,6 @@ import java.util.Collections;;
  *      @Autowired
  *      private BlobStore blobStore;
  *
- *      String readFromBlobExample()
- *      {
- *          String content = blobStorage.readFromBlob("dataPartitionId", "filePath");
- *             if (content != null)
- *                 return content;
- *      }
- *
- *      void writeToBlobExample()
- *      {
- *          blobStorage.writeToBlob("dataPartitionId", "filePath", "content");
- *      }
- *
- *      void deleteFromBlobExample()
- *      {
- *          Boolean success = blobStorage.deleteFromBlob("dataPartitionId", "filePath");
- *      }
- *
  *      String readFromStorageContainerExamole()
  *      {
  *          String content = blobStorage.readFromStorageContainer("dataPartitionId", "filePath", "containerName");
@@ -82,99 +65,12 @@ import java.util.Collections;;
 public class BlobStore {
 
     @Autowired
-    private IBlobContainerClientFactory blobContainerClientFactory;
-
-    @Autowired
     private IBlobServiceClientFactory blobServiceClientFactory;
 
     @Autowired
     private ILogger logger;
 
     private static final String LOG_PREFIX = "azure-core-lib";
-
-    /**
-     *
-     * @param filePath              Path of file to be read.
-     * @param dataPartitionId       Data partition id
-     * @return the content of file with provided file path.
-     */
-    public String readFromBlob(final String dataPartitionId, final String filePath) {
-        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId);
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
-        try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
-            blockBlobClient.download(downloadStream);
-            return downloadStream.toString(StandardCharsets.UTF_8.name());
-        } catch (BlobStorageException ex) {
-            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                String errorMessage = "Specified blob was not found";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(404, errorMessage, ex.getMessage(), ex);
-            } else {
-                String errorMessage = "Failed to read specified blob";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(500, errorMessage, ex.getMessage(), ex);
-            }
-        } catch (UnsupportedEncodingException ex) {
-            String errorMessage = String.format("Encoding was not correct for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(400, errorMessage, ex.getMessage(), ex);
-        } catch (IOException ex) {
-            String errorMessage = String.format("Malformed document for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     *
-     * @param filePath              Path of file to be deleted.
-     * @param dataPartitionId       Data partition id
-     * @return boolean indicating whether the deletion of given file was successful or not.
-     */
-    public boolean deleteFromBlob(final String dataPartitionId, final String filePath) {
-        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId);
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
-        try {
-            blockBlobClient.delete();
-            return true;
-        } catch (BlobStorageException ex) {
-            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                String errorMessage = "Specified blob was not found";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(404, errorMessage, ex.getMessage(), ex);
-            } else {
-                String errorMessage = "Failed to delete blob";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(500, errorMessage, ex.getMessage(), ex);
-            }
-        }
-    }
-
-    /**
-     *
-     * @param filePath              Path of file to be written at.
-     * @param content               Content to be written in the file.
-     * @param dataPartitionId       Data partition id
-     */
-    public void writeToBlob(final String dataPartitionId,
-                            final String filePath,
-                            final String content) {
-        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        int bytesSize = bytes.length;
-        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId);
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
-        try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
-            blockBlobClient.upload(dataStream, bytesSize, true);
-        } catch (BlobStorageException ex) {
-            String errorMessage = "Failed to upload file content.";
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
-        } catch (IOException ex) {
-            String errorMessage = String.format("Malformed document for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
-        }
-    }
 
     /**
      *
@@ -266,22 +162,6 @@ public class BlobStore {
             throw new AppException(500, errorMessage, ex.getMessage(), ex);
         } catch (IOException ex) {
             String errorMessage = String.format("Malformed document for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
-        }
-    }
-
-
-    /**
-     *
-     * @param dataPartitionId       Data partition id
-     * @return blob container client corresponding to the dataPartitionId.
-     */
-    private BlobContainerClient getBlobContainerClient(final String dataPartitionId) {
-        try {
-            return blobContainerClientFactory.getClient(dataPartitionId);
-        } catch (Exception ex) {
-            String errorMessage = "Error creating creating blob container client.";
             logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
             throw new AppException(500, errorMessage, ex.getMessage(), ex);
         }

@@ -30,10 +30,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
-import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 
 import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,9 +47,6 @@ public class BlobStoreTest {
 
     @InjectMocks
     BlobStore blobStore;
-
-    @Mock
-    IBlobContainerClientFactory blobContainerClientFactory;
 
     @Mock
     IBlobServiceClientFactory blobServiceClientFactory;
@@ -81,149 +76,7 @@ public class BlobStoreTest {
         lenient().when(blobContainerClient.getBlobClient(FILE_PATH)).thenReturn(blobClient);
         lenient().when(blobServiceClient.getBlobContainerClient(STORAGE_CONTAINER_NAME)).thenReturn(blobContainerClient);
         lenient().when(blobServiceClientFactory.getBlobServiceClient(PARTITION_ID)).thenReturn(blobServiceClient);
-        lenient().when(blobContainerClientFactory.getClient(PARTITION_ID)).thenReturn(blobContainerClient);
         lenient().doNothing().when(logger).warning(eq("azure-core-lib"), any(), anyMap());
-    }
-
-    @Test
-    public void readFromBlob_ErrorCreatingBlobContainerClient()
-    {
-        doThrow(AppException.class).when(blobContainerClientFactory).getClient(eq(PARTITION_ID));
-        try {
-            String content = blobStore.readFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void readFromBlob_Success()
-    {
-        String content = blobStore.readFromBlob(PARTITION_ID, FILE_PATH);
-        ArgumentCaptor<ByteArrayOutputStream> outputStream = ArgumentCaptor.forClass(ByteArrayOutputStream.class);
-
-        // validate that the download method is being invoked appropriately.
-        verify(blockBlobClient).download(outputStream.capture());
-    }
-
-    @Test
-    public void readFromBlob_BlobNotFound()
-    {
-        BlobStorageException exception = mockStorageException(BlobErrorCode.BLOB_NOT_FOUND);
-        doThrow(exception).when(blockBlobClient).download(any());
-        try {
-            String content = blobStore.readFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (AppException ex) {
-            assertEquals(404, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void readFromBlob_InternalError()
-    {
-        BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
-        doThrow(exception).when(blockBlobClient).download(any());
-        try {
-            String content = blobStore.readFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void deleteFromBlob_ErrorCreatingBlobContainerClient()
-    {
-        doThrow(AppException.class).when(blobContainerClientFactory).getClient(eq(PARTITION_ID));
-        try {
-            blobStore.deleteFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void deleteFromBlob_BlobNotFound()
-    {
-        BlobStorageException exception = mockStorageException(BlobErrorCode.BLOB_NOT_FOUND);
-        doThrow(exception).when(blockBlobClient).delete();
-        try {
-            blobStore.deleteFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (AppException ex) {
-            assertEquals(404, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void deleteFromBlob_InternalError()
-    {
-        BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
-        doThrow(exception).when(blockBlobClient).delete();
-        try {
-            blobStore.deleteFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void deleteFromBlob_Success()
-    {
-        doNothing().when(blockBlobClient).delete();
-        try {
-            blobStore.deleteFromBlob(PARTITION_ID, FILE_PATH);
-        } catch (Exception ex) {
-            fail("should not get any exception.");
-        }
-    }
-
-    @Test
-    public void writeToBlob_ErrorCreatingBlobContainerClient()
-    {
-        doThrow(AppException.class).when(blobContainerClientFactory).getClient(eq(PARTITION_ID));
-        try {
-            blobStore.writeToBlob(PARTITION_ID, FILE_PATH, CONTENT);
-        } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void writeToBlob_InternalError()
-    {
-        BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
-        doThrow(exception).when(blockBlobClient).upload(any(), anyLong(), eq(true));
-        try {
-            blobStore.writeToBlob(PARTITION_ID, FILE_PATH, CONTENT);
-        } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
-        } catch (Exception ex) {
-            fail("should not get different error code");
-        }
-    }
-
-    @Test
-    public void writeToBlob_Success()
-    {
-        doReturn(blockBlobItem).when(blockBlobClient).upload(any(), anyLong(), eq(true));
-        try {
-            blobStore.writeToBlob(PARTITION_ID, FILE_PATH, CONTENT);
-        } catch (Exception ex) {
-            fail("should not get any exception.");
-        }
     }
 
     @Test
