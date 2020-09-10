@@ -25,7 +25,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
@@ -115,7 +114,6 @@ public class TenantFactoryImpl implements ITenantFactory {
                     ti.setComplianceRuleSet(tenantInfoDoc.getComplianceRuleSet());
                     ti.setDataPartitionId(tenantName);
                     ti.setServiceAccount(tenantInfoDoc.getServiceprincipalAppId());
-                    ti.setCrmAccountIds(Arrays.asList(tenantInfoDoc.getGroups()));
                     this.tenants.put(tenantName, ti);
                 }
         );
