@@ -81,6 +81,7 @@ public class TenantFactoryImplTest {
         expected.setName(tenantName);
         expected.setDataPartitionId(tenantName);
         expected.setComplianceRuleSet(complianceRuleSet);
+        expected.setServiceAccount(serviceprincipalAppId);
 
         assertEquals(expected, result);
     }
@@ -106,6 +107,7 @@ public class TenantFactoryImplTest {
         tenantInfo.setName(tenantName);
         tenantInfo.setDataPartitionId(tenantName);
         tenantInfo.setComplianceRuleSet(complianceRuleSet);
+        tenantInfo.setServiceAccount(serviceprincipalAppId);
 
         List<TenantInfo> expected = Collections.singletonList(tenantInfo);
 

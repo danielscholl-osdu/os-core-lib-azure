@@ -113,6 +113,7 @@ public class TenantFactoryImpl implements ITenantFactory {
                     ti.setName(tenantName);
                     ti.setComplianceRuleSet(tenantInfoDoc.getComplianceRuleSet());
                     ti.setDataPartitionId(tenantName);
+                    ti.setServiceAccount(tenantInfoDoc.getServiceprincipalAppId());
                     this.tenants.put(tenantName, ti);
                 }
         );
