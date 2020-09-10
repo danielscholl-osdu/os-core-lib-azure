@@ -21,6 +21,7 @@ import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.opengroup.osdu.core.common.provider.interfaces.ITenantFactory;
 import org.opengroup.osdu.core.common.model.tenant.TenantInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +33,7 @@ import java.util.Collection;
  * Implementation for ITenantFactory.
  */
 @Component
-@Lazy
+@ConditionalOnProperty(value = "tenantFactoryImpl.required", havingValue = "true", matchIfMissing = false)
 public class TenantFactoryImpl implements ITenantFactory {
 
     @Autowired

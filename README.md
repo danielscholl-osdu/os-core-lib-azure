@@ -74,11 +74,13 @@ Note: Below are reference PRs for exclusion and might change from service to ser
 
 Refer this [MR](https://community.opengroup.org/osdu/platform/security-and-compliance/entitlements-azure/-/merge_requests/13) as reference on how to exclude dependencies along with how to enable the 
 Enabled transaction logger and slf4jlogger
+
 ## Environment variables to be added in application.properties to consume the TenantFactoryImpl
 | name | value | description |
 | ---  | ---   | ---         |
 | `tenantInfo.container.name` | `TenantInfo` | cosmos container name |
 | `azure.cosmosdb.database` | ex `dev-osdu-r2-db` | cosmos database name |
+| `tenantFactoryImpl.required` | ex `true` | Set this property to true in order to consume TenantFactoryImpl class from core-lib-azure |
 
 ## Settings to be added in application.properties to consume the BlobStore
 | name | value | description |
