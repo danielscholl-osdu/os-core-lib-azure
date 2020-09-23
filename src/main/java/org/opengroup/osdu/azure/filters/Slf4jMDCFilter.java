@@ -4,6 +4,7 @@ import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.Filter;
@@ -17,9 +18,17 @@ import java.util.Map;
 
 /**
  * MDC Filter for logging.
+ * Condition 1: MDC filter should be called before any filter which contains logging logic, like TransactionLogFilter
+ * Condition 2: MDC filter should be called after OrderedRequestContextFilter, so that the request scope is set
+ * Filter with lowest order value is picked up first
+ * The order of TransactionLogFilter is not set, hence it picks up default value which is Ordered.LOWEST_PRECEDENCE (2147483647)
+ * The order of OrderedRequestContextFilter is -105
+ * Hence setting the order of MDC filter as -104
+ * So now order of calling the filters becomes: OrderedRequestContextFilter --> MDC filter --> ... --> TransactionLogFilter
  */
 @Component
 @ConditionalOnProperty(value = "logging.mdccontext.enabled", havingValue = "true", matchIfMissing = false)
+@Order(-104)
 public class Slf4jMDCFilter implements Filter {
     @Autowired
     private DpsHeaders dpsHeaders;
