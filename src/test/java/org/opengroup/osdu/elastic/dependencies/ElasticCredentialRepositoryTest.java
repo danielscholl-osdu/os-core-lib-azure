@@ -14,16 +14,19 @@
 
 package org.opengroup.osdu.elastic.dependencies;
 
-import com.azure.security.keyvault.secrets.SecretClient;
-import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.cache.ElasticCredentialsCache;
+import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.search.ClusterSettings;
 import org.opengroup.osdu.core.common.model.tenant.TenantInfo;
+import org.opengroup.osdu.core.common.partition.Property;
 
 import java.net.MalformedURLException;
 
@@ -32,71 +35,69 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ElasticCredentialRepositoryTest {
+
     @Mock
-    private SecretClient secretClient;
+    private ElasticCredentialsCache cache;
+
+    @Mock
+    private PartitionServiceClient partitionServiceClient;
 
     @Mock
     private JaxRsDpsLog log;
 
-    private TenantInfo tenant = new TenantInfo();
-
     @InjectMocks
-    private ElasticCredentialRepository repo;
+    private ElasticCredentialRepository sut;
+
+    private TenantInfo tenant;
+
+    private static final String partitionId = "qa";
+
+    @BeforeEach
+    public void init() {
+        tenant = new TenantInfo();
+        tenant.setDataPartitionId(partitionId);
+    }
 
     @Test
     void getClusterSettings_checksForValidURL_andLogsIfFails() {
-        mockSecretValue("elastic-endpoint", "not-a-url");
-        assertThrows(IllegalStateException.class, () -> repo.getElasticClusterSettings(tenant));
+        PartitionInfoAzure expectedPartitionInfo = PartitionInfoAzure.builder()
+                .idConfig(Property.builder().value(partitionId).build())
+                .elasticEndpointConfig(Property.builder().value("not-a-url").build())
+                .build();
+        when(partitionServiceClient.getPartition(partitionId)).thenReturn(expectedPartitionInfo);
+        assertThrows(IllegalStateException.class, () -> sut.getElasticClusterSettings(tenant));
+
         verify(log, times(1)).warning(any(String.class), any(MalformedURLException.class));
     }
 
     @Test
     void getClusterSettings_checksForHTTPS_andLogsIfFails() {
-        mockSecretValue("elastic-endpoint", "http://es-endpoint.com:80");
-        mockSecretValue("elastic-username", "es-user");
-        mockSecretValue("elastic-password", "es-pass");
+        PartitionInfoAzure expectedPartitionInfo = PartitionInfoAzure.builder()
+                .idConfig(Property.builder().value(partitionId).build())
+                .elasticEndpointConfig(Property.builder().value("http://es-endpoint.com:80").build())
+                .elasticUsernameConfig(Property.builder().value("es-user").build())
+                .elasticPasswordConfig(Property.builder().value("es-pass").build())
+                .build();
+        when(partitionServiceClient.getPartition(partitionId)).thenReturn(expectedPartitionInfo);
+        assertThrows(IllegalStateException.class, () -> sut.getElasticClusterSettings(tenant));
 
-        assertThrows(IllegalStateException.class, () -> repo.getElasticClusterSettings(tenant));
         verify(log, times(1)).warning(any(String.class));
     }
 
     @Test
-    void getClusterSettings_checksForNullEndpoint() {
-        mockSecretValue("elastic-endpoint", null);
-        assertThrows(NullPointerException.class, () -> repo.getElasticClusterSettings(tenant));
-    }
-
-    @Test
-    void getClusterSettings_checksForNullUsername() {
-        mockSecretValue("elastic-endpoint", "https://es-endpoint.com:443");
-        mockSecretValue("elastic-username", null);
-        assertThrows(NullPointerException.class, () -> repo.getElasticClusterSettings(tenant));
-    }
-
-    @Test
-    void getClusterSettings_checksForNullPassword() {
-        mockSecretValue("elastic-endpoint", "https://es-endpoint.com:443");
-        mockSecretValue("elastic-username", "es-user");
-        mockSecretValue("elastic-password", null);
-        assertThrows(NullPointerException.class, () -> repo.getElasticClusterSettings(tenant));
-    }
-
-    @Test
     void getClusterSettings_assemblesFromSecretsProperly() {
-        mockSecretValue("elastic-endpoint", "https://es-endpoint.com:443");
-        mockSecretValue("elastic-username", "es-user");
-        mockSecretValue("elastic-password", "es-pass");
+        PartitionInfoAzure expectedPartitionInfo = PartitionInfoAzure.builder()
+                .idConfig(Property.builder().value(partitionId).build())
+                .elasticEndpointConfig(Property.builder().value("https://es-endpoint.com:443").build())
+                .elasticUsernameConfig(Property.builder().value("es-user").build())
+                .elasticPasswordConfig(Property.builder().value("es-pass").build())
+                .build();
+        when(partitionServiceClient.getPartition(partitionId)).thenReturn(expectedPartitionInfo);
 
-        ClusterSettings settings = repo.getElasticClusterSettings(tenant);
+        ClusterSettings settings = sut.getElasticClusterSettings(tenant);
         assertTrue(settings.isHttps());
         assertTrue(settings.isHttps());
         assertEquals(443, settings.getPort());
         assertEquals("es-endpoint.com", settings.getHost());
-    }
-
-    void mockSecretValue(String secretName, String secretValue) {
-        KeyVaultSecret secret = mock(KeyVaultSecret.class);
-        doReturn(secret).when(secretClient).getSecret(secretName);
-        doReturn(secretValue).when(secret).getValue();
     }
 }

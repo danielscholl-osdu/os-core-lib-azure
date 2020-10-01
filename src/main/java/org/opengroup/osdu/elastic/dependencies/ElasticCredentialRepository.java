@@ -14,15 +14,16 @@
 
 package org.opengroup.osdu.elastic.dependencies;
 
-import com.azure.core.exception.ResourceNotFoundException;
-import com.azure.security.keyvault.secrets.SecretClient;
-import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
+import com.google.common.base.Strings;
 import lombok.AllArgsConstructor;
-import org.opengroup.osdu.common.Validators;
+import org.opengroup.osdu.azure.cache.ElasticCredentialsCache;
+import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.search.ClusterSettings;
 import org.opengroup.osdu.core.common.model.tenant.TenantInfo;
 import org.opengroup.osdu.core.common.provider.interfaces.IElasticRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -38,11 +39,13 @@ import java.net.URL;
 @Lazy
 public class ElasticCredentialRepository implements IElasticRepository {
 
-    /**
-     * KeyVault client.
-     */
-    @Inject
-    private SecretClient secretClient;
+    @Autowired
+    @Lazy
+    private PartitionServiceClient partitionService;
+
+    @Autowired
+    @Lazy
+    private ElasticCredentialsCache clusterSettingsCache;
 
     /**
      * OSDU application logger.
@@ -51,26 +54,36 @@ public class ElasticCredentialRepository implements IElasticRepository {
     private JaxRsDpsLog log;
 
     /**
-     * Returns Elasticsearch cluster settings. Note: multi-tenancy has been
-     * de-scoped in R2, so the tenant is ignored for now.
+     * Returns Elasticsearch cluster settings.
      *
      * @param tenantInfo The tenant for which the credentials represent
      * @return Elasticsearch credentials
      */
     @Override
     public ClusterSettings getElasticClusterSettings(final TenantInfo tenantInfo) {
-        URL esURL = getElasticURL();
-        String username = getSecretWithValidation("elastic-username");
-        String password = getSecretWithValidation("elastic-password");
-        boolean sslEnabled = Boolean.parseBoolean(getSecretWithDefault("elastic-ssl-enabled", "true"));
-        return buildSettings(esURL, username, password, sslEnabled);
+        String cacheKey = this.clusterSettingsCache.getCacheKey(tenantInfo.getName());
+        if (this.clusterSettingsCache.containsKey(cacheKey)) {
+            return this.clusterSettingsCache.get(cacheKey);
+        }
+
+        PartitionInfoAzure partitionInfo = partitionService.getPartition(tenantInfo.getDataPartitionId());
+        URL esURL = getElasticURL(partitionInfo);
+        String username = partitionInfo.getElasticUsername();
+        String password = partitionInfo.getElasticPassword();
+        boolean sslEnabled = Strings.isNullOrEmpty(partitionInfo.getElasticSslEnabled()) ? true : Boolean.parseBoolean(partitionInfo.getElasticSslEnabled());
+        ClusterSettings clusterSettings = buildSettings(esURL, username, password, sslEnabled);
+
+        clusterSettingsCache.put(cacheKey, clusterSettings);
+
+        return clusterSettings;
     }
 
     /**
      * Construct the cluster settings.
-     * @param esURL URL for ES cluster
-     * @param username Username for ES cluster
-     * @param password Password for ES cluster
+     *
+     * @param esURL      URL for ES cluster
+     * @param username   Username for ES cluster
+     * @param password   Password for ES cluster
      * @param sslEnabled ES cluster ssl communication enabled or not
      * @return {@link ClusterSettings} representing the cluster
      */
@@ -100,6 +113,7 @@ public class ElasticCredentialRepository implements IElasticRepository {
 
     /**
      * Fail if the URL is not HTTPS.
+     *
      * @param u A URL
      */
     private void failIfNotHTTPS(final URL u) {
@@ -113,10 +127,11 @@ public class ElasticCredentialRepository implements IElasticRepository {
     }
 
     /**
+     * @param partitionInfo partition configuration
      * @return fully parsed {@link URL} pointing to the Elasticsearch cluster.
      */
-    private URL getElasticURL() {
-        String qualifiedEndpoint = getSecretWithValidation("elastic-endpoint");
+    private URL getElasticURL(final PartitionInfoAzure partitionInfo) {
+        String qualifiedEndpoint = partitionInfo.getElasticEndpoint();
         try {
             return new URL(qualifiedEndpoint);
         } catch (MalformedURLException e) {
@@ -125,40 +140,4 @@ public class ElasticCredentialRepository implements IElasticRepository {
             throw new IllegalStateException(error, e);
         }
     }
-
-    /**
-     * Gets a secret from KV and validates that it is not null or empty.
-     * @param secretName name of secret
-     * @return Secret value. This is guaranteed to be not null or empty.
-     */
-    private String getSecretWithValidation(final String secretName) {
-        KeyVaultSecret secret = secretClient.getSecret(secretName);
-        Validators.checkNotNull(secret, "Secret with name " + secretName);
-
-        String secretValue = secret.getValue();
-        Validators.checkNotNullAndNotEmpty(secretValue, "Secret Value for Secret with name " + secretName);
-
-        return secret.getValue();
-    }
-
-    /**
-     * Get the secret with a default value. If the secret is not found or is null return the default value.
-     * @param secretName name of secret
-     * @param defaultValue to be used in case the secret is null or empty.
-     * @return Secret value. It is guaranteed to be returned with either default value or a non null, non empty secret.
-     */
-    private String getSecretWithDefault(final String secretName, final String defaultValue) {
-        Validators.checkNotNull(secretName, "Secret with name " + secretName);
-        KeyVaultSecret secret;
-        try {
-            secret = secretClient.getSecret(secretName);
-            if (secret == null || secret.getValue() == null || secret.getValue().isEmpty()) {
-                return defaultValue;
-            }
-        } catch (ResourceNotFoundException secretNotFound) {
-            return defaultValue;
-        }
-        return secret.getValue();
-    }
-
 }

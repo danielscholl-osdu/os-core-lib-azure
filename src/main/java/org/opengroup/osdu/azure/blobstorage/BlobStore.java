@@ -25,12 +25,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;;
+import java.util.Collections;
 
 /**
  * A simpler interface to interact with Azure blob storage.
@@ -73,10 +73,9 @@ public class BlobStore {
     private static final String LOG_PREFIX = "azure-core-lib";
 
     /**
-     *
-     * @param filePath              Path of file to be read.
-     * @param dataPartitionId       Data partition id
-     * @param containerName         Name of the storage container
+     * @param filePath        Path of file to be read.
+     * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
      * @return the content of file with provided file path.
      */
     public String readFromStorageContainer(
@@ -90,30 +89,21 @@ public class BlobStore {
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                String errorMessage = "Specified blob was not found";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(404, errorMessage, ex.getMessage(), ex);
-            } else {
-                String errorMessage = "Failed to read specified blob";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(500, errorMessage, ex.getMessage(), ex);
+                throw handleBlobStoreException(404, "Specified blob was not found", ex);
             }
+            throw handleBlobStoreException(500, "Failed to read specified blob", ex);
         } catch (UnsupportedEncodingException ex) {
-            String errorMessage = String.format("Encoding was not correct for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(400, errorMessage, ex.getMessage(), ex);
+            throw handleBlobStoreException(400, String.format("Encoding was not correct for item with name=%s", filePath), ex);
         } catch (IOException ex) {
-            String errorMessage = String.format("Malformed document for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
+
+            throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
         }
     }
 
     /**
-     *
-     * @param filePath              Path of file to be deleted.
-     * @param dataPartitionId       Data partition id
-     * @param containerName         Name of the storage container
+     * @param filePath        Path of file to be deleted.
+     * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
      * @return boolean indicating whether the deletion of given file was successful or not.
      */
     public boolean deleteFromStorageContainer(
@@ -127,23 +117,17 @@ public class BlobStore {
             return true;
         } catch (BlobStorageException ex) {
             if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                String errorMessage = "Specified blob was not found";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(404, errorMessage, ex.getMessage(), ex);
-            } else {
-                String errorMessage = "Failed to delete blob";
-                logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-                throw new AppException(500, errorMessage, ex.getMessage(), ex);
+                throw handleBlobStoreException(404, "Specified blob was not found", ex);
             }
+            throw handleBlobStoreException(500, "Failed to delete blob", ex);
         }
     }
 
     /**
-     *
-     * @param filePath              Path of file to be written at.
-     * @param content               Content to be written in the file.
-     * @param dataPartitionId       Data partition id
-     * @param containerName         Name of the storage container
+     * @param filePath        Path of file to be written at.
+     * @param content         Content to be written in the file.
+     * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
      */
     public void writeToStorageContainer(
             final String dataPartitionId,
@@ -157,31 +141,38 @@ public class BlobStore {
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
         } catch (BlobStorageException ex) {
-            String errorMessage = "Failed to upload file content.";
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
+            throw handleBlobStoreException(500, "Failed to upload file content.", ex);
         } catch (IOException ex) {
-            String errorMessage = String.format("Malformed document for item with name=%s", filePath);
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
+            throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
         }
     }
 
     /**
-     *
-     * @param dataPartitionId       Data partition id.
-     * @param containerName         Name of storage container.
+     * @param dataPartitionId Data partition id.
+     * @param containerName   Name of storage container.
      * @return blob container client corresponding to the dataPartitionId.
      */
     private BlobContainerClient getBlobContainerClient(final String dataPartitionId, final String containerName) {
         try {
             BlobServiceClient serviceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
             return serviceClient.getBlobContainerClient(containerName);
+        } catch (AppException ex) {
+            throw handleBlobStoreException(ex.getError().getCode(), "Error creating creating blob container client.", ex);
         } catch (Exception ex) {
-            String errorMessage = "Error creating creating blob container client.";
-            logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
-            throw new AppException(500, errorMessage, ex.getMessage(), ex);
+            throw handleBlobStoreException(500, "Error creating creating blob container client.", ex);
         }
     }
 
+    /**
+     * Logs and returns instance of AppException.
+     *
+     * @param status       Response status code
+     * @param errorMessage Error message
+     * @param ex           Original exception
+     * @return Instance of AppException
+     */
+    private AppException handleBlobStoreException(final int status, final String errorMessage, final Exception ex) {
+        logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
+        return new AppException(status, errorMessage, ex.getMessage(), ex);
+    }
 }

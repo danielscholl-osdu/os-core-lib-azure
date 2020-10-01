@@ -15,6 +15,7 @@
 package org.opengroup.osdu.elastic.dependencies;
 
 import org.junit.jupiter.api.Test;
+import org.opengroup.osdu.azure.cache.ElasticCredentialsCache;
 import org.opengroup.osdu.core.common.model.search.ClusterSettings;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

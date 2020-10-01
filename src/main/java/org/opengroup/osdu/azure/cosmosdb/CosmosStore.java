@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package org.opengroup.osdu.azure;
+package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.ConflictException;
 import com.azure.cosmos.CosmosClientException;
@@ -27,6 +27,8 @@ import com.azure.cosmos.SqlQuerySpec;
 import com.azure.cosmos.internal.AsyncDocumentClient;
 import com.azure.cosmos.internal.Document;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -39,8 +41,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A simpler interface for interacting with CosmosDB.
@@ -88,11 +88,11 @@ public class CosmosStore {
     private ICosmosClientFactory cosmosClientFactory;
 
     /**
-     * @param dataPartitionId       Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName          Database to be used
-     * @param collection            Collection to be used
-     * @param id                    ID of item
-     * @param partitionKey          Partition key of item
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param id              ID of item
+     * @param partitionKey    Partition key of item
      */
     public void deleteItem(
             final String dataPartitionId,
@@ -104,24 +104,20 @@ public class CosmosStore {
             CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
             findItem(cosmosContainer, id, partitionKey).delete(new CosmosItemRequestOptions(partitionKey));
         } catch (NotFoundException e) {
-            String errorMessage = "Item was unexpectedly not found";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(404, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(404, "Item was unexpectedly not found", e);
         } catch (CosmosClientException e) {
-            String errorMessage = "Unexpectedly failed to delete item from CosmosDB";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(500, "Unexpectedly failed to delete item from CosmosDB", e);
         }
     }
 
     /**
-     * @param dataPartitionId       Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName          Database to be used
-     * @param collection            Collection to be used
-     * @param id                    ID of item
-     * @param partitionKey          Partition key of item
-     * @param clazz                 Class to serialize results into
-     * @param <T>                   Type to return
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param id              ID of item
+     * @param partitionKey    Partition key of item
+     * @param clazz           Class to serialize results into
+     * @param <T>             Type to return
      * @return The item that was found based on the IDs provided
      */
     public <T> Optional<T> findItem(
@@ -148,16 +144,16 @@ public class CosmosStore {
             } else {
                 errorMessage = "Unexpectedly encountered error calling CosmosDB";
             }
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(500, errorMessage, e);
         }
     }
+
     /**
-     * @param dataPartitionId       Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName          Database to be used
-     * @param collection            Collection to be used
-     * @param clazz                 Class type of response
-     * @param <T>                   Type of response
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param clazz           Class type of response
+     * @param <T>             Type of response
      * @return List of items found in container
      */
     public <T> List<T> findAllItems(
@@ -170,13 +166,13 @@ public class CosmosStore {
     }
 
     /**
-     * @param dataPartitionId           Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName              Database to be used
-     * @param collection                Collection to be used
-     * @param query                     {@link SqlQuerySpec} to execute
-     * @param options                   Query options
-     * @param clazz                     Class type of response
-     * @param <T>                       Type of response
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param query           {@link SqlQuerySpec} to execute
+     * @param options         Query options
+     * @param clazz           Class type of response
+     * @param <T>             Type of response
      * @return List of items found in container
      */
     public <T> List<T> queryItems(
@@ -194,22 +190,21 @@ public class CosmosStore {
                 try {
                     results.add(properties.getObject(clazz));
                 } catch (IOException e) {
-                    String errorMessage = String.format("Malformed document for item with ID=%s", properties.getId());
-                    LOGGER.warn(errorMessage, e);
-                    throw new AppException(500, errorMessage, e.getMessage(), e);
+                    throw handleCosmosStoreException(500, String.format("Malformed document for item with ID=%s", properties.getId()), e);
                 }
             }
         }
         return results;
     }
+
     /**
-     * @param dataPartitionId           Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName              Database to be used
-     * @param collection                Collection to be used
-     * @param clazz                     Class type of response
-     * @param pageSize                  Number of items returned
-     * @param pageNum                   Page number returned
-     * @param <T>                       Type of response
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param clazz           Class type of response
+     * @param pageSize        Number of items returned
+     * @param pageNum         Page number returned
+     * @param <T>             Type of response
      * @return List of items found on specific page in container
      */
     public <T> List<T> findAllItemsAsync(
@@ -223,14 +218,14 @@ public class CosmosStore {
     }
 
     /**
-     * @param dataPartitionId               Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName                  Database to be used
-     * @param collection                    Collection to be used
-     * @param query                         {@link SqlQuerySpec} to execute
-     * @param clazz                         Class type of response
-     * @param pageSize                      Number of items returned
-     * @param pageNum                       Page number returned
-     * @param <T>                           Type of response
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param query           {@link SqlQuerySpec} to execute
+     * @param clazz           Class type of response
+     * @param pageSize        Number of items returned
+     * @param pageNum         Page number returned
+     * @param <T>             Type of response
      * @return List of items found on specific page in container
      */
     public <T> List<T> queryItemsAsync(
@@ -257,6 +252,7 @@ public class CosmosStore {
         } while (currentPage < pageNum && continuationToken != null);
         return results.get(continuationToken);
     }
+
     /**
      * @param client            {@link AsyncDocumentClient} used to configure/execute requests against database service
      * @param dbName            Cosmos DB name
@@ -302,11 +298,11 @@ public class CosmosStore {
     }
 
     /**
-     * @param dataPartitionId      Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName         Database to be used
-     * @param collection           Collection to be used
-     * @param item                 Data object to store
-     * @param <T>                  Type of response
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param item            Data object to store
+     * @param <T>             Type of response
      */
     public <T> void upsertItem(
             final String dataPartitionId,
@@ -317,18 +313,16 @@ public class CosmosStore {
             CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
             cosmosContainer.upsertItem(item);
         } catch (CosmosClientException e) {
-            String errorMessage = "Unexpectedly failed to put item into CosmosDB";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(500, "Unexpectedly failed to put item into CosmosDB", e);
         }
     }
 
     /**
-     * @param dataPartitionId      Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName         Database to be used
-     * @param collection           Collection to be used
-     * @param item                 Data object to store
-     * @param <T>                  Type of response
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
+     * @param item            Data object to store
+     * @param <T>             Type of response
      */
     public <T> void createItem(
             final String dataPartitionId,
@@ -339,13 +333,9 @@ public class CosmosStore {
             CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
             cosmosContainer.createItem(item);
         } catch (ConflictException e) {
-            String errorMessage = "Resource with specified id or name already exists.";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(409, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(409, "Resource with specified id or name already exists.", e);
         } catch (CosmosClientException e) {
-            String errorMessage = "Unexpectedly failed to insert item into CosmosDB";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(500, "Unexpectedly failed to insert item into CosmosDB", e);
         }
     }
 
@@ -363,9 +353,9 @@ public class CosmosStore {
     }
 
     /**
-     * @param dataPartitionId   Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName      Database to be used
-     * @param collection        Collection to be used
+     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
+     * @param cosmosDBName    Database to be used
+     * @param collection      Collection to be used
      * @return Cosmos container
      */
     private CosmosContainer getCosmosContainer(
@@ -376,11 +366,23 @@ public class CosmosStore {
             return cosmosClientFactory.getClient(dataPartitionId)
                     .getDatabase(cosmosDBName)
                     .getContainer(collection);
+        } catch (AppException e) {
+            throw handleCosmosStoreException(e.getError().getCode(), "Error creating creating Cosmos Client", e);
         } catch (Exception e) {
-            String errorMessage = "Error creating creating Cosmos Client";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw handleCosmosStoreException(500, "Error creating creating Cosmos Client", e);
         }
+    }
 
+    /**
+     * Logs and returns instance of AppException.
+     *
+     * @param status       Response status code
+     * @param errorMessage Error message
+     * @param e            Original exception
+     * @return Instance of AppException
+     */
+    private AppException handleCosmosStoreException(final int status, final String errorMessage, final Exception e) {
+        LOGGER.warn(errorMessage, e);
+        return new AppException(status, errorMessage, e.getMessage(), e);
     }
 }

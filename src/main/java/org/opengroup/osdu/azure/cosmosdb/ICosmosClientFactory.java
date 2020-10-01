@@ -1,4 +1,4 @@
-package org.opengroup.osdu.azure;
+package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.internal.AsyncDocumentClient;

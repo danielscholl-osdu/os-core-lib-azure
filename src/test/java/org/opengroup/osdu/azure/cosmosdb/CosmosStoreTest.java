@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package org.opengroup.osdu.azure;
+package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.ConflictException;
 import com.azure.cosmos.CosmosClient;
@@ -35,6 +35,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.cosmosdb.CosmosStore;
+import org.opengroup.osdu.azure.cosmosdb.ICosmosClientFactory;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import reactor.core.publisher.Flux;
 
