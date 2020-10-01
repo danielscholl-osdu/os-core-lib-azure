@@ -13,6 +13,6 @@ import org.springframework.context.annotation.Lazy;
 @Lazy
 public class AzureActiveDirectoryConfiguration {
 
-    @Value("${azure.activedirectory.client-id}")
+    @Value("${azure.activedirectory.app-resource-id}")
     private String aadClientId;
 }
