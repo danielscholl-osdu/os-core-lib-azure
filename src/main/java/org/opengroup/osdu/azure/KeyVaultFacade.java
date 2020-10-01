@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.azure;
 
+import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import org.opengroup.osdu.common.Validators;
@@ -52,8 +53,32 @@ public final class KeyVaultFacade {
     public static String getSecretWithValidation(final SecretClient kv, final String secretName) {
         KeyVaultSecret secret = kv.getSecret(secretName);
         Validators.checkNotNull(secret, secretName);
+
         String secretValue = secret.getValue();
         Validators.checkNotNullAndNotEmpty(secretValue, secretName);
+
         return secretValue;
+    }
+
+    /**
+     * Get the secret with a default value. If the secret is not found or is null return the default value.
+     *
+     * @param kv           Client configured to the correct vault
+     * @param secretName   name of secret
+     * @param defaultValue to be used in case the secret is null or empty.
+     * @return Secret value. It is guaranteed to be returned with either default value or a non null, non empty secret.
+     */
+    public String getSecretWithDefault(final SecretClient kv, final String secretName, final String defaultValue) {
+        Validators.checkNotNull(secretName, "Secret with name " + secretName);
+        KeyVaultSecret secret;
+        try {
+            secret = kv.getSecret(secretName);
+            if (secret == null || secret.getValue() == null || secret.getValue().isEmpty()) {
+                return defaultValue;
+            }
+        } catch (ResourceNotFoundException secretNotFound) {
+            return defaultValue;
+        }
+        return secret.getValue();
     }
 }

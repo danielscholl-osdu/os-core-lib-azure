@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package org.opengroup.osdu.elastic.dependencies;
+package org.opengroup.osdu.azure.cache;
 
 import org.opengroup.osdu.core.common.cache.VmCache;
 import org.opengroup.osdu.core.common.model.search.ClusterSettings;
@@ -41,7 +41,7 @@ public class ElasticCredentialsCache implements IElasticCredentialsCache<String,
     public ElasticCredentialsCache(
             @Named("ELASTIC_CACHE_EXPIRATION") final Integer cacheExpirationMinutes,
             @Named("MAX_CACHE_VALUE_SIZE") final Integer maxCachedObjectEntries) {
-        cache = new VmCache<>(cacheExpirationMinutes, maxCachedObjectEntries);
+        cache = new VmCache<>(cacheExpirationMinutes * 60, maxCachedObjectEntries);
     }
 
     /**
@@ -78,6 +78,22 @@ public class ElasticCredentialsCache implements IElasticCredentialsCache<String,
     @Override
     public void clearAll() {
         cache.clearAll();
+    }
+
+    /**
+     * @param key cache key
+     * @return true if found in cache
+     */
+    public boolean containsKey(final String key) {
+        return this.get(key) != null;
+    }
+
+    /**
+     * @param partitionId the tenant for which the request should be cached for.
+     * @return cache key for the tenant.
+     */
+    public String getCacheKey(final String partitionId) {
+        return String.format("%s-clusterSettings", partitionId);
     }
 }
 

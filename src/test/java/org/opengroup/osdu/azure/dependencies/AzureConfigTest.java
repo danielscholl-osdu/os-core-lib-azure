@@ -15,11 +15,10 @@
 package org.opengroup.osdu.azure.dependencies;
 
 import com.azure.core.credential.TokenCredential;
-import com.azure.cosmos.CosmosClient;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AzureConfigTest {
     @Test
@@ -31,30 +30,8 @@ class AzureConfigTest {
     @Test
     void nullAndEmptyChecksAreMade() {
         AzureOSDUConfig config = new AzureOSDUConfig();
-        CosmosClient mockClient = Mockito.mock(CosmosClient.class);
-
-        assertThrows(NullPointerException.class, () -> config.cosmosClient(null, "foo"));
-        assertThrows(NullPointerException.class, () -> config.cosmosClient("foo", null));
-        assertThrows(NullPointerException.class, () -> config.cosmosContainer(null, "foo", "foo"));
-        assertThrows(NullPointerException.class, () -> config.cosmosContainer(mockClient, null, "foo"));
-        assertThrows(NullPointerException.class, () -> config.cosmosContainer(mockClient, "foo", null));
         assertThrows(NullPointerException.class, () -> config.keyVaultSecretsClient(null, "foo"));
         assertThrows(NullPointerException.class, () -> config.keyVaultSecretsClient(config.azureCredential(), null));
-        assertThrows(NullPointerException.class, () -> config.blobContainer(null, "foo", "foo"));
-        assertThrows(NullPointerException.class, () -> config.blobContainer(config.azureCredential(), null, "foo"));
-        assertThrows(NullPointerException.class, () -> config.blobContainer(config.azureCredential(), "foo", null));
-        assertThrows(NullPointerException.class, () -> config.topicClient(null, "foo", "foo"));
-        assertThrows(NullPointerException.class, () -> config.topicClient(config.azureCredential(), null, "foo"));
-        assertThrows(NullPointerException.class, () -> config.topicClient(config.azureCredential(), "foo", null));
-
-        assertThrows(IllegalArgumentException.class, () -> config.cosmosClient("", "foo"));
-        assertThrows(IllegalArgumentException.class, () -> config.cosmosClient("foo", ""));
-        assertThrows(IllegalArgumentException.class, () -> config.cosmosContainer(mockClient, "", "foo"));
-        assertThrows(IllegalArgumentException.class, () -> config.cosmosContainer(mockClient, "foo", ""));
         assertThrows(IllegalArgumentException.class, () -> config.keyVaultSecretsClient(config.azureCredential(), ""));
-        assertThrows(IllegalArgumentException.class, () -> config.blobContainer(config.azureCredential(), "", "foo"));
-        assertThrows(IllegalArgumentException.class, () -> config.blobContainer(config.azureCredential(), "foo", ""));
-        assertThrows(IllegalArgumentException.class, () -> config.topicClient(config.azureCredential(), "", "foo"));
-        assertThrows(IllegalArgumentException.class, () -> config.topicClient(config.azureCredential(), "foo", ""));
     }
 }

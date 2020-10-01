@@ -15,15 +15,14 @@
 package org.opengroup.osdu.elastic.dependencies;
 
 import org.apache.http.HttpStatus;
+import org.opengroup.osdu.azure.cache.ElasticCredentialsCache;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.indexer.IElasticSettingService;
 import org.opengroup.osdu.core.common.model.search.ClusterSettings;
 import org.opengroup.osdu.core.common.model.tenant.TenantInfo;
 import org.opengroup.osdu.core.common.multitenancy.ITenantInfoService;
-import org.opengroup.osdu.core.common.provider.interfaces.IElasticCredentialsCache;
 import org.opengroup.osdu.core.common.provider.interfaces.IElasticRepository;
-import org.opengroup.osdu.core.common.search.Config;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -56,7 +55,7 @@ public class ElasticClusterSettingsService implements IElasticSettingService {
      */
     @Inject
     @Lazy
-    private IElasticCredentialsCache<String, ClusterSettings> esCredentialCache;
+    private ElasticCredentialsCache clusterSettingsCache;
 
     /**
      * OSDU logger.
@@ -71,28 +70,20 @@ public class ElasticClusterSettingsService implements IElasticSettingService {
     @Override
     public ClusterSettings getElasticClusterInformation() {
         TenantInfo tenantInfo = tenantProvider.get().getTenantInfo();
-        String cacheKey = getCacheKey(tenantInfo);
+        String cacheKey = this.clusterSettingsCache.getCacheKey(tenantInfo.getName());
 
-        ClusterSettings cachedSettings = this.esCredentialCache.get(cacheKey);
+        ClusterSettings cachedSettings = this.clusterSettingsCache.get(cacheKey);
         if (cachedSettings != null) {
             return cachedSettings;
         }
 
-        log.warning(String.format("elastic-credential cache missed for tenant: %s", tenantInfo.getName()));
+        this.log.warning(String.format("elastic-credential cache missed for tenant: %s", tenantInfo.getName()));
         ClusterSettings clusterSettings = esRepo.getElasticClusterSettings(tenantInfo);
         if (clusterSettings == null) {
             throw new AppException(HttpStatus.SC_NOT_FOUND, "Tenant not found", "No information about the given tenant was found");
         }
 
-        esCredentialCache.put(cacheKey, clusterSettings);
+        this.clusterSettingsCache.put(cacheKey, clusterSettings);
         return clusterSettings;
-    }
-
-    /**
-     * @param tenantInfo the tenant for which the request should be cached for.
-     * @return cache key for the tenant.
-     */
-    private String getCacheKey(final TenantInfo tenantInfo) {
-        return String.format("%s-%s", Config.getDeployedServiceId(), tenantInfo.getName());
     }
 }

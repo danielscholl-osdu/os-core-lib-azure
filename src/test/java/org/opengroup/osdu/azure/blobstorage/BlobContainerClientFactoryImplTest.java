@@ -1,28 +1,14 @@
-// Copyright © Microsoft Corporation
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
-import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobContainerClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
+import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
@@ -33,21 +19,22 @@ import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @ExtendWith(MockitoExtension.class)
-public class BlobServiceClientFactoryImplTest {
+public class BlobContainerClientFactoryImplTest {
 
     @Mock
     private DefaultAzureCredential credential;
     @Mock
     private PartitionServiceClient partitionService;
     @Mock
-    private BlobServiceClientCache clientCache;
+    private BlobContainerClientCache clientCache;
     @Mock
     private BlobStoreConfiguration configuration;
     @InjectMocks
-    private BlobServiceClientFactoryImpl sut;
+    private BlobContainerClientFactoryImpl sut;
 
     private static final String ACCOUNT_NAME = "testAccount";
     private static final String PARTITION_ID = "dataPartitionId";
+    private static final String STORAGE_CONTAINER_NAME = "containerName";
 
     @BeforeEach
     void init() {
@@ -58,7 +45,7 @@ public class BlobServiceClientFactoryImplTest {
     @Test
     public void should_throwException_given_nullDataPartitionId() {
         try {
-            this.sut.getBlobServiceClient(null);
+            this.sut.getClient(null, "testContainer");
         } catch (NullPointerException ex) {
             assertEquals("dataPartitionId cannot be null!", ex.getMessage());
         } catch (Exception ex) {
@@ -69,7 +56,7 @@ public class BlobServiceClientFactoryImplTest {
     @Test
     public void should_throwException_given_emptyDataPartitionId() {
         try {
-            this.sut.getBlobServiceClient("");
+            this.sut.getClient("", "");
         } catch (IllegalArgumentException ex) {
             assertEquals("dataPartitionId cannot be empty!", ex.getMessage());
         } catch (Exception ex) {
@@ -84,8 +71,8 @@ public class BlobServiceClientFactoryImplTest {
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
 
-        BlobServiceClient serviceClient = this.sut.getBlobServiceClient(PARTITION_ID);
-        assertNotNull(serviceClient);
+        BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
+        assertNotNull(containerClient);
     }
 
     @Test
@@ -95,14 +82,14 @@ public class BlobServiceClientFactoryImplTest {
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
 
-        BlobServiceClient serviceClient = this.sut.getBlobServiceClient(PARTITION_ID);
-        assertNotNull(serviceClient);
+        BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
+        assertNotNull(containerClient);
 
-        final String cacheKey = String.format("%s-blobServiceClient", PARTITION_ID);
+        final String cacheKey = String.format("%s-%s", PARTITION_ID, STORAGE_CONTAINER_NAME);
         when(this.clientCache.containsKey(cacheKey)).thenReturn(true);
-        when(this.clientCache.get(cacheKey)).thenReturn(serviceClient);
+        when(this.clientCache.get(cacheKey)).thenReturn(containerClient);
 
-        this.sut.getBlobServiceClient(PARTITION_ID);
+        this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         verify(this.partitionService, times(1)).getPartition(PARTITION_ID);
     }
 }

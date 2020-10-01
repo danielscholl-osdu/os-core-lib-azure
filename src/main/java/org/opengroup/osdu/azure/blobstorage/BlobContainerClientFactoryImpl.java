@@ -15,24 +15,22 @@
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
-import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
-import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
+import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
- * Implementation for IBlobServiceClientFactory.
+ * Implementation for IBlobContainerClientFactory.
  */
 @Component
 @Lazy
-@ConditionalOnProperty(value = "azure.blobStore.required", havingValue = "true", matchIfMissing = false)
-public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
+public class BlobContainerClientFactoryImpl implements IBlobContainerClientFactory {
 
     @Autowired
     private DefaultAzureCredential defaultAzureCredential;
@@ -41,18 +39,20 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     private PartitionServiceClient partitionService;
 
     @Autowired
-    private BlobServiceClientCache clientCache;
+    private BlobContainerClientCache clientCache;
 
     /**
-     * @param dataPartitionId data partition id.
-     * @return BlobServiceClient corresponding to the given data partition id.
+     * @param dataPartitionId Data partition id
+     * @param containerName   Blob container name
+     * @return the blob container client instance.
      */
     @Override
-    public BlobServiceClient getBlobServiceClient(final String dataPartitionId) {
+    public BlobContainerClient getClient(final String dataPartitionId, final String containerName) {
         Validators.checkNotNull(defaultAzureCredential, "Credential");
         Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
+        Validators.checkNotNullAndNotEmpty(containerName, "containerName");
 
-        String cacheKey = String.format("%s-blobServiceClient", dataPartitionId);
+        String cacheKey = String.format("%s-%s", dataPartitionId, containerName);
         if (this.clientCache.containsKey(cacheKey)) {
             return this.clientCache.get(cacheKey);
         }
@@ -60,13 +60,14 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
         String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
 
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+        BlobContainerClient blobContainerClient = new BlobContainerClientBuilder()
                 .endpoint(endpoint)
                 .credential(defaultAzureCredential)
+                .containerName(containerName)
                 .buildClient();
 
-        this.clientCache.put(cacheKey, blobServiceClient);
+        this.clientCache.put(cacheKey, blobContainerClient);
 
-        return blobServiceClient;
+        return blobContainerClient;
     }
 }

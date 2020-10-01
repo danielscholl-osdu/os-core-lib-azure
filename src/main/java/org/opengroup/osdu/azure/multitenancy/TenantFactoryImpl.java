@@ -14,45 +14,50 @@
 
 package org.opengroup.osdu.azure.multitenancy;
 
-import org.opengroup.osdu.azure.CosmosStore;
-import org.opengroup.osdu.azure.di.CosmosDBConfiguration;
+import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.cache.ICache;
-import org.opengroup.osdu.core.common.model.http.DpsHeaders;
-import org.opengroup.osdu.core.common.provider.interfaces.ITenantFactory;
+import org.opengroup.osdu.core.common.logging.ILogger;
+import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.tenant.TenantInfo;
+import org.opengroup.osdu.core.common.provider.interfaces.ITenantFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implementation for ITenantFactory.
  */
 @Component
+@Lazy
 @ConditionalOnProperty(value = "tenantFactoryImpl.required", havingValue = "true", matchIfMissing = false)
 public class TenantFactoryImpl implements ITenantFactory {
 
     @Autowired
     @Lazy
-    private CosmosDBConfiguration cosmosDBConfiguration;
+    private PartitionServiceClient partitionService;
 
     @Autowired
-    @Lazy
-    private CosmosStore cosmosStore;
+    private ILogger logger;
 
-    private Map<String, TenantInfo> tenants;
+    private static final String LOG_PREFIX = "azure-core-lib";
+
+    private Map<String, TenantInfo> tenants = new HashMap<>();
 
     /**
      * @param tenantName Tenant name
      * @return true or false depending on whether tenant is present
      */
+    @Override
     public boolean exists(final String tenantName) {
-        if (this.tenants == null) {
-            initTenants();
+        if (!this.tenants.containsKey(tenantName)) {
+            initPartition(tenantName);
         }
         return this.tenants.containsKey(tenantName);
     }
@@ -61,9 +66,10 @@ public class TenantFactoryImpl implements ITenantFactory {
      * @param tenantName Tenant name
      * @return tenantInfo object
      */
+    @Override
     public TenantInfo getTenantInfo(final String tenantName) {
-        if (this.tenants == null) {
-            initTenants();
+        if (!this.tenants.containsKey(tenantName)) {
+            initPartition(tenantName);
         }
         return this.tenants.get(tenantName);
     }
@@ -72,10 +78,8 @@ public class TenantFactoryImpl implements ITenantFactory {
      * @return list of tenantInfo objects for all the tenants
      */
     public Collection<TenantInfo> listTenantInfo() {
-        if (this.tenants == null) {
-            initTenants();
-        }
-        return this.tenants.values();
+        // todo: requires get all partitions on Partition service.
+        return null;
     }
 
     /**
@@ -91,7 +95,6 @@ public class TenantFactoryImpl implements ITenantFactory {
         return null;
     }
 
-
     /**
      * Flush the cache.
      */
@@ -101,21 +104,24 @@ public class TenantFactoryImpl implements ITenantFactory {
 
     /**
      * Initialise the local cache for tenants.
+     *
+     * @param tenantId Tenant name
      */
-    private void initTenants() {
-        this.tenants = new HashMap<>();
+    private void initPartition(final String tenantId) {
+        PartitionInfoAzure partitionInfo;
+        try {
+            partitionInfo = this.partitionService.getPartition(tenantId);
+        } catch (AppException e) {
+            this.logger.error(LOG_PREFIX, String.format("Error getting tenant: %s via partition service.", tenantId), Collections.emptyMap());
+            return;
+        }
 
-        // TODO partition id should not be required because tenant details will be kept in a known partition
-        cosmosStore.findAllItems(DpsHeaders.DATA_PARTITION_ID, cosmosDBConfiguration.getCosmosDBName(), cosmosDBConfiguration.getTenantInfoContainer(), TenantInfoDoc.class).
-                forEach(tenantInfoDoc -> {
-                    TenantInfo ti = new TenantInfo();
-                    String tenantName = tenantInfoDoc.getId();
-                    ti.setName(tenantName);
-                    ti.setComplianceRuleSet(tenantInfoDoc.getComplianceRuleSet());
-                    ti.setDataPartitionId(tenantName);
-                    ti.setServiceAccount(tenantInfoDoc.getServiceprincipalAppId());
-                    this.tenants.put(tenantName, ti);
-                }
-        );
+        TenantInfo ti = new TenantInfo();
+        String tenantName = partitionInfo.getId();
+        ti.setName(tenantName);
+        ti.setComplianceRuleSet(partitionInfo.getComplianceRuleset());
+        ti.setServiceAccount(partitionInfo.getServicePrincipalAppId()); //set serviceprincipalAppId in Azure side instead of ServiceAccount in GCP
+        ti.setDataPartitionId(tenantName);
+        this.tenants.put(tenantName, ti);
     }
 }

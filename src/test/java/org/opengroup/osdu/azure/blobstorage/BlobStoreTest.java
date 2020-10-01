@@ -33,7 +33,8 @@ import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.io.ByteArrayOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -46,28 +47,28 @@ public class BlobStoreTest {
     private static final String STORAGE_CONTAINER_NAME = "containerName";
 
     @InjectMocks
-    BlobStore blobStore;
+    private BlobStore blobStore;
 
     @Mock
-    IBlobServiceClientFactory blobServiceClientFactory;
+    private IBlobServiceClientFactory blobServiceClientFactory;
 
     @Mock
-    BlobServiceClient blobServiceClient;
+    private BlobServiceClient blobServiceClient;
 
     @Mock
-    BlobContainerClient blobContainerClient;
+    private BlobContainerClient blobContainerClient;
 
     @Mock
-    BlobClient blobClient;
+    private BlobClient blobClient;
 
     @Mock
-    BlockBlobClient blockBlobClient;
+    private BlockBlobClient blockBlobClient;
 
     @Mock
-    BlockBlobItem blockBlobItem;
+    private BlockBlobItem blockBlobItem;
 
     @Mock
-    ILogger logger;
+    private ILogger logger;
 
     @BeforeEach
     void init() {
@@ -80,9 +81,8 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void readFromStorageContainer_ErrorCreatingBlobContainerClient()
-    {
-        doThrow(AppException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
+    public void readFromStorageContainer_ErrorCreatingBlobContainerClient() {
+        doThrow(BlobStorageException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
         try {
             String content = blobStore.readFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
@@ -93,9 +93,8 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void readFromStorageContainer_ErrorCreatingBlobContainerClient_FromServiceClient()
-    {
-        doThrow(AppException.class).when(blobServiceClient).getBlobContainerClient(eq(STORAGE_CONTAINER_NAME));
+    public void readFromStorageContainer_ErrorCreatingBlobContainerClient_FromServiceClient() {
+        doThrow(BlobStorageException.class).when(blobServiceClient).getBlobContainerClient(eq(STORAGE_CONTAINER_NAME));
         try {
             String content = blobStore.readFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
@@ -106,8 +105,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void readFromStorageContainer_Success()
-    {
+    public void readFromStorageContainer_Success() {
         String content = blobStore.readFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         ArgumentCaptor<ByteArrayOutputStream> outputStream = ArgumentCaptor.forClass(ByteArrayOutputStream.class);
 
@@ -116,8 +114,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void readFromStorageContainer_BlobNotFound()
-    {
+    public void readFromStorageContainer_BlobNotFound() {
         BlobStorageException exception = mockStorageException(BlobErrorCode.BLOB_NOT_FOUND);
         doThrow(exception).when(blockBlobClient).download(any());
         try {
@@ -130,8 +127,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void readFromStorageContainer_InternalError()
-    {
+    public void readFromStorageContainer_InternalError() {
         BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
         doThrow(exception).when(blockBlobClient).download(any());
         try {
@@ -144,9 +140,8 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void deleteFromStorageContainer_ErrorCreatingBlobContainerClient()
-    {
-        doThrow(AppException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
+    public void deleteFromStorageContainer_ErrorCreatingBlobContainerClient() {
+        doThrow(BlobStorageException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
         try {
             blobStore.deleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
@@ -157,8 +152,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void deleteFromStorageContainer_BlobNotFound()
-    {
+    public void deleteFromStorageContainer_BlobNotFound() {
         BlobStorageException exception = mockStorageException(BlobErrorCode.BLOB_NOT_FOUND);
         doThrow(exception).when(blockBlobClient).delete();
         try {
@@ -171,8 +165,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void deleteFromStorageContainer_InternalError()
-    {
+    public void deleteFromStorageContainer_InternalError() {
         BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
         doThrow(exception).when(blockBlobClient).delete();
         try {
@@ -185,8 +178,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void deleteFromStorageContainer_Success()
-    {
+    public void deleteFromStorageContainer_Success() {
         doNothing().when(blockBlobClient).delete();
         try {
             blobStore.deleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
@@ -196,9 +188,8 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void writeToStorageContainer_ErrorCreatingBlobContainerClient()
-    {
-        doThrow(AppException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
+    public void writeToStorageContainer_ErrorCreatingBlobContainerClient() {
+        doThrow(BlobStorageException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
         try {
             blobStore.writeToStorageContainer(PARTITION_ID, FILE_PATH, CONTENT, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
@@ -209,8 +200,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void writeToStorageContainer_InternalError()
-    {
+    public void writeToStorageContainer_InternalError() {
         BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
         doThrow(exception).when(blockBlobClient).upload(any(), anyLong(), eq(true));
         try {
@@ -223,8 +213,7 @@ public class BlobStoreTest {
     }
 
     @Test
-    public void writeToStorageContainer_Success()
-    {
+    public void writeToStorageContainer_Success() {
         doReturn(blockBlobItem).when(blockBlobClient).upload(any(), anyLong(), eq(true));
         try {
             blobStore.writeToStorageContainer(PARTITION_ID, FILE_PATH, CONTENT, STORAGE_CONTAINER_NAME);
