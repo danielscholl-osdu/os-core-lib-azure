@@ -21,7 +21,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.33</version>
+  <version>0.0.34</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -36,7 +36,6 @@
     <javax.inject.version>1</javax.inject.version>
     <azure.identity.version>1.0.1</azure.identity.version>
     <azure.keyvault.version>4.1.0</azure.keyvault.version>
-    <azure.cosmos.version>4.0.0-preview.1</azure.cosmos.version>
     <azure.storage.version>12.3.0</azure.storage.version>
     <azure.servicebus.version>3.1.4</azure.servicebus.version>
     <azure.appinsights.version>2.5.1</azure.appinsights.version>
@@ -48,30 +47,25 @@
   </properties>
 
   <licenses>
-  	<license>
-  		<name>Apache License, Version 2.0</name>
-  		<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-  		<distribution>repo</distribution>
-  	</license>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
   </licenses>
 
   <dependencies>
 
-      <dependency>
-        <groupId>com.azure</groupId>
-        <artifactId>azure-core-http-netty</artifactId>
-        <version>1.5.3</version>
-      </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core-http-netty</artifactId>
+      <version>1.5.3</version>
+    </dependency>
 
     <!-- Spring dependencies -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
-      <version>${org.springframework.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-core</artifactId>
       <version>${org.springframework.version}</version>
     </dependency>
     <dependency>
@@ -109,10 +103,11 @@
       <artifactId>azure-security-keyvault-secrets</artifactId>
       <version>${azure.keyvault.version}</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.azure/azure-spring-data-cosmos -->
     <dependency>
       <groupId>com.azure</groupId>
-      <artifactId>azure-cosmos</artifactId>
-      <version>${azure.cosmos.version}</version>
+      <artifactId>azure-spring-data-cosmos</artifactId>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.azure</groupId>
@@ -139,7 +134,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-log4j2</artifactId>
-      <version>2.2.4.RELEASE</version>
+      <version>2.3.4.RELEASE</version>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
@@ -174,6 +169,18 @@
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.version}</version>
       <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.11.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
   </dependencies>
 
