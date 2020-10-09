@@ -149,7 +149,6 @@ The following software have components provided under the terms of this license:
 - lang-mustache (from https://github.com/elastic/elasticsearch)
 - lettuce (from http://github.com/mp911de/lettuce/wiki)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
-- micrometer-registry-azure-monitor (from https://github.com/micrometer-metrics/micrometer)
 - org.apiguardian:apiguardian-api (from https://github.com/apiguardian-team/apiguardian)
 - org.opentest4j:opentest4j (from https://github.com/ota4j-team/opentest4j)
 - parent-join (from https://github.com/elastic/elasticsearch)
