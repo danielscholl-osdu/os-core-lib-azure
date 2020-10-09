@@ -77,7 +77,7 @@ import java.util.Optional;
 
 @Component
 @Lazy
-public final class CosmosStore {
+public class CosmosStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStore.class.getName());
     private static final int PREFERRED_PAGE_SIZE = 1000;
@@ -87,38 +87,14 @@ public final class CosmosStore {
 
     /**
      *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @return CosmosContainer
-     */
-    private CosmosContainer getCosmosContainer(
-            final String dataPartitionId,
-            final String cosmosDBName,
-            final String collection) {
-        try {
-            return cosmosClientFactory.getClient(dataPartitionId)
-                    .getDatabase(cosmosDBName)
-                    .getContainer(collection);
-        } catch (Exception e) {
-            String errorMessage = "Error creating creating Cosmos Client";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
-        }
-    }
-
-    // CRUD
-
-    /**
-     *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param id id
-     * @param partitionKey partitionKey
-     * @param clazz clazz
-     * @param <T> <T>
-     * @return Optional<T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param id ID of item
+     * @param partitionKey Partition key of item
+     * @param clazz Class to serialize results into
+     * @param <T> Type to return
+     * @return The item
      */
     public <T> Optional<T> findItem(
             final String dataPartitionId,
@@ -146,12 +122,12 @@ public final class CosmosStore {
 
     /**
      *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param id id
-     * @param partitionKey partitionKey
-     * @param <T> <T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param id ID of item
+     * @param partitionKey Partition key of item
+     * @param <T> Type of item
      */
     public <T> void deleteItem(
             final String dataPartitionId,
@@ -177,12 +153,12 @@ public final class CosmosStore {
 
     /**
      *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param partitionKey partitionKey
-     * @param item item
-     * @param <T> <T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName  Database name
+     * @param collection Collection name
+     * @param partitionKey Partition key of item
+     * @param item Data object to store
+     * @param <T> Type of item
      */
     public <T> void upsertItem(
             final String dataPartitionId,
@@ -204,12 +180,12 @@ public final class CosmosStore {
 
     /**
      *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param partitionKey partitionKey
-     * @param item item
-     * @param <T> <T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param partitionKey Partition key of item
+     * @param item  Data object to store
+     * @param <T> Type of item
      */
     public <T> void createItem(
             final String dataPartitionId,
@@ -238,11 +214,11 @@ public final class CosmosStore {
     /**
      *
      * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param clazz clazz
-     * @param  <T> <T>
-     * @return  List<T>
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param clazz Class type of response
+     * @param  <T> Type
+     * @return  List<T> List of items found
      */
     public <T> List<T> findAllItems(
             final String dataPartitionId,
@@ -254,15 +230,14 @@ public final class CosmosStore {
     }
 
     /**
-     *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param query query
-     * @param options options
-     * @param clazz clazz
-     * @param <T> <T>
-     * @return List<T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param query {@link SqlQuerySpec} to execute
+     * @param options Options
+     * @param clazz Class type of response
+     * @param <T> Type
+     * @return List<T> List of items found on specific page in container
      */
     public <T> List<T> queryItems(
             final String dataPartitionId,
@@ -285,14 +260,14 @@ public final class CosmosStore {
 
     /**
      *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param clazz clazz
-     * @param pageSize pageSize
-     * @param continuationToken continuationToken
-     * @param <T> <T>
-     * @return Page<T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database
+     * @param collection Collection
+     * @param clazz Class type of response
+     * @param pageSize Page size
+     * @param continuationToken Continuation token
+     * @param <T> Type of items
+     * @return Page<T> Page of items
      */
     public <T> Page<T> findAllItemsPage(
             final String dataPartitionId,
@@ -306,15 +281,15 @@ public final class CosmosStore {
 
     /**
      *
-     * @param dataPartitionId dataPartitionId
-     * @param cosmosDBName cosmosDBName
-     * @param collection collection
-     * @param query query
-     * @param clazz clazz
-     * @param pageSize pageSize
-     * @param continuationToken continuationToken
-     * @param <T> <T>
-     * @return Page<T>
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param query {@link SqlQuerySpec} to execute
+     * @param clazz Class type
+     * @param pageSize Page size
+     * @param continuationToken Continuation token
+     * @param <T> Type
+     * @return Page<T> Page of itemns found
      */
     public <T> Page<T> queryItemsPage(
             final String dataPartitionId,
@@ -365,5 +340,39 @@ public final class CosmosStore {
         LOGGER.info("Done. Retrieved {} results", results.size());
         CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
         return new PageImpl(results, pageRequest, documentNumber);
+    }
+
+    /**
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName    Database name
+     * @param collection      Collection name
+     * @return Cosmos container
+     */
+    private CosmosContainer getCosmosContainer(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection) {
+        try {
+            return cosmosClientFactory.getClient(dataPartitionId)
+                    .getDatabase(cosmosDBName)
+                    .getContainer(collection);
+        } catch (Exception e) {
+            String errorMessage = "Error creating creating Cosmos Client";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Logs and returns instance of AppException.
+     *
+     * @param status       Response status code
+     * @param errorMessage Error message
+     * @param e            Original exception
+     * @return Instance of AppException
+     */
+    private AppException handleCosmosStoreException(final int status, final String errorMessage, final Exception e) {
+        LOGGER.warn(errorMessage, e);
+        return new AppException(status, errorMessage, e.getMessage(), e);
     }
 }
