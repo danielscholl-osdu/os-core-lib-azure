@@ -1,45 +1,42 @@
-//  Copyright © Microsoft Corporation
+// Copyright © Microsoft Corporation
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//       http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package org.opengroup.osdu.azure.cosmosdb;
 
-import com.azure.cosmos.ConflictException;
-import com.azure.cosmos.CosmosClientException;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosItem;
-import com.azure.cosmos.CosmosItemProperties;
-import com.azure.cosmos.CosmosItemRequestOptions;
-import com.azure.cosmos.FeedOptions;
-import com.azure.cosmos.FeedResponse;
-import com.azure.cosmos.NotFoundException;
-import com.azure.cosmos.SqlQuerySpec;
-import com.azure.cosmos.internal.AsyncDocumentClient;
-import com.azure.cosmos.internal.Document;
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.implementation.ConflictException;
+import com.azure.cosmos.implementation.NotFoundException;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.FeedResponse;
+import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.util.CosmosPagedIterable;
+import org.opengroup.osdu.azure.query.CosmosStorePageRequest;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -83,42 +80,21 @@ import java.util.Optional;
 public class CosmosStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStore.class.getName());
+    private static final int PREFERRED_PAGE_SIZE = 1000;
 
     @Autowired
     private ICosmosClientFactory cosmosClientFactory;
 
     /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param id              ID of item
-     * @param partitionKey    Partition key of item
-     */
-    public void deleteItem(
-            final String dataPartitionId,
-            final String cosmosDBName,
-            final String collection,
-            final String id,
-            final String partitionKey) {
-        try {
-            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
-            findItem(cosmosContainer, id, partitionKey).delete(new CosmosItemRequestOptions(partitionKey));
-        } catch (NotFoundException e) {
-            throw handleCosmosStoreException(404, "Item was unexpectedly not found", e);
-        } catch (CosmosClientException e) {
-            throw handleCosmosStoreException(500, "Unexpectedly failed to delete item from CosmosDB", e);
-        }
-    }
-
-    /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param id              ID of item
-     * @param partitionKey    Partition key of item
-     * @param clazz           Class to serialize results into
-     * @param <T>             Type to return
-     * @return The item that was found based on the IDs provided
+     *
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param id ID of item
+     * @param partitionKey Partition key of item
+     * @param clazz Class to serialize results into
+     * @param <T> Type to return
+     * @return The item
      */
     public <T> Optional<T> findItem(
             final String dataPartitionId,
@@ -128,234 +104,248 @@ public class CosmosStore {
             final String partitionKey,
             final Class<T> clazz) {
         try {
-            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
-            T item = findItem(cosmosContainer, id, partitionKey)
-                    .read(new CosmosItemRequestOptions(partitionKey))
-                    .getProperties()
-                    .getObject(clazz);
-            return Optional.ofNullable(item);
+            CosmosContainer container = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            CosmosItemRequestOptions options = new CosmosItemRequestOptions();
+            PartitionKey key = new PartitionKey(partitionKey);
+            T item = container.readItem(id, key, options, clazz).getItem();
+            return Optional.ofNullable((T) item);
         } catch (NotFoundException e) {
             LOGGER.warn(String.format("Unable to find item with ID=%s and PK=%s", id, partitionKey));
             return Optional.empty();
-        } catch (IOException | CosmosClientException e) {
+        } catch (CosmosException e) {
             String errorMessage;
-            if (e instanceof IOException) {
-                errorMessage = String.format("Malformed document for item with ID=%s and PK=%s", id, partitionKey);
-            } else {
-                errorMessage = "Unexpectedly encountered error calling CosmosDB";
-            }
-            throw handleCosmosStoreException(500, errorMessage, e);
+            errorMessage = "Unexpectedly encountered error calling CosmosDB";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
 
     /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param clazz           Class type of response
-     * @param <T>             Type of response
-     * @return List of items found in container
+     *
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param id ID of item
+     * @param partitionKey Partition key of item
+     * @param <T> Type of item
+     */
+    public <T> void deleteItem(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final String id,
+            final String partitionKey) {
+        try {
+            CosmosContainer container = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            PartitionKey key = new PartitionKey(partitionKey);
+            CosmosItemRequestOptions options = new CosmosItemRequestOptions();
+            container.deleteItem(id, key, options);
+        } catch (NotFoundException e) {
+            String errorMessage = "Item was unexpectedly not found";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(404, errorMessage, e.getMessage(), e);
+        } catch (CosmosException e) {
+            String errorMessage = "Unexpectedly failed to delete item from CosmosDB";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    /**
+     *
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName  Database name
+     * @param collection Collection name
+     * @param partitionKey Partition key of item
+     * @param item Data object to store
+     * @param <T> Type of item
+     */
+    public <T> void upsertItem(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final String partitionKey,
+            final T item) {
+        try {
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            PartitionKey key = new PartitionKey(partitionKey);
+            CosmosItemRequestOptions options = new CosmosItemRequestOptions();
+            cosmosContainer.upsertItem(item, key, options);
+        } catch (CosmosException e) {
+            String errorMessage = "Unexpectedly failed to put item into CosmosDB";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    /**
+     *
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param partitionKey Partition key of item
+     * @param item  Data object to store
+     * @param <T> Type of item
+     */
+    public <T> void createItem(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final String partitionKey,
+            final T item) {
+        try {
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            PartitionKey key = new PartitionKey(partitionKey);
+            CosmosItemRequestOptions options = new CosmosItemRequestOptions();
+            cosmosContainer.createItem(item, key, options);
+        } catch (ConflictException e) {
+            String errorMessage = "Resource with specified id or name already exists.";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(409, errorMessage, e.getMessage(), e);
+        } catch (CosmosException e) {
+            String errorMessage = "Unexpectedly failed to insert item into CosmosDB";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    // Find All and Queries
+
+    /**
+     *
+     * @param dataPartitionId dataPartitionId
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param clazz Class type of response
+     * @param  <T> Type
+     * @return  List<T> List of items found
      */
     public <T> List<T> findAllItems(
             final String dataPartitionId,
             final String cosmosDBName,
             final String collection,
             final Class<T> clazz) {
-        FeedOptions options = new FeedOptions().setEnableCrossPartitionQuery(true);
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
         return queryItems(dataPartitionId, cosmosDBName, collection, new SqlQuerySpec("SELECT * FROM c"), options, clazz);
     }
 
     /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param query           {@link SqlQuerySpec} to execute
-     * @param options         Query options
-     * @param clazz           Class type of response
-     * @param <T>             Type of response
-     * @return List of items found in container
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param query {@link SqlQuerySpec} to execute
+     * @param options Options
+     * @param clazz Class type of response
+     * @param <T> Type
+     * @return List<T> List of items found on specific page in container
      */
     public <T> List<T> queryItems(
             final String dataPartitionId,
             final String cosmosDBName,
             final String collection,
             final SqlQuerySpec query,
-            final FeedOptions options,
+            final CosmosQueryRequestOptions options,
             final Class<T> clazz) {
-        ArrayList<T> results = new ArrayList<>();
+        List<T> results = new ArrayList<>();
         CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
-        Iterator<FeedResponse<CosmosItemProperties>> paginatedResponse = cosmosContainer.queryItems(query, options);
-        while (paginatedResponse.hasNext()) {
-            for (CosmosItemProperties properties : paginatedResponse.next().getResults()) {
-                try {
-                    results.add(properties.getObject(clazz));
-                } catch (IOException e) {
-                    throw handleCosmosStoreException(500, String.format("Malformed document for item with ID=%s", properties.getId()), e);
-                }
-            }
-        }
+        CosmosPagedIterable<T> paginatedResponse = cosmosContainer.queryItems(query, options, clazz);
+        paginatedResponse.iterableByPage(PREFERRED_PAGE_SIZE).forEach(cosmosItemPropertiesFeedResponse -> {
+            LOGGER.info("Got a page of query result with {} items(s)",
+                    cosmosItemPropertiesFeedResponse.getResults().size());
+            results.addAll(cosmosItemPropertiesFeedResponse.getResults());
+        });
+        LOGGER.info("Done. Retrieved {} results", results.size());
         return results;
     }
 
     /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param clazz           Class type of response
-     * @param pageSize        Number of items returned
-     * @param pageNum         Page number returned
-     * @param <T>             Type of response
-     * @return List of items found on specific page in container
+     *
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database
+     * @param collection Collection
+     * @param clazz Class type of response
+     * @param pageSize Page size
+     * @param continuationToken Continuation token
+     * @param <T> Type of items
+     * @return Page<T> Page of items
      */
-    public <T> List<T> findAllItemsAsync(
+    public <T> Page<T> findAllItemsPage(
             final String dataPartitionId,
             final String cosmosDBName,
             final String collection,
             final Class<T> clazz,
-            final short pageSize,
-            final int pageNum) {
-        return queryItemsAsync(dataPartitionId, cosmosDBName, collection, new SqlQuerySpec("SELECT * FROM c"), clazz, pageSize, pageNum);
+            final int pageSize,
+            final String continuationToken) {
+        return queryItemsPage(dataPartitionId, cosmosDBName, collection, new SqlQuerySpec("SELECT * FROM c"), clazz, pageSize, continuationToken);
     }
 
     /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param query           {@link SqlQuerySpec} to execute
-     * @param clazz           Class type of response
-     * @param pageSize        Number of items returned
-     * @param pageNum         Page number returned
-     * @param <T>             Type of response
-     * @return List of items found on specific page in container
+     *
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName Database name
+     * @param collection Collection name
+     * @param query {@link SqlQuerySpec} to execute
+     * @param clazz Class type
+     * @param pageSize Page size
+     * @param continuationToken Continuation token
+     * @param <T> Type
+     * @return Page<T> Page of itemns found
      */
-    public <T> List<T> queryItemsAsync(
+    public <T> Page<T> queryItemsPage(
             final String dataPartitionId,
             final String cosmosDBName,
             final String collection,
             final SqlQuerySpec query,
             final Class<T> clazz,
-            final short pageSize,
-            final int pageNum) {
-        String continuationToken = null;
-        int currentPage = 0;
-        HashMap<String, List<T>> results;
-        do {
-            String nextContinuationToken = "";
-            AsyncDocumentClient client = cosmosClientFactory.getAsyncClient(dataPartitionId);
-            results = returnItemsWithToken(client, cosmosDBName, collection, query, clazz, pageSize, continuationToken);
-            for (Map.Entry<String, List<T>> entry : results.entrySet()) {
-                nextContinuationToken = entry.getKey();
-            }
-            continuationToken = nextContinuationToken;
-            currentPage++;
-
-        } while (currentPage < pageNum && continuationToken != null);
-        return results.get(continuationToken);
-    }
-
-    /**
-     * @param client            {@link AsyncDocumentClient} used to configure/execute requests against database service
-     * @param dbName            Cosmos DB name
-     * @param container         Container to query
-     * @param query             {@link SqlQuerySpec} to execute
-     * @param clazz             Class type of response
-     * @param <T>               Type of response
-     * @param pageSize          Number of items returned
-     * @param continuationToken Token used to continue the enumeration
-     * @return Continuation Token and list of documents in container
-     */
-    private static <T> HashMap<String, List<T>> returnItemsWithToken(
-            final AsyncDocumentClient client,
-            final String dbName,
-            final String container,
-            final SqlQuerySpec query,
-            final Class<T> clazz,
-            final short pageSize,
+            final int pageSize,
             final String continuationToken) {
 
-        HashMap<String, List<T>> map = new HashMap<>();
-        List<T> items = new ArrayList<T>();
+        int currentPageNumber = 1;
+        int iterationNumber = 1;
+        int documentNumber = 0;
 
-        FeedOptions feedOptions = new FeedOptions()
-                .maxItemCount((int) pageSize)
-                .setEnableCrossPartitionQuery(true)
-                .requestContinuation(continuationToken);
+        String internalcontinuationToken = continuationToken;
+        List<T> results = new ArrayList<>();
+        CosmosContainer container = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
 
-        String collectionLink = String.format("/dbs/%s/colls/%s", dbName, container);
-        Flux<FeedResponse<Document>> queryFlux = client.queryDocuments(collectionLink, query, feedOptions);
+        LOGGER.info("Receiving a set of query response pages.");
+        LOGGER.info("Continuation Token: " + internalcontinuationToken + "\n");
 
-        Iterator<FeedResponse<Document>> it = queryFlux.toIterable().iterator();
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
 
-        FeedResponse<Document> page = it.next();
-        List<Document> results = page.getResults();
-        for (Document doc : results) {
-            T obj = doc.toObject(clazz);
-            items.add(obj);
+        Iterable<FeedResponse<T>> feedResponseIterator =
+                container.queryItems(query, queryOptions, clazz).iterableByPage(internalcontinuationToken, pageSize);
+
+        Iterator<FeedResponse<T>> iterator = feedResponseIterator.iterator();
+        if (iterator.hasNext()) {
+            FeedResponse<T> page = feedResponseIterator.iterator().next();
+            LOGGER.info(String.format("Current page number: %d", currentPageNumber));
+            // Access all of the documents in this result page
+            for (T item : page.getResults()) {
+                documentNumber++;
+                results.add(item);
+            }
+
+            // Page count so far
+            LOGGER.info(String.format("Total documents received so far: %d", documentNumber));
+
+            // Along with page results, get a continuation token
+            // which enables the client to "pick up where it left off"
+            // in accessing query response pages.
+            internalcontinuationToken = page.getContinuationToken();
+            currentPageNumber++;
+            iterationNumber++;
         }
 
-        map.put(page.getContinuationToken(), items);
-        return map;
+        LOGGER.info("Done. Retrieved {} results", results.size());
+        CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
+        return new PageImpl(results, pageRequest, documentNumber);
     }
 
     /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param item            Data object to store
-     * @param <T>             Type of response
-     */
-    public <T> void upsertItem(
-            final String dataPartitionId,
-            final String cosmosDBName,
-            final String collection,
-            final T item) {
-        try {
-            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
-            cosmosContainer.upsertItem(item);
-        } catch (CosmosClientException e) {
-            throw handleCosmosStoreException(500, "Unexpectedly failed to put item into CosmosDB", e);
-        }
-    }
-
-    /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
-     * @param item            Data object to store
-     * @param <T>             Type of response
-     */
-    public <T> void createItem(
-            final String dataPartitionId,
-            final String cosmosDBName,
-            final String collection,
-            final T item) {
-        try {
-            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
-            cosmosContainer.createItem(item);
-        } catch (ConflictException e) {
-            throw handleCosmosStoreException(409, "Resource with specified id or name already exists.", e);
-        } catch (CosmosClientException e) {
-            throw handleCosmosStoreException(500, "Unexpectedly failed to insert item into CosmosDB", e);
-        }
-    }
-
-    /**
-     * @param cosmos       Container to query
-     * @param id           ID of item
-     * @param partitionKey Partition key of item
-     * @return The item. It may not exist - the caller must check
-     */
-    private static CosmosItem findItem(
-            final CosmosContainer cosmos,
-            final String id,
-            final String partitionKey) {
-        return cosmos.getItem(id, partitionKey);
-    }
-
-    /**
-     * @param dataPartitionId Data partition id to fetch appropriate cosmos client for each partition
-     * @param cosmosDBName    Database to be used
-     * @param collection      Collection to be used
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName    Database name
+     * @param collection      Collection name
      * @return Cosmos container
      */
     private CosmosContainer getCosmosContainer(
@@ -366,10 +356,10 @@ public class CosmosStore {
             return cosmosClientFactory.getClient(dataPartitionId)
                     .getDatabase(cosmosDBName)
                     .getContainer(collection);
-        } catch (AppException e) {
-            throw handleCosmosStoreException(e.getError().getCode(), "Error creating creating Cosmos Client", e);
         } catch (Exception e) {
-            throw handleCosmosStoreException(500, "Error creating creating Cosmos Client", e);
+            String errorMessage = "Error creating creating Cosmos Client";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
 

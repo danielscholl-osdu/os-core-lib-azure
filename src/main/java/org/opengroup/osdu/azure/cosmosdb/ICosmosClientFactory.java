@@ -1,7 +1,6 @@
 package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.internal.AsyncDocumentClient;
 
 /**
  *  Interface for Cosmos Client Factory to return appropriate cosmos client.
@@ -15,9 +14,4 @@ public interface ICosmosClientFactory {
      */
     CosmosClient getClient(String dataPartitionId);
 
-    /**
-     * @param dataPartitionId Data Partition Id
-     * @return Async Document Client instance
-     */
-    AsyncDocumentClient getAsyncClient(String dataPartitionId);
 }
