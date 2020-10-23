@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * Partition service client implementation.
  */
@@ -64,4 +66,21 @@ public class PartitionServiceClient {
         infoAzure.configureSecretClient(secretClient);
         return infoAzure;
     }
+
+    /**
+     * List of all partitions.
+     *
+     * @return List of Partitions
+     * @throws AppException Exception thrown by {@link IPartitionFactory}
+     */
+    public List<String> listPartitions() throws AppException {
+        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
+        try {
+            IPartitionProvider serviceClient = this.partitionFactory.create(headers);
+            return serviceClient.list();
+        } catch (PartitionException e) {
+            throw new AppException(HttpStatus.SC_FORBIDDEN, "Service unavailable", "Error getting list of partitions", e);
+        }
+    }
+
 }

@@ -21,7 +21,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.36</version>
+  <version>0.0.37</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -79,7 +79,7 @@
     <dependency>
       <groupId>org.opengroup.osdu</groupId>
       <artifactId>os-core-common</artifactId>
-      <version>0.3.12</version>
+      <version>0.3.17</version>
       <exclusions>
         <exclusion>
           <groupId>org.springframework.boot</groupId>

@@ -12,7 +12,9 @@ import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.opengroup.osdu.core.common.partition.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -92,5 +94,21 @@ public class PartitionServiceClientTest {
         } catch (Exception ex) {
             fail("Should not get any other exception. Received " + ex.getClass());
         }
+    }
+
+    @Test
+    public void should_return_ListPartitions() throws PartitionException {
+        PartitionService partitionService = mock(PartitionService.class);
+        when(this.tokenService.getAuthorizationToken()).thenReturn("token");
+        when(this.partitionFactory.create(this.headers)).thenReturn(partitionService);
+
+        List<String> partitions = new ArrayList<>();
+        partitions.add("tenant1");
+        partitions.add("tenant2");
+        when(partitionService.list()).thenReturn(partitions);
+
+        List<String> partitionList = this.sut.listPartitions();
+        assertNotNull(partitionList);
+        assertEquals(partitions.size(), partitionList.size());
     }
 }

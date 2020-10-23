@@ -26,10 +26,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 
 /**
  * Implementation for ITenantFactory.
@@ -78,8 +80,16 @@ public class TenantFactoryImpl implements ITenantFactory {
      * @return list of tenantInfo objects for all the tenants
      */
     public Collection<TenantInfo> listTenantInfo() {
-        // todo: requires get all partitions on Partition service.
-        return null;
+        Collection<TenantInfo> tenantInfoList = new ArrayList<>();
+        Collection<String> partitions = this.partitionService.listPartitions();
+        TenantInfo tenantInfo;
+        for (String partition : partitions) {
+            tenantInfo = new TenantInfo();
+            tenantInfo.setName(partition);
+            tenantInfo.setDataPartitionId(partition);
+            tenantInfoList.add(tenantInfo);
+        }
+        return tenantInfoList;
     }
 
     /**
