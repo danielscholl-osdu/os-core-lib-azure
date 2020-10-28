@@ -45,10 +45,8 @@ public class PartitionServiceClient {
      */
     public PartitionInfoAzure getPartition(final String partitionId) throws AppException {
         Validators.checkNotNullAndNotEmpty(partitionId, "partitionId");
-
-        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
         try {
-            IPartitionProvider serviceClient = this.partitionFactory.create(headers);
+            IPartitionProvider serviceClient = getServiceClient();
             PartitionInfo partitionInfo = serviceClient.get(partitionId);
             return convert(partitionInfo);
         } catch (PartitionException e) {
@@ -74,13 +72,22 @@ public class PartitionServiceClient {
      * @throws AppException Exception thrown by {@link IPartitionFactory}
      */
     public List<String> listPartitions() throws AppException {
-        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
         try {
-            IPartitionProvider serviceClient = this.partitionFactory.create(headers);
+            IPartitionProvider serviceClient = getServiceClient();
             return serviceClient.list();
         } catch (PartitionException e) {
             throw new AppException(HttpStatus.SC_FORBIDDEN, "Service unavailable", "Error getting list of partitions", e);
         }
+    }
+
+    /**
+     * Get Service client for Partition Service.
+     *
+     * @return PartitionServiceClient
+     */
+    private IPartitionProvider getServiceClient() {
+        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
+        return this.partitionFactory.create(headers);
     }
 
 }

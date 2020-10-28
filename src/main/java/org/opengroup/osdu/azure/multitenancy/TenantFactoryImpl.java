@@ -26,11 +26,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -80,17 +80,22 @@ public class TenantFactoryImpl implements ITenantFactory {
      * @return list of tenantInfo objects for all the tenants
      */
     public Collection<TenantInfo> listTenantInfo() {
-        Collection<TenantInfo> tenantInfoList = new ArrayList<>();
-        Collection<String> partitions = this.partitionService.listPartitions();
-        TenantInfo tenantInfo;
-        for (String partition : partitions) {
-            tenantInfo = new TenantInfo();
-            tenantInfo.setName(partition);
-            tenantInfo.setDataPartitionId(partition);
-            tenantInfoList.add(tenantInfo);
-        }
-        return tenantInfoList;
+        return this.partitionService.listPartitions().stream().map(this::buildTenantInfo).collect(Collectors.toList());
     }
+
+    /**
+     * Build TenanInfo Object.
+     *
+     * @param partitionId Partition Id
+     * @return TenantInfo object
+     */
+    private TenantInfo buildTenantInfo(final String partitionId) {
+        TenantInfo tenantInfo = new TenantInfo();
+        tenantInfo.setName(partitionId);
+        tenantInfo.setDataPartitionId(partitionId);
+        return tenantInfo;
+    }
+
 
     /**
      * @param tenantName        Tenant name
