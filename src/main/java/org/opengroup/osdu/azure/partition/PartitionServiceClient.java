@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * Partition service client implementation.
  */
@@ -43,10 +45,8 @@ public class PartitionServiceClient {
      */
     public PartitionInfoAzure getPartition(final String partitionId) throws AppException {
         Validators.checkNotNullAndNotEmpty(partitionId, "partitionId");
-
-        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
         try {
-            IPartitionProvider serviceClient = this.partitionFactory.create(headers);
+            IPartitionProvider serviceClient = getServiceClient();
             PartitionInfo partitionInfo = serviceClient.get(partitionId);
             return convert(partitionInfo);
         } catch (PartitionException e) {
@@ -64,4 +64,30 @@ public class PartitionServiceClient {
         infoAzure.configureSecretClient(secretClient);
         return infoAzure;
     }
+
+    /**
+     * List of all partitions.
+     *
+     * @return List of Partitions
+     * @throws AppException Exception thrown by {@link IPartitionFactory}
+     */
+    public List<String> listPartitions() throws AppException {
+        try {
+            IPartitionProvider serviceClient = getServiceClient();
+            return serviceClient.list();
+        } catch (PartitionException e) {
+            throw new AppException(HttpStatus.SC_FORBIDDEN, "Service unavailable", "Error getting list of partitions", e);
+        }
+    }
+
+    /**
+     * Get Service client for Partition Service.
+     *
+     * @return PartitionServiceClient
+     */
+    private IPartitionProvider getServiceClient() {
+        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
+        return this.partitionFactory.create(headers);
+    }
+
 }

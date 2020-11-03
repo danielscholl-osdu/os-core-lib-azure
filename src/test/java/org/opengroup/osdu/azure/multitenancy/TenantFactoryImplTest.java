@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class TenantFactoryImplTest {
@@ -85,21 +86,21 @@ public class TenantFactoryImplTest {
         assertNull(result);
     }
 
-    /**
-     * todo: requires list all tenants on Partition service.
-     */
-    @Disabled
     @Test
-    public void returnsListOfAllTenants() {
+    public void returnsEmptyListTenants() {
         List<TenantInfo> result = new ArrayList<>(tenantFactory.listTenantInfo());
+        assertNotNull(result);
+    }
 
-        TenantInfo tenantInfo = new TenantInfo();
-        tenantInfo.setName(tenantName);
-        tenantInfo.setDataPartitionId(tenantName);
-        tenantInfo.setComplianceRuleSet(complianceRuleSet);
+    @Test
+    public void returnsListOfTenants() {
+        List<String> partitions = new ArrayList<>();
+        partitions.add("tenant1");
+        partitions.add("tenant2");
+        when(partitionServiceClient.listPartitions()).thenReturn(partitions);
 
-        List<TenantInfo> expected = Collections.singletonList(tenantInfo);
-
-        assertEquals(expected, result);
+        List<TenantInfo> result = new ArrayList<>(tenantFactory.listTenantInfo());
+        assertNotNull(result);
+        assertEquals(partitions.size(), result.size());
     }
 }
