@@ -356,10 +356,10 @@ public class CosmosStore {
             return cosmosClientFactory.getClient(dataPartitionId)
                     .getDatabase(cosmosDBName)
                     .getContainer(collection);
+        } catch (AppException ae) {
+            throw this.handleCosmosStoreException(ae.getError().getCode(), "Error creating creating Cosmos Client", ae);
         } catch (Exception e) {
-            String errorMessage = "Error creating creating Cosmos Client";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw this.handleCosmosStoreException(500, "Error creating creating Cosmos Client", e);
         }
     }
 
