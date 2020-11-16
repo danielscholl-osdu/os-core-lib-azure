@@ -18,6 +18,8 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.sas.BlobSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
@@ -30,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 
 /**
@@ -40,7 +43,7 @@ import java.util.Collections;
  *      @Autowired
  *      private BlobStore blobStore;
  *
- *      String readFromStorageContainerExamole()
+ *      String readFromStorageContainerExample()
  *      {
  *          String content = blobStorage.readFromStorageContainer("dataPartitionId", "filePath", "containerName");
  *          if (content != null)
@@ -55,6 +58,14 @@ import java.util.Collections;
  *      void deleteFromStorageContainerExample()
  *      {
  *          Boolean success = blobStorage.deleteFromStorageContainer("dataPartitionId", "filePath", "containerName");
+ *      }
+ *
+ *      void getSasToken()
+ *      {
+ *          int expiryDays = 7;
+ *          OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+ *          BlobSasPermission permissions = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
+ *          String sasToken = blobStorage.getSasToken("dataPartitionId", "filePath", "containerName", expiryTime, permissions);
  *      }
  * }
  * </pre>
@@ -145,6 +156,21 @@ public class BlobStore {
         } catch (IOException ex) {
             throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
         }
+    }
+
+    /**
+     * @param dataPartitionId Data partition id
+     * @param filePath        Path of file (blob) for which SAS token needs to be generated
+     * @param containerName   Name of the storage container
+     * @param expiryTime      Time after which the token expires
+     * @param permissions     Permissions for the given blob
+     * @return SAS token for the given blob
+     */
+    public String getSasToken(final String dataPartitionId, final String filePath, final String containerName, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
+        return blockBlobClient.generateSas(blobServiceSasSignatureValues);
     }
 
     /**
