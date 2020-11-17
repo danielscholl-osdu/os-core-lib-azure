@@ -169,6 +169,31 @@ public class BlobStore {
     public String getSasToken(final String dataPartitionId, final String filePath, final String containerName, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        return generateSASToken(blockBlobClient, expiryTime, permissions);
+    }
+
+    /**
+     * @param dataPartitionId Data partition id
+     * @param filePath        Path of file (blob) for which SAS token needs to be generated
+     * @param containerName   Name of the storage container
+     * @param expiryTime      Time after which the token expires
+     * @param permissions     Permissions for the given blob
+     * @return Generates Pre-Signed URL for a given blob.
+     */
+    public String generatePreSignedURL(final String dataPartitionId, final String filePath, final String containerName, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        return blockBlobClient.getBlobUrl() + "?" + generateSASToken(blockBlobClient, expiryTime, permissions);
+    }
+
+    /**
+     *
+     * @param blockBlobClient Blob client
+     * @param expiryTime Time after which SAS Token expires
+     * @param permissions Permissions for the given blob
+     * @return Generates SAS Token.
+     */
+    private String generateSASToken(final BlockBlobClient blockBlobClient, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
         return blockBlobClient.generateSas(blobServiceSasSignatureValues);
     }
