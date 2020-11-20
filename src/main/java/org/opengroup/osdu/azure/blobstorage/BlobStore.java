@@ -14,8 +14,10 @@
 
 package org.opengroup.osdu.azure.blobstorage;
 
+import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.sas.BlobSasPermission;
@@ -32,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 
@@ -60,12 +63,18 @@ import java.util.Collections;
  *          Boolean success = blobStorage.deleteFromStorageContainer("dataPartitionId", "filePath", "containerName");
  *      }
  *
- *      void getSasToken()
+ *      void getSasTokenExample()
  *      {
  *          int expiryDays = 7;
  *          OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
  *          BlobSasPermission permissions = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
  *          String sasToken = blobStorage.getSasToken("dataPartitionId", "filePath", "containerName", expiryTime, permissions);
+ *      }
+ *
+ *      void copyFileExample()
+ *      {
+ *          BlobCopyInfo copyInfo = blobStore.copyFile("dataPartitionId", "filePath", "containerName", "sourceFilePath");
+ *          System.out.println("copy info " + copyInfo.getCopyStatus());
  *      }
  * }
  * </pre>
@@ -186,6 +195,22 @@ public class BlobStore {
         return blockBlobClient.getBlobUrl() + "?" + generateSASToken(blockBlobClient, expiryTime, permissions);
     }
 
+    /**
+     * Method is used to copy a file specified at Source URL to the provided destination.
+     * @param dataPartitionId Data partition id
+     * @param filePath        Path of file (blob) to which the file has to be copied
+     * @param containerName   Name of the storage container
+     * @param sourceUrl       URL of the file from where the file contents have to be copied
+     * @return Blob Copy Final Result.
+     */
+    public BlobCopyInfo copyFile(final String dataPartitionId, final String filePath, final String containerName,
+                         final String sourceUrl) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+
+        SyncPoller<BlobCopyInfo, Void> result = blockBlobClient.beginCopy(sourceUrl, Duration.ofSeconds(1));
+        return result.waitForCompletion().getValue();
+    }
     /**
      *
      * @param blockBlobClient Blob client
