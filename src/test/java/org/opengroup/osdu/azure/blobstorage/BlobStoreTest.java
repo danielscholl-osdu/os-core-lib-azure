@@ -14,9 +14,12 @@
 
 package org.opengroup.osdu.azure.blobstorage;
 
+import com.azure.core.util.polling.PollResponse;
+import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.BlockBlobItem;
@@ -32,6 +35,7 @@ import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,6 +49,7 @@ public class BlobStoreTest {
     private static final String FILE_PATH = "filePath";
     private static final String CONTENT = "hello world";
     private static final String STORAGE_CONTAINER_NAME = "containerName";
+    private static final String SOURCE_FILE_URL = "http://someURL";
 
     @InjectMocks
     private BlobStore blobStore;
@@ -69,6 +74,15 @@ public class BlobStoreTest {
 
     @Mock
     private ILogger logger;
+
+    @Mock
+    private BlobCopyInfo blobCopyInfo;
+
+    @Mock
+    private SyncPoller<BlobCopyInfo, Void> syncPoller;
+
+    @Mock
+    private PollResponse<BlobCopyInfo> pollResponse;
 
     @BeforeEach
     void init() {
@@ -220,6 +234,28 @@ public class BlobStoreTest {
         } catch (Exception ex) {
             fail("should not get any exception.");
         }
+    }
+
+    @Test
+    public void copyFile_Success() {
+        String copyId = "copyId";
+        doReturn(copyId).when(blobCopyInfo).getCopyId();
+        doReturn(blobCopyInfo).when(pollResponse).getValue();
+        doReturn(pollResponse).when(syncPoller).waitForCompletion();
+        doReturn(syncPoller).when(blockBlobClient).beginCopy(SOURCE_FILE_URL, Duration.ofSeconds(1));
+
+        BlobCopyInfo copyInfo = blobStore.copyFile(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, SOURCE_FILE_URL);
+        assertEquals(copyInfo.getCopyId(), copyId);
+    }
+
+    @Test
+    public void copyFile_Failure() {
+        doReturn(null).when(pollResponse).getValue();
+        doReturn(pollResponse).when(syncPoller).waitForCompletion();
+        doReturn(syncPoller).when(blockBlobClient).beginCopy(SOURCE_FILE_URL, Duration.ofSeconds(1));
+
+        BlobCopyInfo copyInfo = blobStore.copyFile(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, SOURCE_FILE_URL);
+        assertEquals(copyInfo, null);
     }
 
     private BlobStorageException mockStorageException(BlobErrorCode errorCode) {
