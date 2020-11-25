@@ -26,8 +26,6 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -79,9 +77,6 @@ import java.util.Collections;
  * }
  * </pre>
  */
-
-@Component
-@ConditionalOnProperty(value = "azure.blobStore.required", havingValue = "true", matchIfMissing = false)
 public class BlobStore {
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
