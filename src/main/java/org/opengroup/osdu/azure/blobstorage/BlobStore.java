@@ -25,7 +25,6 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -83,12 +82,18 @@ import java.util.Collections;
 @Component
 @ConditionalOnProperty(value = "azure.blobStore.required", havingValue = "true", matchIfMissing = false)
 public class BlobStore {
-
-    @Autowired
     private IBlobServiceClientFactory blobServiceClientFactory;
-
-    @Autowired
     private ILogger logger;
+
+    /**
+     * Constructor to create BlobStore.
+     * @param factory Factory that provides blob client.
+     * @param loggerInstance logger instance to be used for logging.
+     */
+    public BlobStore(final IBlobServiceClientFactory factory, final ILogger loggerInstance) {
+        this.blobServiceClientFactory = factory;
+        this.logger = loggerInstance;
+    }
 
     private static final String LOG_PREFIX = "azure-core-lib";
 
