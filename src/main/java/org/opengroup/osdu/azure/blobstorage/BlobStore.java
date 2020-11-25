@@ -20,6 +20,7 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
@@ -201,6 +202,19 @@ public class BlobStore {
     }
 
     /**
+     * Generates pre-signed url to a blob container.
+     * @param dataPartitionId data partition id
+     * @param containerName Name of the storage container
+     * @param expiryTime Time after which the token expires
+     * @param permissions permissions for the given container
+     * @return Generates pre-signed url for a given container
+     */
+    public String generatePreSignedURL(final String dataPartitionId, final String containerName, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        return blobContainerClient.getBlobContainerUrl() + "?" + generateSASToken(blobContainerClient, expiryTime, permissions);
+    }
+
+    /**
      * Method is used to copy a file specified at Source URL to the provided destination.
      * @param dataPartitionId Data partition id
      * @param filePath        Path of file (blob) to which the file has to be copied
@@ -226,6 +240,17 @@ public class BlobStore {
     private String generateSASToken(final BlockBlobClient blockBlobClient, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
         return blockBlobClient.generateSas(blobServiceSasSignatureValues);
+    }
+
+    /**
+     * @param client Container client
+     * @param expiryTime Time after which SAS Token expires
+     * @param permissions Permissions for the given container
+     * @return Generates SAS Token.
+     */
+    private String generateSASToken(final BlobContainerClient client, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
+        return client.generateSas(blobServiceSasSignatureValues);
     }
 
     /**
