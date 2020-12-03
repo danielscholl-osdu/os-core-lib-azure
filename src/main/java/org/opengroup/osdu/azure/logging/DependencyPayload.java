@@ -12,9 +12,11 @@ import java.time.Duration;
 @Setter
 public final class DependencyPayload {
     private String name;
+    private String type = "HTTP";
     private String data;
     private Duration duration;
     private String resultCode;
+    private String target;
     private boolean success;
 
     /**
@@ -38,6 +40,7 @@ public final class DependencyPayload {
         this.duration = dependencyDuration;
         this.resultCode = dependencyResultCode;
         this.success = dependencySuccess;
+        this.target = dependencyData;
     }
 
     @Override
