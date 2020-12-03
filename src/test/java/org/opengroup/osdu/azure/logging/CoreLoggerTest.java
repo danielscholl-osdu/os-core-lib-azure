@@ -1,8 +1,11 @@
 package org.opengroup.osdu.azure.logging;
 
+import com.microsoft.applicationinsights.TelemetryClient;
+import com.microsoft.applicationinsights.telemetry.RemoteDependencyTelemetry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.core.common.logging.audit.AuditAction;
 import org.opengroup.osdu.core.common.logging.audit.AuditPayload;
@@ -15,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Contains tests for {@link CoreLogger}
@@ -29,12 +33,14 @@ public class CoreLoggerTest {
     private static final String ARG3 = "Argument 3 value";
 
     private static Logger spySlf4jLogger;
+    private static TelemetryClient telemetryClient;
     private static CoreLogger coreLogger;
 
     @BeforeAll
     public static void setup() {
         spySlf4jLogger = spy(LoggerFactory.getLogger(LOGGER_NAME));
-        coreLogger = mock(CoreLogger.class, withSettings().useConstructor(spySlf4jLogger).defaultAnswer(CALLS_REAL_METHODS));
+        telemetryClient = mock(TelemetryClient.class);
+        coreLogger = mock(CoreLogger.class, withSettings().useConstructor(spySlf4jLogger, telemetryClient).defaultAnswer(CALLS_REAL_METHODS));
     }
 
     @Test
@@ -107,8 +113,24 @@ public class CoreLoggerTest {
 
     @Test
     public void testLogDependency() {
-        DependencyPayload payload = new DependencyPayload("DependencyName", "DependencyPayload", Duration.ofMillis(1000), "200", true);
+        RemoteDependencyTelemetry telemetry = new RemoteDependencyTelemetry("DependencyName", "Dependency/Command/Name", new com.microsoft.applicationinsights.telemetry.Duration((long) 1000), true);
+        telemetry.setResultCode("200");
+        telemetry.setType("HTTP");
+        telemetry.setTarget("Dependency/Command/Name");
+
+        final ArgumentCaptor<RemoteDependencyTelemetry> telemetryCaptor = ArgumentCaptor.forClass(RemoteDependencyTelemetry.class);
+        doNothing().when(telemetryClient).trackDependency(telemetryCaptor.capture());
+
+        DependencyPayload payload = new DependencyPayload("DependencyName", "Dependency/Command/Name", Duration.ofMillis(1000), "200", true);
         coreLogger.logDependency(payload);
-        verify(spySlf4jLogger).info("{}", payload);
+
+        assertEquals(1, telemetryCaptor.getAllValues().size());
+        assertEquals("DependencyName", telemetryCaptor.getAllValues().get(0).getName());
+        assertEquals("Dependency/Command/Name", telemetryCaptor.getAllValues().get(0).getCommandName());
+        assertEquals("HTTP", telemetryCaptor.getAllValues().get(0).getType());
+        assertEquals("Dependency/Command/Name", telemetryCaptor.getAllValues().get(0).getTarget());
+        assertEquals(1000, telemetryCaptor.getAllValues().get(0).getDuration().getTotalMilliseconds());
+        assertEquals("200", telemetryCaptor.getAllValues().get(0).getResultCode());
+        assertEquals(true, telemetryCaptor.getAllValues().get(0).getSuccess());
     }
 }
