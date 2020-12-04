@@ -38,6 +38,7 @@
     <azure.spring.data.cosmos.version>3.1.0</azure.spring.data.cosmos.version>
     <azure.storage.version>12.8.0</azure.storage.version>
     <azure.servicebus.version>3.4.0</azure.servicebus.version>
+    <azure.core.version>1.11.0</azure.core.version>
     <azure.core.http.netty.version>1.6.2</azure.core.http.netty.version>
     <azure.msal4j.version>1.7.1</azure.msal4j.version>
     <azure.appinsights.version>2.5.1</azure.appinsights.version>
@@ -45,6 +46,7 @@
     <azure.spring.boot.version>2.3.5</azure.spring.boot.version>
     <checkstyle.version>3.1.0</checkstyle.version>
     <jackson.version>2.11.3</jackson.version>
+    <reactor.version>Dysprosium-SR12</reactor.version>
     <netty.version>4.1.51.Final</netty.version>
     <lombok.version>1.18.16</lombok.version>
     <osdu.oscorecommon.version>0.3.18</osdu.oscorecommon.version>
@@ -70,7 +72,7 @@
       <dependency>
         <groupId>io.projectreactor</groupId>
         <artifactId>reactor-bom</artifactId>
-        <version>Dysprosium-SR12</version>
+        <version>${reactor.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -80,6 +82,16 @@
         <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-core</artifactId>
+        <version>${azure.core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-core-http-netty</artifactId>
+        <version>${azure.core.http.netty.version}</version>
       </dependency>
       <dependency>
         <groupId>com.microsoft.azure</groupId>
@@ -115,7 +127,6 @@
     <dependency>
       <groupId>com.azure</groupId>
       <artifactId>azure-core-http-netty</artifactId>
-      <version>${azure.core.http.netty.version}</version>
     </dependency>
 
     <dependency>
