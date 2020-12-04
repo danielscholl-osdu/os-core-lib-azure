@@ -23,6 +23,9 @@ import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.BlockBlobItem;
+import com.azure.storage.blob.sas.BlobContainerSasPermission;
+import com.azure.storage.blob.sas.BlobSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,8 +39,11 @@ import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -83,6 +89,9 @@ public class BlobStoreTest {
 
     @Mock
     private PollResponse<BlobCopyInfo> pollResponse;
+
+    @Mock
+    private BlobSasPermission blobSasPermission;
 
     @BeforeEach
     void init() {
@@ -256,6 +265,65 @@ public class BlobStoreTest {
 
         BlobCopyInfo copyInfo = blobStore.copyFile(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, SOURCE_FILE_URL);
         assertEquals(copyInfo, null);
+    }
+
+    @Test
+    public void getSasToken_NullSasTokenObtained() {
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        String sasToken = blobStore.getSasToken(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission);
+        assertNull(sasToken);
+    }
+
+    @Test
+    public void getSasToken_whenBlobSasTokenProvided_thenReturnsValidSasToken() {
+        String blobSasToken = "blobSasToken";
+
+        doReturn(blobSasToken).when(blockBlobClient).generateSas(any(BlobServiceSasSignatureValues.class));
+
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobSasPermission blobSasPermission = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
+
+        String obtainedBlobSasToken = blobStore.getSasToken(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission);
+
+        ArgumentCaptor<BlobServiceSasSignatureValues> blobServiceSasSignatureValuesArgumentCaptor = ArgumentCaptor.forClass(BlobServiceSasSignatureValues.class);
+        verify(blockBlobClient).generateSas(blobServiceSasSignatureValuesArgumentCaptor.capture());
+
+        assertEquals(blobSasPermission.toString(), blobServiceSasSignatureValuesArgumentCaptor.getValue().getPermissions());
+        assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
+        assertEquals(blobSasToken, obtainedBlobSasToken);
+    }
+
+    @Test
+    public void generatePreSignedURLForContainer_NullPreSignedTokenObtained() {
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobContainerSasPermission blobContainerSasPermission = (new BlobContainerSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedURL(PARTITION_ID, STORAGE_CONTAINER_NAME, expiryTime, blobContainerSasPermission);
+        assertEquals("null?null", obtainedPreSignedUrl);
+    }
+
+    @Test
+    public void generatePreSignedURLForContainer_whenContainerPreSignedUrl_thenReturnsValidSasToken() {
+        String containerSasToken = "containerSasToken";
+        String containerUrl = "containerUrl";
+        String containerPreSignedUrl = containerUrl + "?" + containerSasToken;
+
+        doReturn(containerSasToken).when(blobContainerClient).generateSas(any(BlobServiceSasSignatureValues.class));
+        doReturn(containerUrl).when(blobContainerClient).getBlobContainerUrl();
+
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobContainerSasPermission blobContainerSasPermission = (new BlobContainerSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedURL(PARTITION_ID, STORAGE_CONTAINER_NAME, expiryTime, blobContainerSasPermission);
+
+        ArgumentCaptor<BlobServiceSasSignatureValues> blobServiceSasSignatureValuesArgumentCaptor = ArgumentCaptor.forClass(BlobServiceSasSignatureValues.class);
+        verify(blobContainerClient).generateSas(blobServiceSasSignatureValuesArgumentCaptor.capture());
+
+        assertEquals(blobContainerSasPermission.toString(), blobServiceSasSignatureValuesArgumentCaptor.getValue().getPermissions());
+        assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
+        assertEquals(containerPreSignedUrl, obtainedPreSignedUrl);
     }
 
     private BlobStorageException mockStorageException(BlobErrorCode errorCode) {
