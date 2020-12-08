@@ -38,7 +38,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.Collections;
 
 /**
  * A simpler interface to interact with Azure blob storage.
@@ -116,7 +115,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             blockBlobClient.download(downloadStream);
-            logger.info(LOG_PREFIX, String.format("Done reading from %s", filePath), Collections.<String, String>emptyMap());
+            coreLogger.info("{} {}", LOG_PREFIX, String.format("Done reading from %s", filePath));
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -153,7 +152,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try {
             blockBlobClient.delete();
-            logger.info(LOG_PREFIX, String.format("Done deleting blob at %s", filePath), Collections.<String, String>emptyMap());
+            coreLogger.info("{} {}", LOG_PREFIX, String.format("Done deleting blob at %s", filePath));
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -188,7 +187,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
-            logger.info(LOG_PREFIX, String.format("Done uploading file content to %s", filePath), Collections.<String, String>emptyMap());
+            coreLogger.info("{} {}", LOG_PREFIX, String.format("Done uploading file content to %s", filePath));
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
             throw handleBlobStoreException(500, "Failed to upload file content.", ex);
@@ -270,7 +269,11 @@ public class BlobStore {
      */
     private String generateSASToken(final BlockBlobClient blockBlobClient, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
-        return blockBlobClient.generateSas(blobServiceSasSignatureValues);
+        final long start = System.currentTimeMillis();
+        String sasToken = blockBlobClient.generateSas(blobServiceSasSignatureValues);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
     }
 
     /**
@@ -281,7 +284,11 @@ public class BlobStore {
      */
     private String generateSASToken(final BlobContainerClient client, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
-        return client.generateSas(blobServiceSasSignatureValues);
+        final long start = System.currentTimeMillis();
+        String sasToken = client.generateSas(blobServiceSasSignatureValues);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN", client.getBlobContainerName(), client.getBlobContainerUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
     }
 
     /**
@@ -309,7 +316,7 @@ public class BlobStore {
      * @return Instance of AppException
      */
     private AppException handleBlobStoreException(final int status, final String errorMessage, final Exception ex) {
-        logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
+        coreLogger.warn("{} {}", LOG_PREFIX, errorMessage);
         return new AppException(status, errorMessage, ex.getMessage(), ex);
     }
 
