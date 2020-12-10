@@ -20,6 +20,7 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.models.CopyStatusType;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
@@ -257,8 +258,15 @@ public class BlobStore {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
 
+        final long start = System.currentTimeMillis();
         SyncPoller<BlobCopyInfo, Void> result = blockBlobClient.beginCopy(sourceUrl, Duration.ofSeconds(1));
-        return result.waitForCompletion().getValue();
+        BlobCopyInfo blobCopyInfo = result.waitForCompletion().getValue();
+        final long timeTaken = System.currentTimeMillis() - start;
+        final String target = String.format("%s:%s/%s", dataPartitionId, containerName, filePath);
+        CopyStatusType status = blobCopyInfo == null ? CopyStatusType.FAILED : blobCopyInfo.getCopyStatus();
+        logDependency("COPY_FILE", sourceUrl, target, timeTaken, status.toString(), status == CopyStatusType.SUCCESS);
+
+        return blobCopyInfo;
     }
 
     /**

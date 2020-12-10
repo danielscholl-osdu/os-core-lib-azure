@@ -19,10 +19,7 @@ import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.models.BlobCopyInfo;
-import com.azure.storage.blob.models.BlobErrorCode;
-import com.azure.storage.blob.models.BlobStorageException;
-import com.azure.storage.blob.models.BlockBlobItem;
+import com.azure.storage.blob.models.*;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
@@ -40,7 +37,6 @@ import org.opengroup.osdu.core.common.model.http.AppException;
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -249,6 +245,7 @@ public class BlobStoreTest {
     public void copyFile_Success() {
         String copyId = "copyId";
         doReturn(copyId).when(blobCopyInfo).getCopyId();
+        doReturn(CopyStatusType.SUCCESS).when(blobCopyInfo).getCopyStatus();
         doReturn(blobCopyInfo).when(pollResponse).getValue();
         doReturn(pollResponse).when(syncPoller).waitForCompletion();
         doReturn(syncPoller).when(blockBlobClient).beginCopy(SOURCE_FILE_URL, Duration.ofSeconds(1));
