@@ -27,7 +27,7 @@ import java.util.Map;
  * So now order of calling the filters becomes: OrderedRequestContextFilter --> MDC filter --> ... --> TransactionLogFilter
  */
 @Component
-@ConditionalOnProperty(value = "logging.mdccontext.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(value = "logging.mdccontext.enabled", havingValue = "true", matchIfMissing = true)
 @Order(-104)
 public class Slf4jMDCFilter implements Filter {
     @Autowired
