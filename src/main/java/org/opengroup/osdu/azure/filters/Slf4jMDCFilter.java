@@ -1,5 +1,7 @@
 package org.opengroup.osdu.azure.filters;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import org.opengroup.osdu.azure.util.AuthUtils;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +61,22 @@ public class Slf4jMDCFilter implements Filter {
         final Map<String, String> contextMap = new HashMap<>();
         contextMap.put(DpsHeaders.CORRELATION_ID, dpsHeaders.getCorrelationId());
         contextMap.put(DpsHeaders.DATA_PARTITION_ID, dpsHeaders.getPartitionId());
+
+        String userId = getUserId();
+        if (userId != null) {
+            contextMap.put("user-id", userId);
+        }
+
         return contextMap;
+    }
+
+    /**
+     * Get user ID from Authorization payload (JWT token).
+     *
+     * @return the user ID
+     */
+    private String getUserId() {
+        JWTClaimsSet claimsSet = AuthUtils.getClaimsFromJwtToken(dpsHeaders.getAuthorization());
+        return claimsSet == null ? null : claimsSet.getSubject();
     }
 }
