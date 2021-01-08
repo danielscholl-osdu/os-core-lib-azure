@@ -34,6 +34,8 @@ import java.util.Map;
 public class Slf4jMDCFilter implements Filter {
     @Autowired
     private DpsHeaders dpsHeaders;
+    @Autowired
+    private AuthUtils authUtils;
 
     /**
      * Filter logic.
@@ -76,7 +78,7 @@ public class Slf4jMDCFilter implements Filter {
      * @return the user ID
      */
     private String getUserId() {
-        JWTClaimsSet claimsSet = AuthUtils.getClaimsFromJwtToken(dpsHeaders.getAuthorization());
+        JWTClaimsSet claimsSet = authUtils.getClaimsFromJwtToken(dpsHeaders.getAuthorization());
         return claimsSet == null ? null : claimsSet.getSubject();
     }
 }
