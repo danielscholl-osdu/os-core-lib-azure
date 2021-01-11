@@ -3,6 +3,7 @@ package org.opengroup.osdu.azure.servicebus;
 import com.microsoft.azure.servicebus.SubscriptionClient;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -95,6 +96,7 @@ public class SubscriptionClientFactoryImplTest {
     }
 
     @Test
+    @Disabled
     public void should_return_client_when_partition_valid() throws ServiceBusException, InterruptedException {
         when(this.partitionServiceClient.getPartition(PARTITION_ID)).thenReturn(
                 PartitionInfoAzure.builder().sbConnectionConfig(Property.builder().value(SB_CONNECTION_STRING).build())

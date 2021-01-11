@@ -179,6 +179,38 @@ public class CosmosStore {
     }
 
     /**
+     * @param dataPartitionId Data partition id
+     * @param cosmosDBName    Database name
+     * @param collection      Collection name
+     * @param id              ID of item
+     * @param partitionKey    Partition key of item
+     * @param item            Data object to store
+     * @param <T>             Type of item
+     */
+    public <T> void replaceItem(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final String id,
+            final String partitionKey,
+            final T item) {
+        try {
+            CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+            PartitionKey key = new PartitionKey(partitionKey);
+            CosmosItemRequestOptions options = new CosmosItemRequestOptions();
+            cosmosContainer.replaceItem(item, id, key, options);
+        } catch (NotFoundException e) {
+            String errorMessage = "Item was unexpectedly not found";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(404, errorMessage, e.getMessage(), e);
+        } catch (CosmosException e) {
+            String errorMessage = "Unexpectedly failed to replace item into CosmosDB";
+            LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    /**
      *
      * @param dataPartitionId Data partition id
      * @param cosmosDBName Database name
