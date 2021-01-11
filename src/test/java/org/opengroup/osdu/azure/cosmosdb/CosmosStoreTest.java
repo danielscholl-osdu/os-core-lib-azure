@@ -26,41 +26,29 @@ import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.models.SqlQuerySpec;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.cosmosdb.CosmosStore;
-import org.opengroup.osdu.azure.cosmosdb.ICosmosClientFactory;
 import org.opengroup.osdu.azure.multitenancy.TenantInfoDoc;
 import org.opengroup.osdu.core.common.model.http.AppException;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CosmosStoreTest {
@@ -71,6 +59,7 @@ class CosmosStoreTest {
     private static final String COLLECTION = "collection";
     private static final String COLLECTION_LINK = "/dbs/cosmosdb/colls/collection";
     private static final String DATA_PARTITION_ID = "data-partition-id";
+    private static final String ITEM = "ITEM";
 
 
     @Mock
@@ -155,6 +144,40 @@ class CosmosStoreTest {
             cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    void replaceItem_throws500_ifUnknownError() throws CosmosException {
+        ArgumentCaptor<PartitionKey> partitionKeyArgumentCaptor = ArgumentCaptor.forClass(PartitionKey.class);
+        doThrow(CosmosException.class).when(container).replaceItem(eq(ITEM), eq(ID), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.replaceItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, ITEM);
+        });
+        assertEquals(500, exception.getError().getCode());
+        verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
+        Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+    }
+
+    @Test
+    void replaceItem_throws404_ifNotFound() throws CosmosException {
+        ArgumentCaptor<PartitionKey> partitionKeyArgumentCaptor = ArgumentCaptor.forClass(PartitionKey.class);
+        doThrow(NotFoundException.class).when(container).replaceItem(eq(ITEM), eq(ID), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.replaceItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, ITEM);
+        });
+        assertEquals(404, exception.getError().getCode());
+        verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
+        Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+    }
+
+    @Test
+    void replaceItem_Success() {
+        CosmosItemResponse<String> cosmosItemResponse = mock(CosmosItemResponse.class);
+        ArgumentCaptor<PartitionKey> partitionKeyArgumentCaptor = ArgumentCaptor.forClass(PartitionKey.class);
+        doReturn(cosmosItemResponse).when(container).replaceItem(eq(ITEM), eq(ID), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
+        cosmosStore.replaceItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, ITEM);
+        verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
+        Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
     }
 
     @Test
