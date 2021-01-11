@@ -16,6 +16,11 @@ public class AuthUtilsTest {
     private static final String invalidJwtToken = "invalidjwttoken";
     private static final String invalidJwtTokenClaims = "part1.invalidclaims.part2";
     private static final String emptyJwtTokenClaims = "part1.e30.part3";
+    private static final String tokenAudience = "audience";
+    private static final String tokenSubject = "my-sub";
+    private static final String tokenOid = "my-oid";
+    private static final String tokenTenant = "my-tenant";
+    private static final String tokenAppid = "application-id";
 
     @InjectMocks
     private AuthUtils authUtils;
@@ -26,11 +31,11 @@ public class AuthUtilsTest {
 
         assertEquals(5, claims.getClaims().size());
         assertEquals(1, claims.getAudience().size());
-        assertEquals("audience", claims.getAudience().get(0));
-        assertEquals("my-sub", claims.getSubject());
-        assertEquals("application-id", claims.getStringClaim("appid"));
-        assertEquals("my-oid", claims.getStringClaim("oid"));
-        assertEquals("my-tenant", claims.getStringClaim("tid"));
+        assertEquals(tokenAudience, claims.getAudience().get(0));
+        assertEquals(tokenSubject, claims.getSubject());
+        assertEquals(tokenAppid, claims.getStringClaim("appid"));
+        assertEquals(tokenOid, claims.getStringClaim("oid"));
+        assertEquals(tokenTenant, claims.getStringClaim("tid"));
     }
 
     @Test
@@ -54,7 +59,7 @@ public class AuthUtilsTest {
     @Test
     public void ShouldReturnOidForValidTokenWithOid() throws Exception {
         String oid = authUtils.getOidFromJwtToken(jwtToken);
-        assertEquals("my-oid", oid);
+        assertEquals(tokenOid, oid);
     }
 
     @Test
