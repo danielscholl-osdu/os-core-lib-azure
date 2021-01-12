@@ -26,8 +26,8 @@ public class SubscriptionClientFactoryImpl implements ISubscriptionClientFactory
     private SubscriptionClientCache clientCache;
 
     /**
-     * @param dataPartitionId Data Partition Id
-     * @param topicName Service Bus Topic Name
+     * @param dataPartitionId  Data Partition Id
+     * @param topicName        Service Bus Topic Name
      * @param subscriptionName Service Bus Subscription Name
      * @return A client configured to communicate with a Service Bus Subscription
      * @throws ServiceBusException  Exception thrown by {@link SubscriptionClient}
@@ -47,16 +47,25 @@ public class SubscriptionClientFactoryImpl implements ISubscriptionClientFactory
 
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
         String serviceBusConnectionString = pi.getSbConnection();
+        SubscriptionClient subscriptionClient = getSubscriptionClient(entityPath, serviceBusConnectionString);
+        this.clientCache.put(cacheKey, subscriptionClient);
+
+        return subscriptionClient;
+    }
+
+    /***
+     * @param entityPath                 Service Bus entity path
+     * @param serviceBusConnectionString Service Bus Connection String
+     * @return SubscriptionClient object
+     * @throws InterruptedException Exception thrown by {@link SubscriptionClient}
+     * @throws ServiceBusException  Exception thrown by {@link SubscriptionClient}
+     */
+    SubscriptionClient getSubscriptionClient(final String entityPath, final String serviceBusConnectionString) throws InterruptedException, ServiceBusException {
         ConnectionStringBuilder connectionStringBuilder = new ConnectionStringBuilder(
                 serviceBusConnectionString,
                 entityPath
         );
 
-        SubscriptionClient subscriptionClient = new SubscriptionClient(connectionStringBuilder, ReceiveMode.PEEKLOCK);
-        this.clientCache.put(cacheKey, subscriptionClient);
-
-        return subscriptionClient;
-
-
+        return new SubscriptionClient(connectionStringBuilder, ReceiveMode.PEEKLOCK);
     }
 }
