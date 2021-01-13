@@ -174,7 +174,7 @@ public class BlobStore {
      * @return boolean indicating whether the creation of the given container was successful or not.
      *         Throws exception in case of failure.
      */
-    public boolean createStorageContainer(
+    public boolean createBlobContainer(
             final String dataPartitionId,
             final String containerName) {
         BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
