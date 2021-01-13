@@ -67,6 +67,15 @@ public class PartitionInfoAzure {
     @SerializedName("eventgrid-recordstopic-accesskey")
     private Property eventGridRecordsTopicAccessKeyConfig;
 
+    @SerializedName("eventgrid-resourcegroup")
+    private Property eventGridResourceGroupConfig;
+
+    @SerializedName("encryption-key-identifier")
+    private Property cryptographyEncryptionKeyIdentifierConfig;
+
+    @SerializedName("subscription-id")
+    private Property azureSubscriptionIdConfig;
+
     private Property servicePrincipalAppIdConfig = Property.builder().value("app-dev-sp-username").sensitive(true).build();
 
     private SecretClient secretClient;
@@ -230,6 +239,36 @@ public class PartitionInfoAzure {
             return getSecret(this.getEventGridRecordsTopicAccessKeyConfig());
         }
         return String.valueOf(this.getEventGridRecordsTopicAccessKeyConfig().getValue());
+    }
+
+    /**
+     * @return partition event grid ResourceGroup
+     */
+    public String getEventGridResourceGroup() {
+        if (this.getEventGridResourceGroupConfig().isSensitive()) {
+            return getSecret(this.getEventGridResourceGroupConfig());
+        }
+        return String.valueOf(this.getEventGridResourceGroupConfig().getValue());
+    }
+
+    /**
+     * @return partition Encryption Key Identifier
+     */
+    public String getCryptographyEncryptionKeyIdentifier() {
+        if (this.getCryptographyEncryptionKeyIdentifierConfig().isSensitive()) {
+            return getSecret(this.getCryptographyEncryptionKeyIdentifierConfig());
+        }
+        return String.valueOf(this.getCryptographyEncryptionKeyIdentifierConfig().getValue());
+    }
+
+    /**
+     * @return partition azure subscriptionId
+     */
+    public String getAzureSubscriptionId() {
+        if (this.getAzureSubscriptionIdConfig().isSensitive()) {
+            return getSecret(this.getAzureSubscriptionIdConfig());
+        }
+        return String.valueOf(this.getAzureSubscriptionIdConfig().getValue());
     }
 
     /**
