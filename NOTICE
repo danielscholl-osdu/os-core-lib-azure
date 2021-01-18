@@ -18,6 +18,7 @@ The following software have components provided under the terms of this license:
 - ASM based accessors helper used by json-smart (from )
 - Adapter: RxJava (from )
 - Apache Commons Codec (from http://commons.apache.org/proper/commons-codec/)
+- Apache Commons Collections (from http://commons.apache.org/proper/commons-collections/)
 - Apache Commons Lang (from http://commons.apache.org/proper/commons-lang/)
 - Apache Commons Logging (from http://commons.apache.org/proper/commons-logging/)
 - Apache HttpAsyncClient (from http://hc.apache.org/httpcomponents-asyncclient)
@@ -69,6 +70,7 @@ The following software have components provided under the terms of this license:
 - Jackson-module-parameter-names (from )
 - Java Native Access (from https://github.com/java-native-access/jna)
 - Java Native Access Platform (from https://github.com/java-native-access/jna)
+- Java UUID Generator (from http://wiki.fasterxml.com/JugHome)
 - Javassist (from http://www.javassist.org/)
 - Joda-Time (from http://www.joda.org/joda-time/)
 - KeePassJava2 :: All (from https://repo1.maven.org/maven2/org/linguafranca/pwdb/KeePassJava2)
@@ -333,6 +335,13 @@ The following software have components provided under the terms of this license:
 - jakarta.annotation-api (from https://projects.eclipse.org/projects/ee4j.ca)
 
 ========================================================================
+JSON
+========================================================================
+The following software have components provided under the terms of this license:
+
+- JSON in Java (from https://github.com/douglascrockford/JSON-java)
+
+========================================================================
 LGPL-2.1-only
 ========================================================================
 The following software have components provided under the terms of this license:
@@ -406,6 +415,8 @@ The following software have components provided under the terms of this license:
 - Spongy Castle (from http://rtyley.github.io/spongycastle/)
 - Spring Data for Azure Cosmos DB SQL API (from https://github.com/Azure/azure-sdk-for-java/tree/master/sdk/cosmos/azure-spring-data-cosmos)
 - adal4j (from https://github.com/AzureAD/azure-activedirectory-library-for-java)
+- azure-documentdb (from https://azure.microsoft.com/en-us/services/cosmos-db/)
+- documentdb-bulkexecutor (from http://azure.microsoft.com/en-us/services/documentdb/)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
 - mockito-junit-jupiter (from https://github.com/mockito/mockito)
 - msal4j (from https://github.com/AzureAD/microsoft-authentication-library-for-java)
@@ -473,6 +484,7 @@ The following software have components provided under the terms of this license:
 - Project Lombok (from https://projectlombok.org)
 - Spring Web (from https://github.com/spring-projects/spring-framework)
 - StAX API (from http://stax.codehaus.org/)
+- azure-documentdb (from https://azure.microsoft.com/en-us/services/cosmos-db/)
 - msal4j (from https://github.com/AzureAD/microsoft-authentication-library-for-java)
 - reactive-streams (from http://www.reactive-streams.org/)
 
