@@ -73,6 +73,9 @@ public class PartitionInfoAzure {
     @SerializedName("encryption-key-identifier")
     private Property cryptographyEncryptionKeyIdentifierConfig;
 
+    @SerializedName("policy-service-enabled")
+    private Property policyServiceConfig = Property.builder().sensitive(false).build();
+
     private Property azureSubscriptionIdConfig = Property.builder().value("subscription-id").sensitive(true).build();
 
     private Property servicePrincipalAppIdConfig = Property.builder().value("app-dev-sp-username").sensitive(true).build();
