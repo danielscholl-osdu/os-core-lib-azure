@@ -188,6 +188,24 @@ public class BlobStore {
 
     /**
      * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
+     * @return boolean indicating whether the deletion of the given container was successful or not.
+     *         Throws exception in case of failure.
+     */
+    public boolean deleteBlobContainer(
+            final String dataPartitionId,
+            final String containerName) {
+        BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
+        try {
+            blobServiceClient.deleteBlobContainer(containerName);
+            return true;
+        } catch (BlobStorageException ex) {
+            throw handleBlobStoreException(500, "Failed to create blob container", ex);
+        }
+    }
+
+    /**
+     * @param dataPartitionId Data partition id
      * @param filePath        Path of file (blob) for which SAS token needs to be generated
      * @param containerName   Name of the storage container
      * @param expiryTime      Time after which the token expires
