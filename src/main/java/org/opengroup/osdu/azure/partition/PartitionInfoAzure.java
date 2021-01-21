@@ -92,7 +92,9 @@ public class PartitionInfoAzure {
     /**
      * @return policy service config
      */
-    public String getPolicySvcConfig() { return String.valueOf(this.getPolicyServiceConfig().getValue()); }
+    public String getPolicySvcConfig() {
+        return String.valueOf(this.getPolicyServiceConfig().getValue());
+    }
 
     /**
      * @return partition name
