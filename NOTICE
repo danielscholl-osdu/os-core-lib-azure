@@ -151,6 +151,7 @@ The following software have components provided under the terms of this license:
 - Spring Core (from https://github.com/spring-projects/spring-framework)
 - Spring Data Core (from )
 - Spring Expression Language (SpEL) (from https://github.com/spring-projects/spring-framework)
+- Spring TestContext Framework (from https://github.com/spring-projects/spring-framework)
 - Spring Transaction (from https://github.com/spring-projects/spring-framework)
 - Spring Web (from https://github.com/spring-projects/spring-framework)
 - Spring Web MVC (from https://github.com/spring-projects/spring-framework)
