@@ -20,7 +20,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.0.57</version>
+  <version>0.0.63</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -49,9 +49,12 @@
     <reactor.version>Dysprosium-SR12</reactor.version>
     <netty.version>4.1.51.Final</netty.version>
     <lombok.version>1.18.16</lombok.version>
-    <osdu.oscorecommon.version>0.3.18</osdu.oscorecommon.version>
+    <osdu.oscorecommon.version>0.3.23</osdu.oscorecommon.version>
     <mockito-junit-jupiter.version>2.23.0</mockito-junit-jupiter.version>
     <spring-boot-starter-log4j2.version>2.3.4.RELEASE</spring-boot-starter-log4j2.version>
+    <azure-mgmt-eventgrid.version>1.0.0-beta-3</azure-mgmt-eventgrid.version>
+    <azure-security-keyvault-keys.version>4.2.3</azure-security-keyvault-keys.version>
+    <documentdb-bulkexecutor.version>2.12.0</documentdb-bulkexecutor.version>
   </properties>
 
   <licenses>
@@ -247,6 +250,39 @@
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-eventgrid</artifactId>
       <version>1.2.0</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>azure-client-runtime</artifactId>
+          <groupId>com.microsoft.azure</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure.eventgrid.v2020_04_01_preview</groupId>
+      <artifactId>azure-mgmt-eventgrid</artifactId>
+      <version>${azure-mgmt-eventgrid.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-security-keyvault-keys</artifactId>
+      <version>${azure-security-keyvault-keys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>documentdb-bulkexecutor</artifactId>
+      <version>${documentdb-bulkexecutor.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>5.2.8.RELEASE</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 

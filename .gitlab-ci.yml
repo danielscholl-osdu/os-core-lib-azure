@@ -13,7 +13,7 @@ include:
 
   - project: 'osdu/platform/ci-cd-pipelines'
     ref: 'master'
-    file: 'scanners/fossa.yml'
+    file: 'scanners/fossa-maven.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
     ref: 'master'

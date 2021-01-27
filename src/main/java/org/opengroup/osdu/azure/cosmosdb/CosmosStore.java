@@ -110,11 +110,10 @@ public class CosmosStore {
             T item = container.readItem(id, key, options, clazz).getItem();
             return Optional.ofNullable((T) item);
         } catch (NotFoundException e) {
-            LOGGER.warn(String.format("Unable to find item with ID=%s and PK=%s", id, partitionKey));
+            LOGGER.warn(String.format("Unable to find item with ID=%s and PK=%s", id, partitionKey), e);
             return Optional.empty();
         } catch (CosmosException e) {
-            String errorMessage;
-            errorMessage = "Unexpectedly encountered error calling CosmosDB";
+            String errorMessage = "Unexpectedly encountered error calling CosmosDB";
             LOGGER.warn(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
