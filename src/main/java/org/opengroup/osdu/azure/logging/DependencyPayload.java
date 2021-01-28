@@ -28,8 +28,8 @@ public final class DependencyPayload {
     /**
      * Instantiate payload with specified values.
      *
-     * @param dependencyData       the name of the command initiated with this dependency call
-     * @param dependencyName       the command initiated by this dependency call
+     * @param dependencyName       the name of the command initiated with this dependency call
+     * @param dependencyData       the command initiated by this dependency call
      * @param dependencyDuration   the request duration
      * @param dependencyResultCode the result code of the call
      * @param dependencySuccess    indication of successful or unsuccessful call

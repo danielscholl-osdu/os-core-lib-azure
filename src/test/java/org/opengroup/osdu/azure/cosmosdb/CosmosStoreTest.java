@@ -26,6 +26,7 @@ import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,8 +35,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.logging.CoreLogger;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.multitenancy.TenantInfoDoc;
 import org.opengroup.osdu.core.common.model.http.AppException;
+
+import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,11 +49,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CosmosStoreTest {
@@ -61,6 +62,11 @@ class CosmosStoreTest {
     private static final String DATA_PARTITION_ID = "data-partition-id";
     private static final String ITEM = "ITEM";
 
+    @Mock
+    private CoreLoggerFactory coreLoggerFactory;
+
+    @Mock
+    private CoreLogger coreLogger;
 
     @Mock
     private CosmosContainer container;
@@ -91,8 +97,40 @@ class CosmosStoreTest {
     @InjectMocks
     private CosmosStore cosmosStore;
 
+    /**
+     * Workaround for inability to mock static methods like getInstance().
+     *
+     * @param mock CoreLoggerFactory mock instance
+     */
+    private void mockSingleton(CoreLoggerFactory mock) {
+        try {
+            Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(instance, mock);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Reset workaround for inability to mock static methods like getInstance().
+     */
+    private void resetSingleton() {
+        try {
+            Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(null, null);
+            instance.setAccessible(false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @BeforeEach
     void init() throws CosmosException {
+        mockSingleton(coreLoggerFactory);
+        when(coreLoggerFactory.getLogger(anyString())).thenReturn(coreLogger);
+
         // mock the common cosmos request/response pattern that most tests need. because
         // not all tests will leverage these, we make the mocks lenient.
 
@@ -102,6 +140,11 @@ class CosmosStoreTest {
         lenient().doReturn(cosmosClient).when(cosmosClientFactory).getClient(anyString());
         lenient().doReturn(cosmosDatabase).when(cosmosClient).getDatabase(any());
         lenient().doReturn(container).when(cosmosDatabase).getContainer(anyString());
+    }
+
+    @AfterEach
+    public void takeDown() {
+        resetSingleton();
     }
 
     @Test
