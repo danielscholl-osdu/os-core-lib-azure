@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
@@ -323,7 +324,7 @@ public class BlobStore {
      * @return Instance of AppException
      */
     private AppException handleBlobStoreException(final int status, final String errorMessage, final Exception ex) {
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("{} {}", LOG_PREFIX, errorMessage);
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(MessageFormat.format("{0} {1}", LOG_PREFIX, errorMessage), ex);
         return new AppException(status, errorMessage, ex.getMessage(), ex);
     }
 
