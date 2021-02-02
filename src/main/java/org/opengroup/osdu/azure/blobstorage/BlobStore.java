@@ -28,7 +28,6 @@ import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.logging.DependencyPayload;
-import org.opengroup.osdu.azure.logging.ICoreLogger;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
@@ -82,9 +81,10 @@ import java.time.OffsetDateTime;
  * </pre>
  */
 public class BlobStore {
+    private static final String LOGGER_NAME = BlobStore.class.getName();
+
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
-    private ICoreLogger coreLogger;
 
     /**
      * Constructor to create BlobStore.
@@ -95,7 +95,6 @@ public class BlobStore {
     public BlobStore(final IBlobServiceClientFactory factory, final ILogger loggerInstance) {
         this.blobServiceClientFactory = factory;
         this.logger = loggerInstance;
-        this.coreLogger = CoreLoggerFactory.getInstance().getLogger(BlobStore.class);
     }
 
     private static final String LOG_PREFIX = "azure-core-lib";
@@ -116,7 +115,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             blockBlobClient.download(downloadStream);
-            coreLogger.info("{} {}", LOG_PREFIX, String.format("Done reading from %s", filePath));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{} {}", LOG_PREFIX, String.format("Done reading from %s", filePath));
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -153,7 +152,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try {
             blockBlobClient.delete();
-            coreLogger.info("{} {}", LOG_PREFIX, String.format("Done deleting blob at %s", filePath));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{} {}", LOG_PREFIX, String.format("Done deleting blob at %s", filePath));
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -188,7 +187,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
-            coreLogger.info("{} {}", LOG_PREFIX, String.format("Done uploading file content to %s", filePath));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{} {}", LOG_PREFIX, String.format("Done uploading file content to %s", filePath));
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
             throw handleBlobStoreException(500, "Failed to upload file content.", ex);
@@ -324,7 +323,7 @@ public class BlobStore {
      * @return Instance of AppException
      */
     private AppException handleBlobStoreException(final int status, final String errorMessage, final Exception ex) {
-        coreLogger.warn("{} {}", LOG_PREFIX, errorMessage);
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("{} {}", LOG_PREFIX, errorMessage);
         return new AppException(status, errorMessage, ex.getMessage(), ex);
     }
 
@@ -343,6 +342,6 @@ public class BlobStore {
         payload.setType("BlobStore");
         payload.setTarget(target);
 
-        coreLogger.logDependency(payload);
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
     }
 }

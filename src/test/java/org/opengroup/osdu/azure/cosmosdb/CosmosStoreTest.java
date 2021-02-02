@@ -106,7 +106,7 @@ class CosmosStoreTest {
         try {
             Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
             instance.setAccessible(true);
-            instance.set(instance, mock);
+            instance.set(null, mock);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

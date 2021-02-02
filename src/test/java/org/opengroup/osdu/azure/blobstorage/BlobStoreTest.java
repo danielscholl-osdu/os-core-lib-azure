@@ -24,6 +24,7 @@ import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +32,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.logging.CoreLogger;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
@@ -53,8 +57,11 @@ public class BlobStoreTest {
     private static final String STORAGE_CONTAINER_NAME = "containerName";
     private static final String SOURCE_FILE_URL = "http://someURL";
 
-    @InjectMocks
-    private BlobStore blobStore;
+    @Mock
+    private CoreLoggerFactory coreLoggerFactory;
+
+    @Mock
+    private CoreLogger coreLogger;
 
     @Mock
     private IBlobServiceClientFactory blobServiceClientFactory;
@@ -89,14 +96,55 @@ public class BlobStoreTest {
     @Mock
     private BlobSasPermission blobSasPermission;
 
+    @InjectMocks
+    private BlobStore blobStore;
+
+    /**
+     * Workaround for inability to mock static methods like getInstance().
+     *
+     * @param mock CoreLoggerFactory mock instance
+     */
+    private void mockSingleton(CoreLoggerFactory mock) {
+        try {
+            Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(null, mock);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Reset workaround for inability to mock static methods like getInstance().
+     */
+    private void resetSingleton() {
+        try {
+            Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(null, null);
+            instance.setAccessible(false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @BeforeEach
     void init() {
         initMocks(this);
+
+        mockSingleton(coreLoggerFactory);
+        when(coreLoggerFactory.getLogger(anyString())).thenReturn(coreLogger);
+
         lenient().when(blobClient.getBlockBlobClient()).thenReturn(blockBlobClient);
         lenient().when(blobContainerClient.getBlobClient(FILE_PATH)).thenReturn(blobClient);
         lenient().when(blobServiceClient.getBlobContainerClient(STORAGE_CONTAINER_NAME)).thenReturn(blobContainerClient);
         lenient().when(blobServiceClientFactory.getBlobServiceClient(PARTITION_ID)).thenReturn(blobServiceClient);
         lenient().doNothing().when(logger).warning(eq("azure-core-lib"), any(), anyMap());
+    }
+
+    @AfterEach
+    public void takeDown() {
+        resetSingleton();
     }
 
     @Test
