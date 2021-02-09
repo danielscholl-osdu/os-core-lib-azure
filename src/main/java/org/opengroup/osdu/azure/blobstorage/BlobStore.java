@@ -30,13 +30,13 @@ import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.logging.DependencyPayload;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.slf4j.helpers.MessageFormatter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
@@ -98,8 +98,6 @@ public class BlobStore {
         this.logger = loggerInstance;
     }
 
-    private static final String LOG_PREFIX = "azure-core-lib";
-
     /**
      * @param filePath        Path of file to be read.
      * @param dataPartitionId Data partition id
@@ -116,7 +114,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             blockBlobClient.download(downloadStream);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{} {}", LOG_PREFIX, String.format("Done reading from %s", filePath));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done reading from {}", filePath).getMessage());
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -126,13 +124,13 @@ public class BlobStore {
             throw handleBlobStoreException(500, "Failed to read specified blob", ex);
         } catch (UnsupportedEncodingException ex) {
             statusCode = HttpStatus.SC_BAD_REQUEST;
-            throw handleBlobStoreException(400, String.format("Encoding was not correct for item with name=%s", filePath), ex);
+            throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
         } catch (IOException ex) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
+            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyData = String.format("%s:%s/%s", dataPartitionId, containerName, filePath);
+            final String dependencyData = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
             logDependency("READ_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
@@ -153,7 +151,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try {
             blockBlobClient.delete();
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{} {}", LOG_PREFIX, String.format("Done deleting blob at %s", filePath));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting blob at {}", filePath).getMessage());
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -163,7 +161,7 @@ public class BlobStore {
             throw handleBlobStoreException(500, "Failed to delete blob", ex);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyData = String.format("%s:%s/%s", dataPartitionId, containerName, filePath);
+            final String dependencyData = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
             logDependency("DELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
@@ -188,16 +186,16 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{} {}", LOG_PREFIX, String.format("Done uploading file content to %s", filePath));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done uploading file content to %s", filePath).getMessage());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
             throw handleBlobStoreException(500, "Failed to upload file content.", ex);
         } catch (IOException ex) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
+            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyData = String.format("%s:%s/%s", dataPartitionId, containerName, filePath);
+            final String dependencyData = MessageFormatter.format("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
             logDependency("WRITE_TO_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
@@ -262,7 +260,7 @@ public class BlobStore {
         SyncPoller<BlobCopyInfo, Void> result = blockBlobClient.beginCopy(sourceUrl, Duration.ofSeconds(1));
         BlobCopyInfo blobCopyInfo = result.waitForCompletion().getValue();
         final long timeTaken = System.currentTimeMillis() - start;
-        final String target = String.format("%s:%s/%s", dataPartitionId, containerName, filePath);
+        final String target = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
         CopyStatusType status = blobCopyInfo == null ? CopyStatusType.FAILED : blobCopyInfo.getCopyStatus();
         logDependency("COPY_FILE", sourceUrl, target, timeTaken, status.toString(), status == CopyStatusType.SUCCESS);
 
@@ -324,7 +322,7 @@ public class BlobStore {
      * @return Instance of AppException
      */
     private AppException handleBlobStoreException(final int status, final String errorMessage, final Exception ex) {
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(MessageFormat.format("{0} {1}", LOG_PREFIX, errorMessage), ex);
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(MessageFormatter.format("{}", errorMessage).getMessage(), ex);
         return new AppException(status, errorMessage, ex.getMessage(), ex);
     }
 
