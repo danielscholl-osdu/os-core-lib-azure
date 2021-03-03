@@ -16,10 +16,14 @@ package org.opengroup.osdu.azure.eventgrid;
 
 import com.microsoft.azure.eventgrid.EventGridClient;
 import com.microsoft.azure.eventgrid.models.EventGridEvent;
-import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
-import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+import lombok.SneakyThrows;
+import org.opengroup.osdu.azure.cosmosdb.CosmosStoreBulkOperations;
+import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -55,33 +59,32 @@ import java.util.List;
 @Component
 public class EventGridTopicStore {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStoreBulkOperations.class.getName());
     @Autowired
     private IEventGridTopicClientFactory eventGridTopicClientFactory;
-
     @Autowired
     private ILogger logger;
-
     @Autowired
-    private PartitionServiceClient partitionService;
+    private PartitionServiceEventGridClient eventGridPartitionClient;
 
     /**
      * @param dataPartitionId Data partition id
      * @param topicName       Topic name
      * @param eventsList      List of Event Grid Events
      */
-    public void publishToEventGridTopic(final String dataPartitionId, final TopicName topicName, final List<EventGridEvent> eventsList) {
-        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+    @SneakyThrows
+    public void publishToEventGridTopic(final String dataPartitionId, final String topicName, final List<EventGridEvent> eventsList) {
+        EventGridTopicPartitionInfoAzure eventGridTopicPartitionInfoAzure = this.eventGridPartitionClient.getEventGridTopicInPartition(dataPartitionId, topicName);
 
-        String endpoint = "";
-        if (topicName == TopicName.RECORDS_CHANGED) {
-            try {
-                endpoint = String.format("https://%s/", new URI(pi.getEventGridRecordsTopicEndpoint()).getHost());
-            } catch (URISyntaxException e) {
-                throw new AppException(500, "Invalid Event Grid endpoint URI", "PartitionInfo for eventgrid-recordstopic " + pi.getEventGridRecordsTopicEndpoint(), e);
-            }
+        String endpoint;
+        try {
+            endpoint = String.format("https://%s/", new URI(eventGridTopicPartitionInfoAzure.getTopicName()).getHost());
+        } catch (URISyntaxException e) {
+            throw new AppException(500, "Invalid Event Grid endpoint URI", "PartitionInfo for Event Grid Topic " + topicName, e);
         }
-
         EventGridClient eventGridClient = eventGridTopicClientFactory.getClient(dataPartitionId, topicName);
         eventGridClient.publishEvents(endpoint, eventsList);
+
+
     }
 }
