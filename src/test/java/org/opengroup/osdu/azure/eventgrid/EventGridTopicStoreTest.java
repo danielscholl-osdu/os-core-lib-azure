@@ -22,11 +22,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
-import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
-import org.opengroup.osdu.core.common.partition.Property;
+import org.opengroup.osdu.core.common.partition.PartitionException;
 
 import java.util.ArrayList;
 
@@ -37,23 +37,20 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @ExtendWith(MockitoExtension.class)
 class EventGridTopicStoreTest {
 
+    private static final String VALID_DATA_PARTIION_ID = "validDataPartitionId";
+    private static final String VALID_TOPIC = "validTopic";
+    private static final String INVALID_URI = "://invalidUri";
+    private static final String VALID_KEY = "validkey";
     @Mock
     EventGridTopicClientFactoryImpl eventGridTopicClientFactory;
-
     @Mock
     EventGridClient eventGridClient;
-
-    @Mock
-    private ILogger logger;
-
-    @Mock
-    private PartitionServiceClient partitionService;
-
     @InjectMocks
     EventGridTopicStore sut;
-
-    private static final String VALID_DATA_PARTIION_ID = "validDataPartitionId";
-    private static final String INVALID_URI = "://invalidUri";
+    @Mock
+    private ILogger logger;
+    @Mock
+    private PartitionServiceEventGridClient partitionService;
 
     @BeforeEach
     void setUp() {
@@ -61,27 +58,30 @@ class EventGridTopicStoreTest {
     }
 
     @Test
-    public void should_throwException_given_invalidURI() {
-        when(this.partitionService.getPartition(VALID_DATA_PARTIION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(VALID_DATA_PARTIION_ID).build())
-                        .eventGridRecordsTopicEndpointConfig(Property.builder().value(INVALID_URI).build()).build());
+    public void should_throwException_given_invalidURI() throws PartitionException {
+        doReturn(EventGridTopicPartitionInfoAzure.builder()
+                .topicName(INVALID_URI)
+                .topicAccessKey(VALID_KEY).build())
+                .when(this.partitionService).getEventGridTopicInPartition(anyString(), anyString());
+
 
         AppException appException = Assertions.assertThrows(AppException.class,
-                () -> this.sut.publishToEventGridTopic(VALID_DATA_PARTIION_ID, TopicName.RECORDS_CHANGED, new ArrayList<>()));
-        assertEquals("PartitionInfo for eventgrid-recordstopic ://invalidUri", appException.getError().getMessage());
+                () -> this.sut.publishToEventGridTopic(VALID_DATA_PARTIION_ID, VALID_TOPIC, new ArrayList<>()));
+
+        assertEquals("PartitionInfo for Event Grid Topic " + VALID_TOPIC, appException.getError().getMessage());
         verify(this.eventGridClient, times(0)).publishEvents(any(), any());
     }
 
     @Test
-    public void should_should_invoke_publishEvents() {
-        when(this.partitionService.getPartition(VALID_DATA_PARTIION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(VALID_DATA_PARTIION_ID).build())
-                        .eventGridRecordsTopicEndpointConfig(Property.builder().value("validURL").build()).build());
-        when(this.eventGridTopicClientFactory.getClient(VALID_DATA_PARTIION_ID, TopicName.RECORDS_CHANGED)).thenReturn(this.eventGridClient);
+    public void should_should_invoke_publishEvents() throws PartitionException {
 
-        this.sut.publishToEventGridTopic(VALID_DATA_PARTIION_ID, TopicName.RECORDS_CHANGED, new ArrayList<>());
+        doReturn(EventGridTopicPartitionInfoAzure.builder()
+                .topicName(VALID_TOPIC)
+                .topicAccessKey(VALID_KEY).build())
+                .when(this.partitionService).getEventGridTopicInPartition(anyString(), anyString());
+        when(this.eventGridTopicClientFactory.getClient(VALID_DATA_PARTIION_ID, "validTopic")).thenReturn(this.eventGridClient);
+
+        this.sut.publishToEventGridTopic(VALID_DATA_PARTIION_ID, "validTopic", new ArrayList<>());
 
         verify(this.eventGridClient, times(1)).publishEvents(any(), any());
     }

@@ -12,12 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.opengroup.osdu.azure.eventgrid;
+package org.opengroup.osdu.azure.partition;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * Topic Name Enum.
- * The Topic Stores and client are controlled by the same.
+ * Azure event grid topic data partition variables.
  */
-public enum TopicName {
-    RECORDS_CHANGED
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class EventGridTopicPartitionInfoAzure {
+    private String topicName;
+    private String topicAccessKey;
 }

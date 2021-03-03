@@ -1,3 +1,4 @@
+
 // Copyright © Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,22 +23,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.EventGridTopicClientCache;
-import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
-import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
+import org.opengroup.osdu.core.common.partition.PartitionException;
 import org.opengroup.osdu.core.common.partition.Property;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EventGridTopicClientFactoryImplTest {
 
-    private static final String VALID_TOPIC_NAME = "RecordsChanged";
+    private static final String VALID_TOPIC_NAME = "eventgrid-validtopic";
+    private static final String VALID_TOPICKEY_NAME = "eventgrid-validtopic-accesskey";
     private static final String VALID_DATA_PARTIION_ID = "validDataPartitionId";
 
     @Mock
-    private PartitionServiceClient partitionService;
+    private PartitionServiceEventGridClient partitionService;
 
     @InjectMocks
     private EventGridTopicClientFactoryImpl sut;
@@ -49,7 +53,7 @@ class EventGridTopicClientFactoryImplTest {
     public void should_throwException_given_nullDataPartitionId() {
 
         NullPointerException nullPointerException = Assertions.assertThrows(NullPointerException.class,
-                () -> this.sut.getClient(null, TopicName.RECORDS_CHANGED));
+                () -> this.sut.getClient(null, "recordsChanged"));
         assertEquals("dataPartitionId cannot be null!", nullPointerException.getMessage());
     }
 
@@ -57,7 +61,7 @@ class EventGridTopicClientFactoryImplTest {
     public void should_throwException_given_emptyDataPartitionId() {
 
         IllegalArgumentException illegalArgumentException = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> this.sut.getClient("", TopicName.RECORDS_CHANGED));
+                () -> this.sut.getClient("", "recordsChanged"));
         assertEquals("dataPartitionId cannot be empty!", illegalArgumentException.getMessage());
     }
 
@@ -70,20 +74,21 @@ class EventGridTopicClientFactoryImplTest {
     }
 
     @Test
-    public void should_return_validClient_given_validPartitionId() {
+    public void should_return_validClient_given_validPartitionId() throws PartitionException {
         // Setup
-        when(this.partitionService.getPartition(VALID_DATA_PARTIION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(VALID_DATA_PARTIION_ID).build())
-                        .eventGridRecordsTopicAccessKeyConfig(Property.builder().value(VALID_TOPIC_NAME).build()).build());
+        when(this.partitionService.getEventGridTopicInPartition(VALID_DATA_PARTIION_ID, "validtopic")).thenReturn(
+                EventGridTopicPartitionInfoAzure.builder()
+                        .topicName(VALID_TOPIC_NAME)
+                        .topicAccessKey(VALID_TOPICKEY_NAME).build());
 
         when(this.clientCache.containsKey(any())).thenReturn(false);
 
         // Act
-        EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, TopicName.RECORDS_CHANGED);
+        EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, "validtopic");
 
         // Assert
         assertNotNull(eventGridClient);
         verify(this.clientCache, times(1)).put(any(), any());
     }
 }
+
