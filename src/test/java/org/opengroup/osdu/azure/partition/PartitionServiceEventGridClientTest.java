@@ -25,6 +25,7 @@ import org.opengroup.osdu.azure.util.AzureServicePrincipleTokenService;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.opengroup.osdu.core.common.partition.IPartitionFactory;
+import org.opengroup.osdu.core.common.partition.IPartitionProvider;
 import org.opengroup.osdu.core.common.partition.PartitionException;
 import org.opengroup.osdu.core.common.partition.PartitionInfo;
 import org.opengroup.osdu.core.common.partition.Property;
@@ -32,9 +33,16 @@ import org.opengroup.osdu.core.common.partition.Property;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class PartitionServiceEventGridClientTest {
@@ -117,5 +125,15 @@ public class PartitionServiceEventGridClientTest {
         // Assert negative
         AppException exception = assertThrows(AppException.class, () -> partitionServiceClientSpy.getEventGridTopicInPartition("tenant1", "recordschangedtopic"));
         assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    public void shouldNotModifyDpsHeaders() throws PartitionException {
+        when(tokenService.getAuthorizationToken()).thenReturn("token");
+        when(partitionFactory.create(any(DpsHeaders.class))).thenReturn(mock(IPartitionProvider.class));
+
+        sut.getPartitionInfo("test");
+
+        verify(headers, never()).put(DpsHeaders.AUTHORIZATION, "Bearer token");
     }
 }

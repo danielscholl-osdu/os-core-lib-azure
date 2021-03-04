@@ -193,8 +193,9 @@ public class PartitionServiceEventGridClient {
      * @return PartitionServiceClient
      */
     private IPartitionProvider getServiceClient() {
-        this.headers.put(DpsHeaders.AUTHORIZATION, "Bearer " + this.tokenService.getAuthorizationToken());
-        return this.partitionFactory.create(headers);
+        DpsHeaders newHeaders = DpsHeaders.createFromMap(headers.getHeaders());
+        newHeaders.put(DpsHeaders.AUTHORIZATION, "Bearer " + tokenService.getAuthorizationToken());
+        return partitionFactory.create(newHeaders);
     }
 }
 
