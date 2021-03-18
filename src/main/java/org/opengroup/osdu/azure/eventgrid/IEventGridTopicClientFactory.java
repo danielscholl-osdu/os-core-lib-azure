@@ -15,6 +15,7 @@
 package org.opengroup.osdu.azure.eventgrid;
 
 import com.microsoft.azure.eventgrid.EventGridClient;
+import org.opengroup.osdu.core.common.partition.PartitionException;
 
 /**
  * Interface for Event Grid Topic client factory to return appropriate
@@ -23,9 +24,11 @@ import com.microsoft.azure.eventgrid.EventGridClient;
 public interface IEventGridTopicClientFactory {
 
     /**
+     *
      * @param dataPartitionId Data partition id
      * @param topicName       Topic name
      * @return EventGridClient
+     * @throws PartitionException partitionException
      */
-    EventGridClient getClient(String dataPartitionId, TopicName topicName);
+    EventGridClient getClient(String dataPartitionId, String topicName) throws PartitionException;
 }

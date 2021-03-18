@@ -10,15 +10,26 @@ import org.opengroup.osdu.azure.util.AzureServicePrincipleTokenService;
 import org.opengroup.osdu.core.common.http.HttpResponse;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
-import org.opengroup.osdu.core.common.partition.*;
+import org.opengroup.osdu.core.common.partition.IPartitionFactory;
+import org.opengroup.osdu.core.common.partition.PartitionException;
+import org.opengroup.osdu.core.common.partition.PartitionInfo;
+import org.opengroup.osdu.core.common.partition.PartitionService;
+import org.opengroup.osdu.core.common.partition.Property;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +51,7 @@ public class PartitionServiceClientTest {
     @Test
     public void should_throwException_given_nullDataPartitionId() {
         try {
-            this.sut.getPartition(null);
+            sut.getPartition(null);
         } catch (NullPointerException ex) {
             assertEquals("partitionId cannot be null!", ex.getMessage());
         } catch (Exception ex) {
@@ -51,7 +62,7 @@ public class PartitionServiceClientTest {
     @Test
     public void should_throwException_given_emptyDataPartitionId() {
         try {
-            this.sut.getPartition("");
+            sut.getPartition("");
         } catch (IllegalArgumentException ex) {
             assertEquals("partitionId cannot be empty!", ex.getMessage());
         } catch (Exception ex) {
@@ -62,8 +73,8 @@ public class PartitionServiceClientTest {
     @Test
     public void should_return_validPartition_given_partitionExists() throws PartitionException {
         PartitionService partitionService = mock(PartitionService.class);
-        when(this.tokenService.getAuthorizationToken()).thenReturn("token");
-        when(this.partitionFactory.create(this.headers)).thenReturn(partitionService);
+        when(tokenService.getAuthorizationToken()).thenReturn("token");
+        when(partitionFactory.create(any(DpsHeaders.class))).thenReturn(partitionService);
 
         final String storageAccountKey = "testStorageAccountKey";
         final String cosmosEndpoint = "testCosmosEndpoint";
@@ -74,21 +85,22 @@ public class PartitionServiceClientTest {
         PartitionInfo partitionInfo = PartitionInfo.builder().properties(properties).build();
         when(partitionService.get(PARTITION_ID)).thenReturn(partitionInfo);
 
-        PartitionInfoAzure partitionInfoAzure = this.sut.getPartition(PARTITION_ID);
+        PartitionInfoAzure partitionInfoAzure = sut.getPartition(PARTITION_ID);
         assertNotNull(partitionInfoAzure);
         assertEquals(cosmosEndpoint, partitionInfoAzure.getCosmosEndpoint());
         assertEquals(storageAccountKey, partitionInfoAzure.getStorageAccountKey());
+        verify(headers, never()).put(eq(DpsHeaders.AUTHORIZATION), anyString());
     }
 
     @Test
     public void should_throwException_when_partitionNotFound() {
         PartitionService partitionService = mock(PartitionService.class);
-        when(this.tokenService.getAuthorizationToken()).thenReturn("token");
-        when(this.partitionFactory.create(this.headers)).thenReturn(partitionService);
+        when(tokenService.getAuthorizationToken()).thenReturn("token");
+        when(partitionFactory.create(any(DpsHeaders.class))).thenReturn(partitionService);
 
         try {
             when(partitionService.get(PARTITION_ID)).thenThrow(new PartitionException("unknown error", new HttpResponse()));
-            this.sut.getPartition(PARTITION_ID);
+            sut.getPartition(PARTITION_ID);
         } catch (AppException ex) {
             assertEquals("unknown error", ex.getOriginalException().getMessage());
         } catch (Exception ex) {
@@ -99,16 +111,17 @@ public class PartitionServiceClientTest {
     @Test
     public void should_return_ListPartitions() throws PartitionException {
         PartitionService partitionService = mock(PartitionService.class);
-        when(this.tokenService.getAuthorizationToken()).thenReturn("token");
-        when(this.partitionFactory.create(this.headers)).thenReturn(partitionService);
+        when(tokenService.getAuthorizationToken()).thenReturn("token");
+        when(partitionFactory.create(any(DpsHeaders.class))).thenReturn(partitionService);
 
         List<String> partitions = new ArrayList<>();
         partitions.add("tenant1");
         partitions.add("tenant2");
         when(partitionService.list()).thenReturn(partitions);
 
-        List<String> partitionList = this.sut.listPartitions();
+        List<String> partitionList = sut.listPartitions();
         assertNotNull(partitionList);
         assertEquals(partitions.size(), partitionList.size());
+        verify(headers, never()).put(eq(DpsHeaders.AUTHORIZATION), anyString());
     }
 }

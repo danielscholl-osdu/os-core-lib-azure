@@ -18,9 +18,12 @@ import com.microsoft.azure.eventgrid.EventGridClient;
 import com.microsoft.azure.eventgrid.TopicCredentials;
 import com.microsoft.azure.eventgrid.implementation.EventGridClientImpl;
 import org.opengroup.osdu.azure.cache.EventGridTopicClientCache;
-import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
-import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
+import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.common.Validators;
+import org.opengroup.osdu.core.common.partition.PartitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,20 +32,23 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFactory {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventGridTopicClientFactoryImpl.class.getName());
 
     @Autowired
-    private PartitionServiceClient partitionService;
+    private PartitionServiceEventGridClient partitionService;
 
     @Autowired
     private EventGridTopicClientCache clientCache;
 
     /**
+     *
      * @param dataPartitionId Data partition id
-     * @param topicName       Topic Name
+     * @param topicName       Topic name
      * @return EventGridClient
+     * @throws PartitionException partitionException
      */
     @Override
-    public EventGridClient getClient(final String dataPartitionId, final TopicName topicName) {
+    public EventGridClient getClient(final String dataPartitionId, final String topicName) throws PartitionException {
         Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
         Validators.checkNotNull(topicName, "topicName");
 
@@ -50,13 +56,12 @@ public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFac
         if (this.clientCache.containsKey(cacheKey)) {
             return this.clientCache.get(cacheKey);
         }
+        EventGridTopicPartitionInfoAzure eventGridTopicPartitionInfoAzure =
+                this.partitionService.getEventGridTopicInPartition(dataPartitionId, topicName);
 
-        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
 
-        TopicCredentials topicCredentials = null;
-        if (topicName == TopicName.RECORDS_CHANGED) {
-            topicCredentials = new TopicCredentials(pi.getEventGridRecordsTopicAccessKey());
-        }
+        TopicCredentials topicCredentials =
+                new TopicCredentials(eventGridTopicPartitionInfoAzure.getTopicAccessKey());
 
         EventGridClient eventGridClient = new EventGridClientImpl(topicCredentials);
         this.clientCache.put(cacheKey, eventGridClient);

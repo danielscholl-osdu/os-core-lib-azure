@@ -20,12 +20,17 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
+import com.azure.storage.blob.models.CopyStatusType;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
+import org.apache.http.HttpStatus;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.azure.logging.DependencyPayload;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.slf4j.helpers.MessageFormatter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,7 +39,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.Collections;
 
 /**
  * A simpler interface to interact with Azure blob storage.
@@ -78,20 +82,21 @@ import java.util.Collections;
  * </pre>
  */
 public class BlobStore {
+    private static final String LOGGER_NAME = BlobStore.class.getName();
+
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
 
     /**
      * Constructor to create BlobStore.
-     * @param factory Factory that provides blob client.
+     *
+     * @param factory        Factory that provides blob client.
      * @param loggerInstance logger instance to be used for logging.
      */
     public BlobStore(final IBlobServiceClientFactory factory, final ILogger loggerInstance) {
         this.blobServiceClientFactory = factory;
         this.logger = loggerInstance;
     }
-
-    private static final String LOG_PREFIX = "azure-core-lib";
 
     /**
      * @param filePath        Path of file to be read.
@@ -105,19 +110,28 @@ public class BlobStore {
             final String containerName) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             blockBlobClient.download(downloadStream);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done reading from {}", filePath).getMessage());
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
             if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
                 throw handleBlobStoreException(404, "Specified blob was not found", ex);
             }
             throw handleBlobStoreException(500, "Failed to read specified blob", ex);
         } catch (UnsupportedEncodingException ex) {
-            throw handleBlobStoreException(400, String.format("Encoding was not correct for item with name=%s", filePath), ex);
+            statusCode = HttpStatus.SC_BAD_REQUEST;
+            throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
         } catch (IOException ex) {
-
-            throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
+            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
+            logDependency("READ_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -133,14 +147,22 @@ public class BlobStore {
             final String containerName) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
         try {
             blockBlobClient.delete();
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting blob at {}", filePath).getMessage());
             return true;
         } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
             if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
                 throw handleBlobStoreException(404, "Specified blob was not found", ex);
             }
             throw handleBlobStoreException(500, "Failed to delete blob", ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
+            logDependency("DELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -159,12 +181,22 @@ public class BlobStore {
         int bytesSize = bytes.length;
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done uploading file content to %s", filePath).getMessage());
         } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
             throw handleBlobStoreException(500, "Failed to upload file content.", ex);
         } catch (IOException ex) {
-            throw handleBlobStoreException(500, String.format("Malformed document for item with name=%s", filePath), ex);
+            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.format("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
+            logDependency("WRITE_TO_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -234,10 +266,11 @@ public class BlobStore {
 
     /**
      * Generates pre-signed url to a blob container.
+     *
      * @param dataPartitionId data partition id
-     * @param containerName Name of the storage container
-     * @param expiryTime Time after which the token expires
-     * @param permissions permissions for the given container
+     * @param containerName   Name of the storage container
+     * @param expiryTime      Time after which the token expires
+     * @param permissions     permissions for the given container
      * @return Generates pre-signed url for a given container
      */
     public String generatePreSignedURL(final String dataPartitionId, final String containerName, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
@@ -247,6 +280,7 @@ public class BlobStore {
 
     /**
      * Method is used to copy a file specified at Source URL to the provided destination.
+     *
      * @param dataPartitionId Data partition id
      * @param filePath        Path of file (blob) to which the file has to be copied
      * @param containerName   Name of the storage container
@@ -254,34 +288,49 @@ public class BlobStore {
      * @return Blob Copy Final Result.
      */
     public BlobCopyInfo copyFile(final String dataPartitionId, final String filePath, final String containerName,
-                         final String sourceUrl) {
+                                 final String sourceUrl) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
 
+        final long start = System.currentTimeMillis();
         SyncPoller<BlobCopyInfo, Void> result = blockBlobClient.beginCopy(sourceUrl, Duration.ofSeconds(1));
-        return result.waitForCompletion().getValue();
+        BlobCopyInfo blobCopyInfo = result.waitForCompletion().getValue();
+        final long timeTaken = System.currentTimeMillis() - start;
+        final String target = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
+        CopyStatusType status = blobCopyInfo == null ? CopyStatusType.FAILED : blobCopyInfo.getCopyStatus();
+        logDependency("COPY_FILE", sourceUrl, target, timeTaken, status.toString(), status == CopyStatusType.SUCCESS);
+
+        return blobCopyInfo;
     }
+
     /**
-     *
      * @param blockBlobClient Blob client
-     * @param expiryTime Time after which SAS Token expires
-     * @param permissions Permissions for the given blob
+     * @param expiryTime      Time after which SAS Token expires
+     * @param permissions     Permissions for the given blob
      * @return Generates SAS Token.
      */
     private String generateSASToken(final BlockBlobClient blockBlobClient, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
-        return blockBlobClient.generateSas(blobServiceSasSignatureValues);
+        final long start = System.currentTimeMillis();
+        String sasToken = blockBlobClient.generateSas(blobServiceSasSignatureValues);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
     }
 
     /**
-     * @param client Container client
-     * @param expiryTime Time after which SAS Token expires
+     * @param client      Container client
+     * @param expiryTime  Time after which SAS Token expires
      * @param permissions Permissions for the given container
      * @return Generates SAS Token.
      */
     private String generateSASToken(final BlobContainerClient client, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
         BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
-        return client.generateSas(blobServiceSasSignatureValues);
+        final long start = System.currentTimeMillis();
+        String sasToken = client.generateSas(blobServiceSasSignatureValues);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN", client.getBlobContainerName(), client.getBlobContainerUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
     }
 
     /**
@@ -309,7 +358,25 @@ public class BlobStore {
      * @return Instance of AppException
      */
     private AppException handleBlobStoreException(final int status, final String errorMessage, final Exception ex) {
-        logger.warning(LOG_PREFIX, errorMessage, Collections.<String, String>emptyMap());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(MessageFormatter.format("{}", errorMessage).getMessage(), ex);
         return new AppException(status, errorMessage, ex.getMessage(), ex);
+    }
+
+    /**
+     * Log dependency.
+     *
+     * @param name          the name of the command initiated with this dependency call
+     * @param data          the command initiated by this dependency call
+     * @param target        the target of this dependency call
+     * @param timeTakenInMs the request duration in milliseconds
+     * @param resultCode    the result code of the call
+     * @param success       indication of successful or unsuccessful call
+     */
+    private void logDependency(final String name, final String data, final String target, final long timeTakenInMs, final String resultCode, final boolean success) {
+        DependencyPayload payload = new DependencyPayload(name, data, Duration.ofMillis(timeTakenInMs), resultCode, success);
+        payload.setType("BlobStore");
+        payload.setTarget(target);
+
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
     }
 }
