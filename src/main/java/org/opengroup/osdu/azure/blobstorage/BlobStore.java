@@ -212,7 +212,7 @@ public class BlobStore {
         BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
         try {
             blobServiceClient.createBlobContainer(containerName);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done creating container with name %s", containerName).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done creating container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
             throw handleBlobStoreException(500, "Failed to create blob container", ex);
@@ -231,7 +231,7 @@ public class BlobStore {
         BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
         try {
             blobServiceClient.deleteBlobContainer(containerName);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting container with name %s", containerName).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
             throw handleBlobStoreException(500, "Failed to create blob container", ex);
