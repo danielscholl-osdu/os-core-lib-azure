@@ -313,6 +313,58 @@ public class BlobStoreTest {
     }
 
     @Test
+    public void createBlobContainer_Failure() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
+        doThrow(exception).when(blobServiceClient).createBlobContainer(anyString());
+        String containerName = "containerName";
+        try {
+            blobStore.createBlobContainer(PARTITION_ID, containerName);
+        } catch (AppException ex) {
+            assertEquals(500, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void createBlobContainer_Success() {
+        String containerName = "containerName";
+        boolean status = blobStore.createBlobContainer(PARTITION_ID, containerName);
+
+        ArgumentCaptor<String> containerNameCaptor = ArgumentCaptor.forClass(String.class);
+        verify(blobServiceClient).createBlobContainer(containerNameCaptor.capture());
+
+        assertEquals(containerNameCaptor.getValue(), containerName);
+        assertEquals(status, true);
+    }
+
+    @Test
+    public void deleteBlobContainer_Failure() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
+        doThrow(exception).when(blobServiceClient).deleteBlobContainer(anyString());
+        String containerName = "containerName";
+        try {
+            blobStore.deleteBlobContainer(PARTITION_ID, containerName);
+        } catch (AppException ex) {
+            assertEquals(500, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void deleteBlobContainer_Success() {
+        String containerName = "containerName";
+        boolean status = blobStore.deleteBlobContainer(PARTITION_ID, containerName);
+
+        ArgumentCaptor<String> containerNameCaptor = ArgumentCaptor.forClass(String.class);
+        verify(blobServiceClient).deleteBlobContainer(containerNameCaptor.capture());
+
+        assertEquals(containerNameCaptor.getValue(), containerName);
+        assertEquals(status, true);
+    }
+
+    @Test
     public void getSasToken_NullSasTokenObtained() {
         int expiryDays = 1;
         OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
