@@ -234,7 +234,7 @@ public class BlobStore {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
-            throw handleBlobStoreException(500, "Failed to create blob container", ex);
+            throw handleBlobStoreException(500, "Failed to delete blob container", ex);
         }
     }
 
