@@ -186,7 +186,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done uploading file content to %s", filePath).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done uploading file content to {}", filePath).getMessage());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
             throw handleBlobStoreException(500, "Failed to upload file content.", ex);
