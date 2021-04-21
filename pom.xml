@@ -45,7 +45,7 @@
     <azure.appinsights.log4j.version>2.5.1</azure.appinsights.log4j.version>
     <azure.spring.boot.version>2.3.5</azure.spring.boot.version>
     <checkstyle.version>3.1.0</checkstyle.version>
-    <jackson.version>2.11.3</jackson.version>
+    <jackson.version>2.11.4</jackson.version>
     <reactor.version>Dysprosium-SR12</reactor.version>
     <netty.version>4.1.51.Final</netty.version>
     <lombok.version>1.18.16</lombok.version>
