@@ -2,6 +2,7 @@ package org.opengroup.osdu.azure.cache;
 
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
 import org.opengroup.osdu.core.common.cache.VmCache;
+import org.opengroup.osdu.core.common.cache.enums.CachingStrategy;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ public class CosmosBulkExecutorCache extends VmCache<String, DocumentBulkExecuto
      *  Default cache constructor.
      */
     public CosmosBulkExecutorCache() {
-        super(60 * 60, 1000);
+        super(60 * 60, 1000, CachingStrategy.EXPIRE_AFTER_WRITE);
     }
 
     /**
