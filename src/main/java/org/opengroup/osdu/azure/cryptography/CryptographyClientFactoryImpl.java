@@ -5,6 +5,7 @@ import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.azure.identity.DefaultAzureCredentialBuilder;
@@ -15,6 +16,7 @@ import com.azure.security.keyvault.keys.cryptography.CryptographyClientBuilder;
  * Implementation for CryptographyClientFactory.
  */
 @Component
+@Lazy
 public class CryptographyClientFactoryImpl implements CryptographyClientFactory {
 
   @Autowired
