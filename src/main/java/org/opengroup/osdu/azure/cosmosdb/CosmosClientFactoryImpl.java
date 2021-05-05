@@ -2,13 +2,16 @@ package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import org.opengroup.osdu.azure.cache.CosmosClientCache;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implementation for ICosmosClientFactory.
@@ -21,9 +24,15 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     @Autowired
     private PartitionServiceClient partitionService;
 
-    @Lazy
-    @Autowired
-    private CosmosClientCache syncClientCache;
+    private Map<String, CosmosClient> cosmosClientMap;
+
+    /**
+     * Initializes the private variables as required.
+     */
+    @PostConstruct
+    public void initialize() {
+        cosmosClientMap = new HashMap<>();
+    }
 
     /**
      * @param dataPartitionId Data Partition Id
@@ -34,8 +43,8 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
 
         String cacheKey = String.format("%s-cosmosClient", dataPartitionId);
-        if (this.syncClientCache.containsKey(cacheKey)) {
-            return this.syncClientCache.get(cacheKey);
+        if (this.cosmosClientMap.containsKey(cacheKey)) {
+            return this.cosmosClientMap.get(cacheKey);
         }
 
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
@@ -44,9 +53,8 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
                 .key(pi.getCosmosPrimaryKey())
                 .buildClient();
 
-        this.syncClientCache.put(cacheKey, cosmosClient);
+        this.cosmosClientMap.put(cacheKey, cosmosClient);
 
         return cosmosClient;
     }
-
 }

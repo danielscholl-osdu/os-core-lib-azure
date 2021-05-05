@@ -54,7 +54,6 @@ public class CosmosClientFactoryImplTest {
         }
     }
 
-    @Test
     public void should_return_cachedClient_when_cachedEarlier() {
         CosmosClient cosmosClient = mock(CosmosClient.class);
         final String cacheKey = String.format("%s-cosmosClient", PARTITION_ID);
