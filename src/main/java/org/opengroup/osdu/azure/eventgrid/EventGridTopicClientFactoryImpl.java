@@ -25,12 +25,14 @@ import org.opengroup.osdu.core.common.partition.PartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
  * Implementation for IEventGridTopicClientFactory.
  */
 @Component
+@Lazy
 public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventGridTopicClientFactoryImpl.class.getName());
 
