@@ -25,7 +25,7 @@ import org.opengroup.osdu.core.common.model.http.AppException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -58,7 +58,7 @@ import java.util.List;
  * </pre>
  */
 @Component
-@Lazy
+@ConditionalOnProperty(value = "service.eventgrid.topic.enabled", havingValue = "true", matchIfMissing = true)
 public class EventGridTopicStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStoreBulkOperations.class.getName());

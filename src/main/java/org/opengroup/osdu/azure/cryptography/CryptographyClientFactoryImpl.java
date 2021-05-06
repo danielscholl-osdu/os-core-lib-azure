@@ -5,7 +5,7 @@ import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.azure.identity.DefaultAzureCredentialBuilder;
@@ -16,7 +16,7 @@ import com.azure.security.keyvault.keys.cryptography.CryptographyClientBuilder;
  * Implementation for CryptographyClientFactory.
  */
 @Component
-@Lazy
+@ConditionalOnProperty(value = "service.cryptography.enabled", havingValue = "true", matchIfMissing = true)
 public class CryptographyClientFactoryImpl implements CryptographyClientFactory {
 
   @Autowired
