@@ -16,7 +16,7 @@ import com.azure.security.keyvault.keys.cryptography.CryptographyClientBuilder;
  * Implementation for CryptographyClientFactory.
  */
 @Component
-@ConditionalOnProperty(value = "service.cryptography.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "azure.cryptography.enabled", havingValue = "true", matchIfMissing = true)
 public class CryptographyClientFactoryImpl implements CryptographyClientFactory {
 
   @Autowired

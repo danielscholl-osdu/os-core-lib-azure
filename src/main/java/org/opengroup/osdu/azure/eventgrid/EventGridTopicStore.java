@@ -58,7 +58,7 @@ import java.util.List;
  * </pre>
  */
 @Component
-@ConditionalOnProperty(value = "service.eventgrid.topic.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "azure.eventgrid.topic.enabled", havingValue = "true", matchIfMissing = true)
 public class EventGridTopicStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStoreBulkOperations.class.getName());

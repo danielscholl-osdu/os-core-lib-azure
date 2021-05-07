@@ -17,7 +17,7 @@ import com.microsoft.rest.LogLevel;
  * Interface for Event Grid Manager Factory to return appropriate EventGridManager based on the data partition id.
  */
 @Component
-@ConditionalOnProperty(value = "service.eventgrid.manager.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "azure.eventgrid.manager.enabled", havingValue = "true", matchIfMissing = true)
 public class EventGridManagerFactoryImpl implements EventGridManagerFactory {
 
   @Autowired

@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
  * Implementation for IEventGridTopicClientFactory.
  */
 @Component
-@ConditionalOnProperty(value = "service.eventgrid.topic.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "azure.eventgrid.topic.enabled", havingValue = "true", matchIfMissing = true)
 public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventGridTopicClientFactoryImpl.class.getName());
 
