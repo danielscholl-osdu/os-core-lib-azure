@@ -6,6 +6,11 @@ import com.microsoft.azure.documentdb.DocumentClient;
 import com.microsoft.azure.documentdb.DocumentClientException;
 import com.microsoft.azure.documentdb.DocumentCollection;
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
+
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -16,9 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A factory class to generate DocumentBulkExecutor objects to perform bulk operations.
@@ -50,7 +52,7 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
      */
     @PostConstruct
     public void initialize() {
-        cosmosClientMap = new HashMap<>();
+        cosmosClientMap = new ConcurrentHashMap<>();
     }
 
     /**

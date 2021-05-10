@@ -2,16 +2,15 @@ package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Implementation for ICosmosClientFactory.
@@ -31,7 +30,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
      */
     @PostConstruct
     public void initialize() {
-        cosmosClientMap = new HashMap<>();
+        cosmosClientMap = new ConcurrentHashMap<>();
     }
 
     /**
