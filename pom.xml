@@ -126,6 +126,10 @@
           <groupId>net.minidev</groupId>
           <artifactId>json-smart</artifactId>
         </exclusion>
+		<exclusion>
+              <groupId>org.simpleframework</groupId>
+              <artifactId>simple-xml</artifactId>
+          </exclusion>
       </exclusions>
     </dependency>
     <!--
