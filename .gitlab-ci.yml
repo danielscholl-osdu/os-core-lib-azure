@@ -17,4 +17,8 @@ include:
 
   - project: 'osdu/platform/ci-cd-pipelines'
     ref: 'master'
+    file: 'release/maven-release-candidates.yml'
+
+  - project: 'osdu/platform/ci-cd-pipelines'
+    ref: 'master'
     file: 'publishing/pages.yml'
