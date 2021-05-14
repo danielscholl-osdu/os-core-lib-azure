@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.azure.filters;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,12 +29,15 @@ import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.apache.commons.lang3.reflect.FieldUtils.getDeclaredField;
+import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link TransactionLogFilter}
@@ -53,13 +57,9 @@ public class TransactionLogFilterTest {
     @InjectMocks
     private TransactionLogFilter logFilter;
 
-    @BeforeEach
-    public void setup() {
-        when(servletResponse.getStatus()).thenReturn(STATUS_CODE);
-    }
-
     @Test
     public void testStartAndEndMessagesAreLoggedProperly() throws Exception {
+        when(servletResponse.getStatus()).thenReturn(STATUS_CODE);
         final String startLogMessage = "Start Web-API PUT records Headers: {correlation-id:abc}";
         final String endMessage = "End Web-API PUT records Headers: {correlation-id:abc} status=200 time=";
         when(servletRequest.getMethod()).thenReturn("PUT");
@@ -70,7 +70,7 @@ public class TransactionLogFilterTest {
         doNothing().when(jaxRsDpsLog).info(eq("TxnLogger"), logMessageCaptor.capture());
         this.logFilter.doFilter(servletRequest, servletResponse, filterChain);
         verify(servletRequest, times(2)).getMethod();
-        verify(servletRequest, times(2)).getServletPath();
+        verify(servletRequest, times(3)).getServletPath();
         verify(servletRequest, times(2)).getHeader(eq(DpsHeaders.CORRELATION_ID));
         verify(servletResponse, times(2)).getHeader(eq(DpsHeaders.CORRELATION_ID));
         verify(servletResponse, times(1)).getStatus();
@@ -81,6 +81,7 @@ public class TransactionLogFilterTest {
 
     @Test
     public void testStartAndEndMessagesAreLoggedProperlyWithNoHeaders() throws Exception {
+        when(servletResponse.getStatus()).thenReturn(STATUS_CODE);
         final String startLogMessage = "Start Web-API PUT records Headers: {}";
         final String endMessage = "End Web-API PUT records Headers: {} status=200 time=";
         when(servletRequest.getMethod()).thenReturn("PUT");
@@ -89,10 +90,36 @@ public class TransactionLogFilterTest {
         doNothing().when(jaxRsDpsLog).info(eq("TxnLogger"), logMessageCaptor.capture());
         this.logFilter.doFilter(servletRequest, servletResponse, filterChain);
         verify(servletRequest, times(2)).getMethod();
-        verify(servletRequest, times(2)).getServletPath();
+        verify(servletRequest, times(3)).getServletPath();
         verify(servletResponse, times(1)).getStatus();
         assertEquals(2, logMessageCaptor.getAllValues().size());
         assertEquals(startLogMessage, logMessageCaptor.getAllValues().get(0));
         assertEquals(true, logMessageCaptor.getAllValues().get(1).startsWith(endMessage));
+    }
+
+    @Test
+    public void testNoLoggingWhenIgnoredServletPathProvided() throws Exception {
+        final String ignoredServletPath = "/actuator/health";
+        initIgnoredServletPaths(ignoredServletPath);
+        when(servletRequest.getServletPath()).thenReturn(ignoredServletPath);
+        final ArgumentCaptor<String> logMessageCaptor = ArgumentCaptor.forClass(String.class);
+        this.logFilter.doFilter(servletRequest, servletResponse, filterChain);
+        verify(servletRequest, never()).getMethod();
+        verify(servletRequest, only()).getServletPath();
+        verify(servletRequest, never()).getHeader(eq(DpsHeaders.CORRELATION_ID));
+        verify(servletResponse, never()).getHeader(eq(DpsHeaders.CORRELATION_ID));
+        verify(servletResponse, never()).getStatus();
+        assertEquals(0, logMessageCaptor.getAllValues().size());
+    }
+
+    private void initIgnoredServletPaths(String ignoredServletPath) {
+        Field field = getDeclaredField(TransactionLogFilter.class, "ignoredServletPaths", true);
+        field.setAccessible(true);
+        try {
+            List<String> ignoredServletPaths = (List<String>) field.get(logFilter);
+            ignoredServletPaths.add(ignoredServletPath);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
