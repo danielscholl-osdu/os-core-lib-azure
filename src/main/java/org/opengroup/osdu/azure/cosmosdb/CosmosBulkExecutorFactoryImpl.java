@@ -75,14 +75,25 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
             return this.cosmosClientMap.get(cacheKey);
         }
 
-        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+        return this.cosmosClientMap.computeIfAbsent(cacheKey,
+                cosmosClient -> createDocumentBulkExecutor(cosmosDBName, collectionName, dataPartitionId));
+    }
 
-        DocumentClient client = getDocumentClient(pi.getCosmosEndpoint(),
-                pi.getCosmosPrimaryKey());
-
-        String collectionLink = String.format(unformattedCollectionLink, cosmosDBName, collectionName);
+    /**
+     *
+     * @param cosmosDBName name of the cosmos db
+     * @param collectionName name of the cosmos collection
+     * @param dataPartitionId name of the data partition
+     * @return DocumentBulkExecutor
+     */
+    private DocumentBulkExecutor createDocumentBulkExecutor(final String cosmosDBName, final String collectionName,
+                                                            final String dataPartitionId) {
         try {
+            PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+            DocumentClient client = getDocumentClient(pi.getCosmosEndpoint(),
+                    pi.getCosmosPrimaryKey());
 
+            String collectionLink = String.format(unformattedCollectionLink, cosmosDBName, collectionName);
             DocumentCollection collection = client.readCollection(collectionLink, null).getResource();
             DocumentBulkExecutor executor = DocumentBulkExecutor.builder().from(
                     client,
@@ -91,8 +102,6 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
                     collection.getPartitionKey(),
                     bulkExecutorMaxRUs
             ).build();
-
-            cosmosClientMap.put(String.format(unformattedCosmosBulkExecutorCacheKey, dataPartitionId, cosmosDBName, collectionName), executor);
 
             // Set client retry options to 0 because retries are handled by DocumentBulkExecutor class.
             client.getConnectionPolicy().getRetryOptions().setMaxRetryAttemptsOnThrottledRequests(0);
@@ -135,6 +144,4 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
 
         return client;
     }
-
-
 }
