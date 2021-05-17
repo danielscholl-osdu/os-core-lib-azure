@@ -6,7 +6,11 @@ import com.microsoft.azure.documentdb.DocumentClient;
 import com.microsoft.azure.documentdb.DocumentClientException;
 import com.microsoft.azure.documentdb.DocumentCollection;
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
-import org.opengroup.osdu.azure.cache.CosmosBulkExecutorCache;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
+
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -16,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
 
 /**
  * A factory class to generate DocumentBulkExecutor objects to perform bulk operations.
@@ -30,9 +35,7 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
     @Autowired
     private PartitionServiceClient partitionService;
 
-    @Lazy
-    @Autowired
-    private CosmosBulkExecutorCache cosmosBulkExecutorCache;
+    private Map<String, DocumentBulkExecutor> cosmosClientMap;
 
     @Autowired
     private int documentClientMaxPoolSize;
@@ -43,6 +46,14 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
     private final String unformattedCollectionLink = "/dbs/%s/colls/%s";
     private final String unformattedCosmosBulkExecutorCacheKey = "%s-%s-%s-cosmosBulkExecutor";
     private final String unformattedDocumentClientCacheKey = "%s-documentClient";
+
+    /**
+     * Initializes the private variables as required.
+     */
+    @PostConstruct
+    public void initialize() {
+        cosmosClientMap = new ConcurrentHashMap<>();
+    }
 
     /**
      *
@@ -60,18 +71,29 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
         Validators.checkNotNullAndNotEmpty(collectionName, "collectionName");
 
         String cacheKey = String.format(unformattedCosmosBulkExecutorCacheKey, dataPartitionId, cosmosDBName, collectionName);
-        if (this.cosmosBulkExecutorCache.containsKey(cacheKey)) {
-            return this.cosmosBulkExecutorCache.get(cacheKey);
+        if (this.cosmosClientMap.containsKey(cacheKey)) {
+            return this.cosmosClientMap.get(cacheKey);
         }
 
-        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+        return this.cosmosClientMap.computeIfAbsent(cacheKey,
+                cosmosClient -> createDocumentBulkExecutor(cosmosDBName, collectionName, dataPartitionId));
+    }
 
-        DocumentClient client = getDocumentClient(pi.getCosmosEndpoint(),
-                pi.getCosmosPrimaryKey());
-
-        String collectionLink = String.format(unformattedCollectionLink, cosmosDBName, collectionName);
+    /**
+     *
+     * @param cosmosDBName name of the cosmos db
+     * @param collectionName name of the cosmos collection
+     * @param dataPartitionId name of the data partition
+     * @return DocumentBulkExecutor
+     */
+    private DocumentBulkExecutor createDocumentBulkExecutor(final String cosmosDBName, final String collectionName,
+                                                            final String dataPartitionId) {
         try {
+            PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+            DocumentClient client = getDocumentClient(pi.getCosmosEndpoint(),
+                    pi.getCosmosPrimaryKey());
 
+            String collectionLink = String.format(unformattedCollectionLink, cosmosDBName, collectionName);
             DocumentCollection collection = client.readCollection(collectionLink, null).getResource();
             DocumentBulkExecutor executor = DocumentBulkExecutor.builder().from(
                     client,
@@ -80,7 +102,6 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
                     collection.getPartitionKey(),
                     bulkExecutorMaxRUs
             ).build();
-            cosmosBulkExecutorCache.put(String.format(unformattedCosmosBulkExecutorCacheKey, dataPartitionId, cosmosDBName, collectionName), executor);
 
             // Set client retry options to 0 because retries are handled by DocumentBulkExecutor class.
             client.getConnectionPolicy().getRetryOptions().setMaxRetryAttemptsOnThrottledRequests(0);
@@ -123,6 +144,4 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
 
         return client;
     }
-
-
 }

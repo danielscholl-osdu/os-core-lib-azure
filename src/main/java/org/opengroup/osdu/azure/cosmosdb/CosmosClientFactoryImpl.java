@@ -2,7 +2,11 @@ package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import org.opengroup.osdu.azure.cache.CosmosClientCache;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.PostConstruct;
+
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -16,14 +20,20 @@ import org.springframework.stereotype.Component;
 @Component
 @Lazy
 public class CosmosClientFactoryImpl implements ICosmosClientFactory {
-
+    private static final String LOGGER_NAME = CosmosClientFactoryImpl.class.getName();
     @Lazy
     @Autowired
     private PartitionServiceClient partitionService;
 
-    @Lazy
-    @Autowired
-    private CosmosClientCache syncClientCache;
+    private Map<String, CosmosClient> cosmosClientMap;
+
+    /**
+     * Initializes the private variables as required.
+     */
+    @PostConstruct
+    public void initialize() {
+        cosmosClientMap = new ConcurrentHashMap<>();
+    }
 
     /**
      * @param dataPartitionId Data Partition Id
@@ -34,19 +44,26 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
 
         String cacheKey = String.format("%s-cosmosClient", dataPartitionId);
-        if (this.syncClientCache.containsKey(cacheKey)) {
-            return this.syncClientCache.get(cacheKey);
+        if (this.cosmosClientMap.containsKey(cacheKey)) {
+            return this.cosmosClientMap.get(cacheKey);
         }
 
+        return this.cosmosClientMap.computeIfAbsent(cacheKey, cosmosClient -> createCosmosClient(dataPartitionId));
+    }
+
+    /**
+     *
+     * @param dataPartitionId Data Partition Id
+     * @return Cosmos Client Instance
+     */
+    private CosmosClient createCosmosClient(final String dataPartitionId) {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
         CosmosClient cosmosClient = new CosmosClientBuilder()
                 .endpoint(pi.getCosmosEndpoint())
                 .key(pi.getCosmosPrimaryKey())
                 .buildClient();
-
-        this.syncClientCache.put(cacheKey, cosmosClient);
-
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
+                .info("Created CosmosClient for dataPartition {}.", dataPartitionId);
         return cosmosClient;
     }
-
 }

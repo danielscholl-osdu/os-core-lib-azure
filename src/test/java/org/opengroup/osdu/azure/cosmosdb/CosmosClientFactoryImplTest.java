@@ -7,8 +7,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.cache.CosmosClientCache;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -19,7 +20,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 public class CosmosClientFactoryImplTest {
 
     @Mock
-    private CosmosClientCache clientCache;
+    private Map<String, CosmosClient> cosmosClientMap;
     @Mock
     private PartitionServiceClient partitionService;
     @InjectMocks
@@ -58,8 +59,8 @@ public class CosmosClientFactoryImplTest {
     public void should_return_cachedClient_when_cachedEarlier() {
         CosmosClient cosmosClient = mock(CosmosClient.class);
         final String cacheKey = String.format("%s-cosmosClient", PARTITION_ID);
-        when(this.clientCache.containsKey(cacheKey)).thenReturn(true);
-        when(this.clientCache.get(cacheKey)).thenReturn(cosmosClient);
+        when(this.cosmosClientMap.containsKey(cacheKey)).thenReturn(true);
+        when(this.cosmosClientMap.get(cacheKey)).thenReturn(cosmosClient);
 
         this.sut.getClient(PARTITION_ID);
         verify(this.partitionService, never()).getPartition(PARTITION_ID);
