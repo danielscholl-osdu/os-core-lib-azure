@@ -68,10 +68,10 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
 
         ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
         if (cosmosRetryConfiguration.isCustomRetryApplicable()) {
-            throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(cosmosRetryConfiguration.getRetryCount());
+            throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(cosmosRetryConfiguration.getMaxRetryCount());
             throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(cosmosRetryConfiguration.getRetryWaitTimeout()));
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                    .info("Added custom retry options on CosmosClient with maxRetryAttemps = {} , MaxRetryWaitTime = {}.", cosmosRetryConfiguration.getRetryCount(),cosmosRetryConfiguration.getRetryWaitTimeout());
+                    .info("Added custom retry options on CosmosClient with maxRetryAttemps = {} , MaxRetryWaitTime = {}.", cosmosRetryConfiguration.getMaxRetryCount(),cosmosRetryConfiguration.getRetryWaitTimeout());
         }
 
         CosmosClient cosmosClient = new CosmosClientBuilder()

@@ -14,45 +14,22 @@
 
 package org.opengroup.osdu.azure.di;
 
+import com.azure.cosmos.ThrottlingRetryOptions;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * CosmosRetryConfiguration settings.
  */
 @Configuration
+@ConfigurationProperties("azure.cosmos")
+@Getter
 public class CosmosRetryConfiguration {
 
-    @Value("${azure.blobStore.CustomRetryConfiguration:false}")
-    private boolean customRetryApplicable;
+    private boolean customRetryApplicable = false;
+    private int maxRetryCount = new ThrottlingRetryOptions().getMaxRetryAttemptsOnThrottledRequests(); // Setting default value of MaxRetryAttempts
+    private long retryWaitTimeout = new ThrottlingRetryOptions().getMaxRetryWaitTime().toMinutes()*60;
 
-    @Value("${azure.cosmos.retryOptions.MaxRetryAttempts:9}")
-    private int retryCount;
-
-    @Value("${azure.cosmos.retryOptions.MaxRetryWaitTime:30}")
-    private int retryWaitTimeout;
-
-    /**
-     *
-     * @return retrySupported
-     */
-    public boolean isCustomRetryApplicable() {
-        return customRetryApplicable;
-    }
-
-    /**
-     *
-     * @return retryCount
-     */
-    public int getRetryCount() {
-        return retryCount;
-    }
-
-    /**
-     *
-     * @return retryWaitTimeout
-     */
-    public int getRetryWaitTimeout() {
-        return retryWaitTimeout;
-    }
 }
