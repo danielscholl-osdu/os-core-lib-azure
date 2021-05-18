@@ -27,9 +27,17 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties("azure.cosmos")
 @Getter
 public class CosmosRetryConfiguration {
-
-    private boolean customRetryApplicable = false;
-    private int maxRetryCount = new ThrottlingRetryOptions().getMaxRetryAttemptsOnThrottledRequests(); // Setting default value of MaxRetryAttempts
-    private long retryWaitTimeout = new ThrottlingRetryOptions().getMaxRetryWaitTime().toMinutes()*60;
+    /**
+     * Specifies if it should pick the custom configuration values.
+     */
+    private final boolean customRetryApplicable = false;
+    /**
+     * Value for max Retry Count on Throttled Requests for Cosmos
+     */
+    private final int maxRetryCount = new ThrottlingRetryOptions().getMaxRetryAttemptsOnThrottledRequests(); // Setting default value of MaxRetryAttempts
+    /**
+     * Value for max retry wait time for Cosmos (Value in seconds)
+     */
+    private final long retryWaitTimeout = new ThrottlingRetryOptions().getMaxRetryWaitTime().toMinutes()*60; // Setting default value
 
 }

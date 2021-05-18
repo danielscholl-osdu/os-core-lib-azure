@@ -31,7 +31,6 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
 
     private Map<String, CosmosClient> cosmosClientMap;
 
-    @Lazy
     @Autowired
     private CosmosRetryConfiguration cosmosRetryConfiguration;
 
