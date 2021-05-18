@@ -67,9 +67,11 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
 
         ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
-        if (cosmosRetryConfiguration.isRetrySupported()) {
+        if (cosmosRetryConfiguration.isCustomRetryApplicable()) {
             throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(cosmosRetryConfiguration.getRetryCount());
             throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(cosmosRetryConfiguration.getRetryWaitTimeout()));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
+                    .info("Added custom retry options on CosmosClient with maxRetryAttemps = {} , MaxRetryWaitTime = {}.", cosmosRetryConfiguration.getRetryCount(),cosmosRetryConfiguration.getRetryWaitTimeout());
         }
 
         CosmosClient cosmosClient = new CosmosClientBuilder()
