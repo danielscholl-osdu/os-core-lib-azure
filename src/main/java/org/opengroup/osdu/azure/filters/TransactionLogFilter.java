@@ -17,6 +17,7 @@ package org.opengroup.osdu.azure.filters;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +29,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -49,6 +51,9 @@ public final class TransactionLogFilter implements Filter {
     @Autowired
     private JaxRsDpsLog jaxRsDpsLog;
 
+    @Value("${logging.ignore.servlet.paths:}#{T(java.util.Collections).emptyList()}")
+    private List<String> ignoredServletPaths = new ArrayList<>();
+
     /**
      * Filter logic.
      * @param servletRequest Request object.
@@ -62,11 +67,16 @@ public final class TransactionLogFilter implements Filter {
                          final FilterChain filterChain) throws IOException, ServletException {
         final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
         final HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
-        logTransactionStart(httpRequest);
-        final long start = System.currentTimeMillis();
-        filterChain.doFilter(servletRequest, servletResponse);
-        final long timeTaken = System.currentTimeMillis() - start;
-        logTransactionEnd(httpRequest, httpResponse, timeTaken);
+        String servletPath = httpRequest.getServletPath();
+        if (ignoredServletPaths.stream().noneMatch(path -> servletPath.equals(path))) {
+            logTransactionStart(httpRequest);
+            final long start = System.currentTimeMillis();
+            filterChain.doFilter(servletRequest, servletResponse);
+            final long timeTaken = System.currentTimeMillis() - start;
+            logTransactionEnd(httpRequest, httpResponse, timeTaken);
+        } else {
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
     }
 
     /**
