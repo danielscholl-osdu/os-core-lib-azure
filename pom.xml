@@ -20,7 +20,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.9.0-SNAPSHOT</version>
+  <version>0.9.0-SNAPSHOT-AZ</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -45,6 +45,8 @@
     <json-smart.version>2.4.6</json-smart.version>
     <azure.servicebus.version>3.6.3</azure.servicebus.version>
     <io.micrometer.version>1.6.6</io.micrometer.version>
+    <azure-spring-data-cosmos.version>3.7.0</azure-spring-data-cosmos.version>
+
   </properties>
 
   <licenses>
@@ -149,6 +151,7 @@
     <dependency>
       <groupId>com.azure</groupId>
       <artifactId>azure-spring-data-cosmos</artifactId>
+      <version>${azure-spring-data-cosmos.version}</version>
     </dependency>
 
     <dependency>
