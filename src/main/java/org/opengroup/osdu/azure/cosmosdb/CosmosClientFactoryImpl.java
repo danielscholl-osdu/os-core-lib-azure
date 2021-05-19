@@ -49,6 +49,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     @Override
     public CosmosClient getClient(final String dataPartitionId) {
         Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
+
         String cacheKey = String.format("%s-cosmosClient", dataPartitionId);
         if (this.cosmosClientMap.containsKey(cacheKey)) {
             return this.cosmosClientMap.get(cacheKey);
@@ -65,17 +66,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     private CosmosClient createCosmosClient(final String dataPartitionId) {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
 
-        ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
-
-        if (cosmosRetryConfiguration.getMaxRetryCount() != -1) {
-            throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(cosmosRetryConfiguration.getMaxRetryCount());
-        }
-        if (cosmosRetryConfiguration.getRetryWaitTimeout() != -1) {
-            throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(cosmosRetryConfiguration.getRetryWaitTimeout()));
-        }
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", cosmosRetryConfiguration.getMaxRetryCount() == -1 ? "default" : cosmosRetryConfiguration.getMaxRetryCount(), cosmosRetryConfiguration.getRetryWaitTimeout() == -1 ? "default" : cosmosRetryConfiguration.getRetryWaitTimeout());
-
+        ThrottlingRetryOptions throttlingRetryOptions = setThrottlingRetryOptions();
 
         CosmosClient cosmosClient = new CosmosClientBuilder()
                 .endpoint(pi.getCosmosEndpoint())
@@ -85,5 +76,24 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
                 .info("Created CosmosClient for dataPartition {}.", dataPartitionId);
         return cosmosClient;
+    }
+
+    /**
+     *  Reads application.properties for Retry options.
+     * @return ThrottlingRetryOptions object taking into consideration the attributes set by application.properties.
+     */
+    private ThrottlingRetryOptions setThrottlingRetryOptions() {
+        ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
+        System.out.println(cosmosRetryConfiguration.getMaxRetryCount());
+        if (cosmosRetryConfiguration.isMaxRetryCountConfigured()) {
+            throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(cosmosRetryConfiguration.getMaxRetryCount());
+        }
+        if (cosmosRetryConfiguration.isRetryWaitTimeoutConfiguresd()) {
+            throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(cosmosRetryConfiguration.getRetryWaitTimeout()));
+        }
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
+                .info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", cosmosRetryConfiguration.getMaxRetryCount() == -1 ? "default" : cosmosRetryConfiguration.getMaxRetryCount(), cosmosRetryConfiguration.getRetryWaitTimeout() == -1 ? "default" : cosmosRetryConfiguration.getRetryWaitTimeout());
+
+        return throttlingRetryOptions;
     }
 }

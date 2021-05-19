@@ -37,4 +37,19 @@ public class CosmosRetryConfiguration {
      */
     private long retryWaitTimeout = -1; // Setting default value of -1, indicates to use default retryWaitTimeout
 
+    /**
+     *
+     * @return Returns true if MaxRetryCount is configured.
+     */
+    public boolean isMaxRetryCountConfigured() {
+        return maxRetryCount != -1;
+    }
+
+    /**
+     *
+     * @return Returns true if RetryWaitTimeout is configured.
+     */
+    public boolean isRetryWaitTimeoutConfiguresd() {
+        return retryWaitTimeout != -1;
+    }
 }
