@@ -20,7 +20,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.9.0-SNAPSHOT-AZ</version>
+  <version>0.9.0-SNAPSHOT</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -62,6 +62,11 @@
   inherit this list. -->
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-spring-data-cosmos</artifactId>
+        <version>${azure-spring-data-cosmos.version}</version>
+      </dependency>
       <dependency>
         <groupId>com.azure.spring</groupId>
         <artifactId>azure-spring-boot-bom</artifactId>
@@ -151,7 +156,6 @@
     <dependency>
       <groupId>com.azure</groupId>
       <artifactId>azure-spring-data-cosmos</artifactId>
-      <version>${azure-spring-data-cosmos.version}</version>
     </dependency>
 
     <dependency>
