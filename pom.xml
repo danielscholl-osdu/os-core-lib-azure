@@ -63,6 +63,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <!--
+        This dependency is added here to override the version coming from Azure Spring boot bom.
+        We need the latest azure spring data cosmos version{3.7} to use the latest cosmos sdk {4.15} which
+        comes with the bug fix for handling collisions in the effective partition key.
+      -->
         <groupId>com.azure</groupId>
         <artifactId>azure-spring-data-cosmos</artifactId>
         <version>${azure-spring-data-cosmos.version}</version>
