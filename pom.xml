@@ -45,6 +45,8 @@
     <json-smart.version>2.4.6</json-smart.version>
     <azure.servicebus.version>3.6.3</azure.servicebus.version>
     <io.micrometer.version>1.6.6</io.micrometer.version>
+    <azure-spring-data-cosmos.version>3.7.0</azure-spring-data-cosmos.version>
+
   </properties>
 
   <licenses>
@@ -60,6 +62,16 @@
   inherit this list. -->
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <!--
+        This dependency is added here to override the version coming from Azure Spring boot bom.
+        We need the latest azure spring data cosmos version{3.7} to use the latest cosmos sdk {4.15} which
+        comes with the bug fix for handling collisions in the effective partition key.
+      -->
+        <groupId>com.azure</groupId>
+        <artifactId>azure-spring-data-cosmos</artifactId>
+        <version>${azure-spring-data-cosmos.version}</version>
+      </dependency>
       <dependency>
         <groupId>com.azure.spring</groupId>
         <artifactId>azure-spring-boot-bom</artifactId>
