@@ -71,6 +71,17 @@ public final class Slf4JLogger implements ILogger {
     }
 
     @Override
+    public void debug(final String logPrefix, final String message, final Map<String, String> headers) {
+        this.debug(DEFAULT_LOGGER_NAME, logPrefix, message, headers);
+    }
+
+    @Override
+    public void debug(final String loggerName, final String logPrefix, final String message, final Map<String, String> headers) {
+        CoreLoggerFactory.getInstance().getLogger(loggerName).debug("{} {} {}", logPrefix, message,
+                this.headersToLog.createStandardLabelsFromMap(headers));
+    }
+
+    @Override
     public void warning(final String logPrefix, final String message, final Map<String, String> headers) {
         this.warning(DEFAULT_LOGGER_NAME, logPrefix, message, headers);
     }
