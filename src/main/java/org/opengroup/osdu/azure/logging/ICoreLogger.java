@@ -22,6 +22,21 @@ public interface ICoreLogger {
     void info(String format, Object... arguments);
 
     /**
+     * Log a message at the INFO level.
+     *
+     * @param msg the message string to be logged
+     */
+    void debug(String msg);
+
+    /**
+     * Log a message at the INFO level according to the specified format and arguments.
+     *
+     * @param format    the format string
+     * @param arguments a list of arguments
+     */
+    void debug(String format, Object... arguments);
+
+    /**
      * Log a message at the WARN level.
      *
      * @param msg the message string to be logged

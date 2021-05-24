@@ -56,6 +56,18 @@ public class CoreLoggerTest {
     }
 
     @Test
+    public void testDebugWithMessage() {
+        coreLogger.debug(LOG_MESSAGE);
+        verify(spySlf4jLogger).debug(LOG_MESSAGE);
+    }
+
+    @Test
+    public void testDebugWithArguments() {
+        coreLogger.debug("{} {} {}", ARG1, ARG2, ARG3);
+        verify(spySlf4jLogger).debug("{} {} {}", ARG1, ARG2, ARG3);
+    }
+
+    @Test
     public void testWarnWithMessage() {
         coreLogger.warn(LOG_MESSAGE);
         verify(spySlf4jLogger).warn(LOG_MESSAGE);
