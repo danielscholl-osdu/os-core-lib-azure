@@ -17,7 +17,9 @@ package org.opengroup.osdu.azure.blobstorage;
 import com.azure.identity.DefaultAzureCredential;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.common.policy.RequestRetryOptions;
 import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
+import org.opengroup.osdu.azure.di.BlobStorageRetryConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -41,6 +43,9 @@ public class BlobContainerClientFactoryImpl implements IBlobContainerClientFacto
     @Autowired
     private BlobContainerClientCache clientCache;
 
+    @Autowired
+    private BlobStorageRetryConfiguration blobStorageRetryConfiguration;
+
     /**
      * @param dataPartitionId Data partition id
      * @param containerName   Blob container name
@@ -60,10 +65,13 @@ public class BlobContainerClientFactoryImpl implements IBlobContainerClientFacto
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
         String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
 
+        RequestRetryOptions requestRetryOptions = blobStorageRetryConfiguration.getRequestRetryOptions();
+
         BlobContainerClient blobContainerClient = new BlobContainerClientBuilder()
                 .endpoint(endpoint)
                 .credential(defaultAzureCredential)
                 .containerName(containerName)
+                .retryOptions(requestRetryOptions)
                 .buildClient();
 
         this.clientCache.put(cacheKey, blobContainerClient);
