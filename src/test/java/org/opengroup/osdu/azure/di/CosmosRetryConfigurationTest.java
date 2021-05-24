@@ -24,7 +24,7 @@ public class CosmosRetryConfigurationTest {
     @Test
     public void should_set_maxRetryCount_ThrottlingOptions() {
         cosmosRetryConfiguration.setMaxRetryCount(1);
-        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.setThrottlingRetryOptions();
+        cosmosRetryConfiguration.getThrottlingRetryOptions();
         verify(cosmosRetryConfiguration,times(1)).getMaxRetryCount();
         verify(cosmosRetryConfiguration,never()).getRetryWaitTimeout();
     }
@@ -32,7 +32,7 @@ public class CosmosRetryConfigurationTest {
     @Test
     public void should_set_RetryWaitTimeout_ThrottlingOptions() {
         cosmosRetryConfiguration.setRetryWaitTimeout(20);
-        cosmosRetryConfiguration.setThrottlingRetryOptions();
+        cosmosRetryConfiguration.getThrottlingRetryOptions();
         verify(cosmosRetryConfiguration,never()).getMaxRetryCount();
         verify(cosmosRetryConfiguration,times(1)).getRetryWaitTimeout();
     }
@@ -41,14 +41,14 @@ public class CosmosRetryConfigurationTest {
     public void should_set_RetryWaitTimeout_MaxRetry_ThrottlingOptions() {
         cosmosRetryConfiguration.setRetryWaitTimeout(20);
         cosmosRetryConfiguration.setMaxRetryCount(2);
-        cosmosRetryConfiguration.setThrottlingRetryOptions();
+        cosmosRetryConfiguration.getThrottlingRetryOptions();
         verify(cosmosRetryConfiguration,times(1)).getMaxRetryCount();
         verify(cosmosRetryConfiguration,times(1)).getRetryWaitTimeout();
     }
 
     @Test
     public void should_not_set_RetryWaitTimeout_MaxRetry_ThrottlingOptions() {
-        cosmosRetryConfiguration.setThrottlingRetryOptions();
+        cosmosRetryConfiguration.getThrottlingRetryOptions();
         verify(cosmosRetryConfiguration,never()).getMaxRetryCount();
         verify(cosmosRetryConfiguration,never()).getRetryWaitTimeout();
     }

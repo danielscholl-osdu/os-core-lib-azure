@@ -65,7 +65,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     private CosmosClient createCosmosClient(final String dataPartitionId) {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
 
-        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.setThrottlingRetryOptions();
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
 
         CosmosClient cosmosClient = new CosmosClientBuilder()
                 .endpoint(pi.getCosmosEndpoint())

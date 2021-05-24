@@ -62,9 +62,10 @@ public class CosmosRetryConfiguration {
      * Set's the Throttling retry options based on application.properties configuration
      * @return Throttling retry options
      */
-    public ThrottlingRetryOptions setThrottlingRetryOptions() {
+    public ThrottlingRetryOptions getThrottlingRetryOptions() {
         ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
         boolean x = isMaxRetryCountConfigured();
+
         if (isMaxRetryCountConfigured()) {
             throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(this.getMaxRetryCount());
         }
@@ -72,7 +73,7 @@ public class CosmosRetryConfiguration {
             throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(this.getRetryWaitTimeout()));
         }
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", this.maxRetryCount == -1 ? "default" : this.maxRetryCount, this.retryWaitTimeout == -1 ? "default" : this.retryWaitTimeout);
+                .info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests(),throttlingRetryOptions.getMaxRetryWaitTime());
 
         return throttlingRetryOptions;
     }
