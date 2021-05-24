@@ -14,10 +14,14 @@
 
 package org.opengroup.osdu.azure.di;
 
+import com.azure.cosmos.ThrottlingRetryOptions;
 import lombok.Getter;
 import lombok.Setter;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
 
 /**
  * CosmosRetryConfiguration settings.
@@ -27,6 +31,7 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class CosmosRetryConfiguration {
+    private static final String LOGGER_NAME = CosmosRetryConfiguration.class.getName();
 
     /**
      * Value for max Retry Count on Throttled Requests for Cosmos.
@@ -49,7 +54,26 @@ public class CosmosRetryConfiguration {
      *
      * @return Returns true if RetryWaitTimeout is configured.
      */
-    public boolean isRetryWaitTimeoutConfiguresd() {
+    public boolean isRetryWaitTimeoutConfigured() {
         return retryWaitTimeout != -1;
+    }
+
+    /**
+     * Set's the Throttling retry options based on application.properties configuration
+     * @return Throttling retry options
+     */
+    public ThrottlingRetryOptions setThrottlingRetryOptions() {
+        ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
+        boolean x = isMaxRetryCountConfigured();
+        if (isMaxRetryCountConfigured()) {
+            throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(this.getMaxRetryCount());
+        }
+        if (isRetryWaitTimeoutConfigured()) {
+            throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(this.getRetryWaitTimeout()));
+        }
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
+                .info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", this.maxRetryCount == -1 ? "default" : this.maxRetryCount, this.retryWaitTimeout == -1 ? "default" : this.retryWaitTimeout);
+
+        return throttlingRetryOptions;
     }
 }
