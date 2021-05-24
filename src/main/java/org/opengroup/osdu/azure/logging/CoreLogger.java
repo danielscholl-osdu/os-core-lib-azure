@@ -47,6 +47,27 @@ public class CoreLogger implements ICoreLogger {
     }
 
     /**
+     * Log a message at the DEBUG level.
+     *
+     * @param msg the message string to be logged
+     */
+    @Override
+    public void debug(final String msg) {
+        this.logger.debug(msg);
+    }
+
+    /**
+     * Log a message at the DEBUG level according to the specified format and arguments.
+     *
+     * @param format    the format string
+     * @param arguments a list of arguments
+     */
+    @Override
+    public void debug(final String format, final Object... arguments) {
+        this.logger.debug(format, arguments);
+    }
+
+    /**
      * Log a message at the WARN level.
      *
      * @param msg the message string to be logged

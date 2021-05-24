@@ -161,6 +161,24 @@ public class Slf4JLoggerTest {
     }
 
     @Test
+    public void testDebug() {
+        doNothing().when(coreLogger).debug(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
+        slf4JLogger.debug(LOG_PREFIX, LOG_MESSAGE, headers);
+        verify(coreLogger, times(1)).debug(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
+        verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
+        verify(headersToLog, times(1)).createStandardLabelsFromMap(eq(headers));
+    }
+
+    @Test
+    public void testDebugWithLoggerName() {
+        doNothing().when(coreLogger).debug(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
+        slf4JLogger.debug(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
+        verify(coreLogger, times(1)).debug(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
+        verify(coreLoggerFactory, times(1)).getLogger(eq(LOGGER_NAME));
+        verify(headersToLog, times(1)).createStandardLabelsFromMap(eq(headers));
+    }
+
+    @Test
     public void testWarning() {
         doNothing().when(coreLogger).warn(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         slf4JLogger.warning(LOG_PREFIX, LOG_MESSAGE, headers);
