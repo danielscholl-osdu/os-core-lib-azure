@@ -48,9 +48,6 @@ public class CosmosRetryConfigurationTest {
 
     @Test
     public void should_not_set_RetryWaitTimeout_MaxRetry_ThrottlingOptions() {
-        if(cosmosRetryConfiguration == null) {
-            System.out.println("it is null");
-        }
         cosmosRetryConfiguration.setThrottlingRetryOptions();
         verify(cosmosRetryConfiguration,never()).getMaxRetryCount();
         verify(cosmosRetryConfiguration,never()).getRetryWaitTimeout();
