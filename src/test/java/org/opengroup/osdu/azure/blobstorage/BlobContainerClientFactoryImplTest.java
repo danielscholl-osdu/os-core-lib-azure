@@ -2,6 +2,7 @@ package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
 import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.common.policy.RequestRetryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
+import org.opengroup.osdu.azure.di.BlobStorageRetryConfiguration;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
@@ -29,8 +31,11 @@ public class BlobContainerClientFactoryImplTest {
     private BlobContainerClientCache clientCache;
     @Mock
     private BlobStoreConfiguration configuration;
+    @Mock
+    private BlobStorageRetryConfiguration blobStorageRetryConfiguration;
     @InjectMocks
     private BlobContainerClientFactoryImpl sut;
+
 
     private static final String ACCOUNT_NAME = "testAccount";
     private static final String PARTITION_ID = "dataPartitionId";
@@ -70,7 +75,7 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-
+        when(this.blobStorageRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
     }
@@ -81,7 +86,7 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-
+        when(this.blobStorageRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
 

@@ -24,12 +24,15 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
+/**
+ * Config for BlogStorage Retry.
+ */
 @Configuration
 @ConfigurationProperties("azure.blobstorage")
 @Getter
 @Setter
 public class BlobStorageRetryConfiguration {
-    private final String LOGGER_NAME = BlobStorageRetryConfiguration.class.getName();
+    private static final String LOGGER_NAME = BlobStorageRetryConfiguration.class.getName();
 
     private int maxTries = -1;
     private int tryTimeoutInSeconds = -1;
@@ -39,31 +42,31 @@ public class BlobStorageRetryConfiguration {
     private String secondaryHost = "";
 
     /**
-     * Checks whether an int variable value is configured or not
+     * Checks whether an int variable value is configured or not.
      * @param val integer value to be checked
      * @return true if value is configured in app.properties
      */
-    private boolean valueConfigured(int val) {
-        if(val != -1) {
+    private boolean valueConfigured(final int val) {
+        if (val != -1) {
             return true;
         }
         return false;
     }
 
     /**
-     * Checks whether an string variable value is configured or not
+     * Checks whether an string variable value is configured or not.
      * @param val string value to be checked
      * @return true if value is configured in app.properties
      */
-    private boolean valueConfigured(String val) {
-        if(val==null || val.isEmpty()) {
+    private boolean valueConfigured(final String val) {
+        if (val == null || val.isEmpty()) {
             return false;
         }
         return true;
     }
 
     /**
-     * Method to get RequestRetryOptions object based on configuration set in applicaiton.properties
+     * Method to get RequestRetryOptions object based on configuration set in applicaiton.properties.
      * @return RequestRetryOption object with appropriate configurations.
      */
     public RequestRetryOptions getRequestRetryOptions() {
@@ -72,18 +75,18 @@ public class BlobStorageRetryConfiguration {
         // Value has to be sent as null incase where they are not configured to use the default configurations (As specified in RequestRetryOptions.class)
         // https://azure.github.io/azure-storage-java-async/com/microsoft/azure/storage/blob/RequestRetryOptions.html
 
-        RetryPolicyType rpt = valueConfigured(retryPolicyType)?RetryPolicyType.valueOf(retryPolicyType) : RetryPolicyType.EXPONENTIAL;
-        int maxTries = valueConfigured(this.maxTries) ? this.maxTries : (Integer) null;
-        Duration tryTimeout = valueConfigured(tryTimeoutInSeconds)?Duration.ofSeconds((long) tryTimeoutInSeconds) : null;
-        Duration retryDelay = valueConfigured(retryDelayInMs)?Duration.ofMillis(retryDelayInMs):null;
-        Duration maxRetryDelay = valueConfigured(maxRetryDelayInMs)?Duration.ofMillis(maxRetryDelayInMs): null;
-        String secondaryHost = valueConfigured(this.secondaryHost) ? this.secondaryHost : null;
+        RetryPolicyType rpt = valueConfigured(retryPolicyType) ? RetryPolicyType.valueOf(retryPolicyType) : RetryPolicyType.EXPONENTIAL;
+        int maxTriesValue = valueConfigured(this.maxTries) ? this.maxTries : (Integer) null;
+        Duration tryTimeout = valueConfigured(tryTimeoutInSeconds) ? Duration.ofSeconds((long) tryTimeoutInSeconds) : null;
+        Duration retryDelay = valueConfigured(retryDelayInMs) ? Duration.ofMillis(retryDelayInMs) : null;
+        Duration maxRetryDelay = valueConfigured(maxRetryDelayInMs) ? Duration.ofMillis(maxRetryDelayInMs) : null;
+        String secondaryHostValue = valueConfigured(this.secondaryHost) ? this.secondaryHost : null;
 
-        RequestRetryOptions requestRetryOptions = new RequestRetryOptions(rpt , maxTries, tryTimeout, retryDelay, maxRetryDelay, secondaryHost);
+        RequestRetryOptions requestRetryOptions = new RequestRetryOptions(rpt, maxTriesValue, tryTimeout, retryDelay, maxRetryDelay, secondaryHostValue);
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
                 .info("Retry Options on BlobStorage with RetryPolicyType = {} , maxTries = {} , tryTimeout = {} , retryDelay = {} , maxRetryDelay = {} , secondaryHost = {}.",
-                        rpt.toString(),requestRetryOptions.getMaxTries(),requestRetryOptions.getTryTimeoutDuration().getSeconds(),requestRetryOptions.getRetryDelay().toMillis(),requestRetryOptions.getMaxRetryDelay().toMillis(),requestRetryOptions.getSecondaryHost());
+                        rpt.toString(), requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost());
 
         return requestRetryOptions;
     }
