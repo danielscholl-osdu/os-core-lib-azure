@@ -17,11 +17,15 @@ package org.opengroup.osdu.azure.di;
 import com.azure.cosmos.ThrottlingRetryOptions;
 import lombok.Getter;
 import lombok.Setter;
-import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.core.common.logging.ILogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.Collections;
 
 /**
  * CosmosRetryConfiguration settings.
@@ -31,7 +35,9 @@ import java.time.Duration;
 @Getter
 @Setter
 public class CosmosRetryConfiguration {
-    private static final String LOGGER_NAME = CosmosRetryConfiguration.class.getName();
+    private static final Logger LOGGER = LoggerFactory.getLogger(CosmosRetryConfiguration.class.getName());
+    @Autowired
+    private ILogger logger;
 
     /**
      * Value for max Retry Count on Throttled Requests for Cosmos.
@@ -64,7 +70,6 @@ public class CosmosRetryConfiguration {
      */
     public ThrottlingRetryOptions getThrottlingRetryOptions() {
         ThrottlingRetryOptions throttlingRetryOptions = new ThrottlingRetryOptions();
-        boolean x = isMaxRetryCountConfigured();
 
         if (isMaxRetryCountConfigured()) {
             throttlingRetryOptions.setMaxRetryAttemptsOnThrottledRequests(this.getMaxRetryCount());
@@ -72,8 +77,7 @@ public class CosmosRetryConfiguration {
         if (isRetryWaitTimeoutConfigured()) {
             throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(this.getRetryWaitTimeout()));
         }
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests(), throttlingRetryOptions.getMaxRetryWaitTime());
+        this.logger.info("CosmosRetryConfiguration", String.format("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests(), throttlingRetryOptions.getMaxRetryWaitTime()), Collections.emptyMap());
 
         return throttlingRetryOptions;
     }

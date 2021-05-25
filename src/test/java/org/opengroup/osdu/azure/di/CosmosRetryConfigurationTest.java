@@ -1,55 +1,77 @@
 package org.opengroup.osdu.azure.di;
 
 import com.azure.cosmos.ThrottlingRetryOptions;
+import io.jsonwebtoken.lang.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Spy;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.core.common.logging.ILogger;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
+import java.time.Duration;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @ExtendWith(MockitoExtension.class)
 public class CosmosRetryConfigurationTest {
 
-    @Spy
+    @InjectMocks
     CosmosRetryConfiguration cosmosRetryConfiguration;
+    @Mock
+    private ILogger logger;
+
+    ThrottlingRetryOptions defaultRetryOptions = new ThrottlingRetryOptions();
 
     @BeforeEach
     void setUp() {
-        initMocks(this);
+        openMocks(this);
     }
 
     @Test
     public void should_set_maxRetryCount_ThrottlingOptions() {
-        cosmosRetryConfiguration.setMaxRetryCount(1);
-        cosmosRetryConfiguration.getThrottlingRetryOptions();
-        verify(cosmosRetryConfiguration,times(1)).getMaxRetryCount();
-        verify(cosmosRetryConfiguration,never()).getRetryWaitTimeout();
+        int maxRetryValue = 1;
+
+        cosmosRetryConfiguration.setMaxRetryCount(maxRetryValue);
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests() == maxRetryValue);
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryWaitTime().equals(defaultRetryOptions.getMaxRetryWaitTime()));
     }
 
     @Test
     public void should_set_RetryWaitTimeout_ThrottlingOptions() {
-        cosmosRetryConfiguration.setRetryWaitTimeout(20);
-        cosmosRetryConfiguration.getThrottlingRetryOptions();
-        verify(cosmosRetryConfiguration,never()).getMaxRetryCount();
-        verify(cosmosRetryConfiguration,times(1)).getRetryWaitTimeout();
+        int retryWaitTimeoutValue = 20;
+
+        cosmosRetryConfiguration.setRetryWaitTimeout(retryWaitTimeoutValue);
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryWaitTime().equals(Duration.ofSeconds(retryWaitTimeoutValue)));
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests() == defaultRetryOptions.getMaxRetryAttemptsOnThrottledRequests());
     }
 
     @Test
     public void should_set_RetryWaitTimeout_MaxRetry_ThrottlingOptions() {
-        cosmosRetryConfiguration.setRetryWaitTimeout(20);
-        cosmosRetryConfiguration.setMaxRetryCount(2);
-        cosmosRetryConfiguration.getThrottlingRetryOptions();
-        verify(cosmosRetryConfiguration,times(1)).getMaxRetryCount();
-        verify(cosmosRetryConfiguration,times(1)).getRetryWaitTimeout();
+        int retryWaitTimeoutValue = 20;
+        int maxRetryValue = 1;
+
+        cosmosRetryConfiguration.setRetryWaitTimeout(retryWaitTimeoutValue);
+        cosmosRetryConfiguration.setMaxRetryCount(maxRetryValue);
+
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests() == maxRetryValue);
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryWaitTime().equals(Duration.ofSeconds(retryWaitTimeoutValue)));
+
+
     }
 
     @Test
     public void should_not_set_RetryWaitTimeout_MaxRetry_ThrottlingOptions() {
-        cosmosRetryConfiguration.getThrottlingRetryOptions();
-        verify(cosmosRetryConfiguration,never()).getMaxRetryCount();
-        verify(cosmosRetryConfiguration,never()).getRetryWaitTimeout();
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests() == defaultRetryOptions.getMaxRetryAttemptsOnThrottledRequests());
+        Assert.isTrue(throttlingRetryOptions.getMaxRetryWaitTime().equals(defaultRetryOptions.getMaxRetryWaitTime()));
     }
 }
