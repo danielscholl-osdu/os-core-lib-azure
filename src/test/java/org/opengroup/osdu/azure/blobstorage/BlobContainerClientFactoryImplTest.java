@@ -14,6 +14,7 @@ import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.partition.Property;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,8 +32,6 @@ public class BlobContainerClientFactoryImplTest {
     private BlobContainerClientCache clientCache;
     @Mock
     private BlobStoreConfiguration configuration;
-    @Mock
-    private BlobStoreRetryConfiguration blobStoreRetryConfiguration;
     @InjectMocks
     private BlobContainerClientFactoryImpl sut;
 
@@ -75,7 +74,6 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
     }
@@ -86,7 +84,6 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
 

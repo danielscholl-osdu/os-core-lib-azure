@@ -18,21 +18,27 @@ import com.azure.storage.common.policy.RequestRetryOptions;
 import com.azure.storage.common.policy.RetryPolicyType;
 import lombok.Getter;
 import lombok.Setter;
-import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.core.common.logging.ILogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
 import java.time.Duration;
+import java.util.Collections;
 
 /**
  * Config for BlogStorage Retry.
  */
 @Configuration
-@ConfigurationProperties("azure.blobStore")
+@ConfigurationProperties("azure.blobstore")
 @Getter
 @Setter
 public class BlobStoreRetryConfiguration {
-    private static final String LOGGER_NAME = BlobStoreRetryConfiguration.class.getName();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreRetryConfiguration.class.getName());
+    @Autowired
+    private ILogger logger;
 
     private int maxTries = -1;
     private int tryTimeoutInSeconds = -1;
@@ -76,7 +82,7 @@ public class BlobStoreRetryConfiguration {
         // https://azure.github.io/azure-storage-java-async/com/microsoft/azure/storage/blob/RequestRetryOptions.html
 
         RetryPolicyType rpt = valueConfigured(retryPolicyType) ? RetryPolicyType.valueOf(retryPolicyType) : RetryPolicyType.EXPONENTIAL;
-        int maxTriesValue = valueConfigured(this.maxTries) ? this.maxTries : (Integer) null;
+        Integer maxTriesValue = valueConfigured(this.maxTries) ? this.maxTries : null;
         Duration tryTimeout = valueConfigured(tryTimeoutInSeconds) ? Duration.ofSeconds((long) tryTimeoutInSeconds) : null;
         Duration retryDelay = valueConfigured(retryDelayInMs) ? Duration.ofMillis(retryDelayInMs) : null;
         Duration maxRetryDelay = valueConfigured(maxRetryDelayInMs) ? Duration.ofMillis(maxRetryDelayInMs) : null;
@@ -84,9 +90,9 @@ public class BlobStoreRetryConfiguration {
 
         RequestRetryOptions requestRetryOptions = new RequestRetryOptions(rpt, maxTriesValue, tryTimeout, retryDelay, maxRetryDelay, secondaryHostValue);
 
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Retry Options on BlobStorage with RetryPolicyType = {} , maxTries = {} , tryTimeout = {} , retryDelay = {} , maxRetryDelay = {} , secondaryHost = {}.",
-                        rpt.toString(), requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost());
+
+        this.logger.info("BlobStoreRetryConfiguration", String.format("Retry Options on BlobStorage with RetryPolicyType = %s , maxTries = %d , tryTimeout = %d , retryDelay = %d , maxRetryDelay = %d , secondaryHost = %s.",
+                        rpt.toString(), requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost()), Collections.emptyMap());
 
         return requestRetryOptions;
     }
