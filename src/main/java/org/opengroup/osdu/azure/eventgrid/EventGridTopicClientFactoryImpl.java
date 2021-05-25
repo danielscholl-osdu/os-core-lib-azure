@@ -18,6 +18,7 @@ import com.microsoft.azure.eventgrid.EventGridClient;
 import com.microsoft.azure.eventgrid.TopicCredentials;
 import com.microsoft.azure.eventgrid.implementation.EventGridClientImpl;
 import org.opengroup.osdu.azure.cache.EventGridTopicClientCache;
+import org.opengroup.osdu.azure.di.EventGridTopicRetryConfiguration;
 import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.common.Validators;
@@ -42,6 +43,9 @@ public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFac
     @Autowired
     private EventGridTopicClientCache clientCache;
 
+    @Autowired
+    private EventGridTopicRetryConfiguration eventGridTopicRetryConfiguration;
+
     /**
      *
      * @param dataPartitionId Data partition id
@@ -64,8 +68,12 @@ public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFac
 
         TopicCredentials topicCredentials =
                 new TopicCredentials(eventGridTopicPartitionInfoAzure.getTopicAccessKey());
-
-        EventGridClient eventGridClient = new EventGridClientImpl(topicCredentials);
+        EventGridClient eventGridClient;
+        if (eventGridTopicRetryConfiguration.isTimeoutConfigured()) {
+            eventGridClient = new EventGridClientImpl(topicCredentials).withLongRunningOperationRetryTimeout(eventGridTopicRetryConfiguration.getLongRunningOperationRetryTimeout());
+        } else {
+            eventGridClient = new EventGridClientImpl(topicCredentials);
+        }
         this.clientCache.put(cacheKey, eventGridClient);
         return eventGridClient;
     }
