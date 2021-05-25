@@ -28,11 +28,11 @@ import java.time.Duration;
  * Config for BlogStorage Retry.
  */
 @Configuration
-@ConfigurationProperties("azure.blobstorage")
+@ConfigurationProperties("azure.blobStore")
 @Getter
 @Setter
-public class BlobStorageRetryConfiguration {
-    private static final String LOGGER_NAME = BlobStorageRetryConfiguration.class.getName();
+public class BlobStoreRetryConfiguration {
+    private static final String LOGGER_NAME = BlobStoreRetryConfiguration.class.getName();
 
     private int maxTries = -1;
     private int tryTimeoutInSeconds = -1;

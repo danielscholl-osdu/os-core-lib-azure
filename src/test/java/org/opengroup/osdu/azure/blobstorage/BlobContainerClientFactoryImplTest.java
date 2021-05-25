@@ -10,7 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
-import org.opengroup.osdu.azure.di.BlobStorageRetryConfiguration;
+import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
@@ -32,7 +32,7 @@ public class BlobContainerClientFactoryImplTest {
     @Mock
     private BlobStoreConfiguration configuration;
     @Mock
-    private BlobStorageRetryConfiguration blobStorageRetryConfiguration;
+    private BlobStoreRetryConfiguration blobStoreRetryConfiguration;
     @InjectMocks
     private BlobContainerClientFactoryImpl sut;
 
@@ -75,7 +75,7 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-        when(this.blobStorageRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
+        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
     }
@@ -86,7 +86,7 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-        when(this.blobStorageRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
+        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
 
