@@ -15,7 +15,6 @@
 package org.opengroup.osdu.azure.di;
 
 import com.azure.storage.common.policy.RequestRetryOptions;
-import io.jsonwebtoken.lang.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,10 +44,10 @@ public class BlobStoreRetryConfigurationTest {
     public void should_set_default_values() {
         RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
 
-        Assert.isTrue(requestRetryOptions.getMaxTries() == defaultRequestRetryOptions.getMaxTries());
-        Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(defaultRequestRetryOptions.getTryTimeoutDuration()));
-        Assert.isTrue(requestRetryOptions.getRetryDelay().equals(defaultRequestRetryOptions.getRetryDelay()));
-        Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(defaultRequestRetryOptions.getMaxRetryDelay()));
+        assertEquals(requestRetryOptions.getMaxTries(), defaultRequestRetryOptions.getMaxTries());
+        assertEquals(requestRetryOptions.getTryTimeoutDuration(), defaultRequestRetryOptions.getTryTimeoutDuration());
+        assertEquals(requestRetryOptions.getRetryDelay(), defaultRequestRetryOptions.getRetryDelay());
+        assertEquals(requestRetryOptions.getMaxRetryDelay(), defaultRequestRetryOptions.getMaxRetryDelay());
         assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
@@ -58,10 +57,10 @@ public class BlobStoreRetryConfigurationTest {
         blobStoreRetryConfiguration.setMaxTries(maxTriesValue);
         RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
 
-        Assert.isTrue(requestRetryOptions.getMaxTries() == maxTriesValue);
-        Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(defaultRequestRetryOptions.getTryTimeoutDuration()));
-        Assert.isTrue(requestRetryOptions.getRetryDelay().equals(defaultRequestRetryOptions.getRetryDelay()));
-        Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(defaultRequestRetryOptions.getMaxRetryDelay()));
+        assertEquals(requestRetryOptions.getMaxTries(), maxTriesValue);
+        assertEquals(requestRetryOptions.getTryTimeoutDuration(), defaultRequestRetryOptions.getTryTimeoutDuration());
+        assertEquals(requestRetryOptions.getRetryDelay(), defaultRequestRetryOptions.getRetryDelay());
+        assertEquals(requestRetryOptions.getMaxRetryDelay(), defaultRequestRetryOptions.getMaxRetryDelay());
         assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
@@ -71,10 +70,10 @@ public class BlobStoreRetryConfigurationTest {
         blobStoreRetryConfiguration.setTryTimeoutInSeconds(tryTimeoutValue);
         RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
 
-        Assert.isTrue(requestRetryOptions.getMaxTries() == defaultRequestRetryOptions.getMaxTries());
-        Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(Duration.ofSeconds(tryTimeoutValue)));
-        Assert.isTrue(requestRetryOptions.getRetryDelay().equals(defaultRequestRetryOptions.getRetryDelay()));
-        Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(defaultRequestRetryOptions.getMaxRetryDelay()));
+        assertEquals(requestRetryOptions.getMaxTries(), defaultRequestRetryOptions.getMaxTries());
+        assertEquals(requestRetryOptions.getTryTimeoutDuration(), Duration.ofSeconds(tryTimeoutValue));
+        assertEquals(requestRetryOptions.getRetryDelay(), defaultRequestRetryOptions.getRetryDelay());
+        assertEquals(requestRetryOptions.getMaxRetryDelay(), defaultRequestRetryOptions.getMaxRetryDelay());
         assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
@@ -86,10 +85,10 @@ public class BlobStoreRetryConfigurationTest {
         blobStoreRetryConfiguration.setMaxRetryDelayInMs(maxRetryDelayValue);
         RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
 
-        Assert.isTrue(requestRetryOptions.getMaxTries() == defaultRequestRetryOptions.getMaxTries());
-        Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(defaultRequestRetryOptions.getTryTimeoutDuration()));
-        Assert.isTrue(requestRetryOptions.getRetryDelay().equals(Duration.ofMillis(retryDelayValue)));
-        Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(Duration.ofMillis(maxRetryDelayValue)));
+        assertEquals(requestRetryOptions.getMaxTries(), defaultRequestRetryOptions.getMaxTries());
+        assertEquals(requestRetryOptions.getTryTimeoutDuration(), defaultRequestRetryOptions.getTryTimeoutDuration());
+        assertEquals(requestRetryOptions.getRetryDelay(), Duration.ofMillis(retryDelayValue));
+        assertEquals(requestRetryOptions.getMaxRetryDelay(), Duration.ofMillis(maxRetryDelayValue));
         assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
