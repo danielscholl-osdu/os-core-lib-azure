@@ -81,6 +81,7 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
+
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
 
