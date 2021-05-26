@@ -2,7 +2,6 @@ package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
 import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.common.policy.RequestRetryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,11 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
-import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
-import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.partition.Property;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,7 +31,6 @@ public class BlobContainerClientFactoryImplTest {
     private BlobStoreConfiguration configuration;
     @InjectMocks
     private BlobContainerClientFactoryImpl sut;
-
 
     private static final String ACCOUNT_NAME = "testAccount";
     private static final String PARTITION_ID = "dataPartitionId";
@@ -74,6 +70,7 @@ public class BlobContainerClientFactoryImplTest {
                 PartitionInfoAzure.builder()
                         .idConfig(Property.builder().value(PARTITION_ID).build())
                         .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
+
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
     }

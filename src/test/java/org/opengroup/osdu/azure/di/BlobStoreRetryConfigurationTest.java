@@ -1,18 +1,16 @@
 package org.opengroup.osdu.azure.di;
-import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.storage.common.policy.RequestRetryOptions;
 import io.jsonwebtoken.lang.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.platform.commons.util.StringUtils;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.core.common.logging.ILogger;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.time.Duration;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,13 +26,6 @@ public class BlobStoreRetryConfigurationTest {
         openMocks(this);
     }
 
-    boolean compareStrings(String str1, String str2) {
-        if (str1 == null || str2 == null)
-            return str1 == str2;
-
-        return str1.equals(str2);
-    }
-
     @Test
     public void should_set_default_values() {
         RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
@@ -43,7 +34,7 @@ public class BlobStoreRetryConfigurationTest {
         Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(defaultRequestRetryOptions.getTryTimeoutDuration()));
         Assert.isTrue(requestRetryOptions.getRetryDelay().equals(defaultRequestRetryOptions.getRetryDelay()));
         Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(defaultRequestRetryOptions.getMaxRetryDelay()));
-        Assert.isTrue(compareStrings(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost()));
+        assertEquals(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost());
     }
 
     @Test
@@ -56,7 +47,7 @@ public class BlobStoreRetryConfigurationTest {
         Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(defaultRequestRetryOptions.getTryTimeoutDuration()));
         Assert.isTrue(requestRetryOptions.getRetryDelay().equals(defaultRequestRetryOptions.getRetryDelay()));
         Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(defaultRequestRetryOptions.getMaxRetryDelay()));
-        Assert.isTrue(compareStrings(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost()));
+        assertEquals(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost());
     }
 
     @Test
@@ -69,7 +60,7 @@ public class BlobStoreRetryConfigurationTest {
         Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(Duration.ofSeconds(tryTimeoutValue)));
         Assert.isTrue(requestRetryOptions.getRetryDelay().equals(defaultRequestRetryOptions.getRetryDelay()));
         Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(defaultRequestRetryOptions.getMaxRetryDelay()));
-        Assert.isTrue(compareStrings(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost()));
+        assertEquals(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost());
     }
 
     @Test
@@ -84,7 +75,7 @@ public class BlobStoreRetryConfigurationTest {
         Assert.isTrue(requestRetryOptions.getTryTimeoutDuration().equals(defaultRequestRetryOptions.getTryTimeoutDuration()));
         Assert.isTrue(requestRetryOptions.getRetryDelay().equals(Duration.ofMillis(retryDelayValue)));
         Assert.isTrue(requestRetryOptions.getMaxRetryDelay().equals(Duration.ofMillis(maxRetryDelayValue)));
-        Assert.isTrue(compareStrings(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost()));
+        assertEquals(requestRetryOptions.getSecondaryHost(),defaultRequestRetryOptions.getSecondaryHost());
     }
 
 }
