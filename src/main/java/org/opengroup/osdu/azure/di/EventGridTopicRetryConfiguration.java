@@ -15,14 +15,16 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class EventGridTopicRetryConfiguration {
 
-    private int longRunningOperationRetryTimeout = -1;
+    private static final int DEFAULT_INT_VALUE = -1;
+
+    private int longRunningOperationRetryTimeout = DEFAULT_INT_VALUE;
 
     /**
      * Used to check if timeout is configured in application.properties.
      * @return True if retry is configured.
      */
     public boolean isTimeoutConfigured() {
-        if (this.longRunningOperationRetryTimeout != -1) {
+        if (this.longRunningOperationRetryTimeout != DEFAULT_INT_VALUE) {
             return true;
         }
         return false;
