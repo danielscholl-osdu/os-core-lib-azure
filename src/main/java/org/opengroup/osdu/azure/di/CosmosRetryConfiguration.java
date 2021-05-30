@@ -17,15 +17,11 @@ package org.opengroup.osdu.azure.di;
 import com.azure.cosmos.ThrottlingRetryOptions;
 import lombok.Getter;
 import lombok.Setter;
-import org.opengroup.osdu.core.common.logging.ILogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
-import java.util.Collections;
 
 /**
  * CosmosRetryConfiguration settings.
@@ -35,25 +31,23 @@ import java.util.Collections;
 @Getter
 @Setter
 public class CosmosRetryConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CosmosRetryConfiguration.class.getName());
-    @Autowired
-    private ILogger logger;
-
+    public static final String LOGGER_NAME = CosmosRetryConfiguration.class.getName();
+    public static int DEFAULT_INT_VALUE = -1;
     /**
      * Value for max Retry Count on Throttled Requests for Cosmos.
      */
-    private int maxRetryCount = -1; // Setting default value of -1, indicates to use default maxRetryCount
+    private int maxRetryCount = DEFAULT_INT_VALUE; // Setting default value of -1, indicates to use default maxRetryCount
     /**
      * Value for max retry wait time for Cosmos (Value in seconds).
      */
-    private long retryWaitTimeout = -1; // Setting default value of -1, indicates to use default retryWaitTimeout
+    private long retryWaitTimeout = DEFAULT_INT_VALUE; // Setting default value of -1, indicates to use default retryWaitTimeout
 
     /**
      *
      * @return Returns true if MaxRetryCount is configured.
      */
     public boolean isMaxRetryCountConfigured() {
-        return maxRetryCount != -1;
+        return maxRetryCount != DEFAULT_INT_VALUE;
     }
 
     /**
@@ -61,7 +55,7 @@ public class CosmosRetryConfiguration {
      * @return Returns true if RetryWaitTimeout is configured.
      */
     public boolean isRetryWaitTimeoutConfigured() {
-        return retryWaitTimeout != -1;
+        return retryWaitTimeout != DEFAULT_INT_VALUE;
     }
 
     /**
@@ -77,7 +71,7 @@ public class CosmosRetryConfiguration {
         if (isRetryWaitTimeoutConfigured()) {
             throttlingRetryOptions.setMaxRetryWaitTime(Duration.ofSeconds(this.getRetryWaitTimeout()));
         }
-        this.logger.info("CosmosRetryConfiguration", String.format("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests(), throttlingRetryOptions.getMaxRetryWaitTime()), Collections.emptyMap());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Retry Options on CosmosClient with maxRetryAttempts = {} , MaxRetryWaitTime = {}.", throttlingRetryOptions.getMaxRetryAttemptsOnThrottledRequests(), throttlingRetryOptions.getMaxRetryWaitTime());
 
         return throttlingRetryOptions;
     }
