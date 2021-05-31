@@ -15,16 +15,23 @@
 package org.opengroup.osdu.azure.di;
 
 import com.azure.storage.common.policy.RequestRetryOptions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.logging.CoreLogger;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.core.common.logging.ILogger;
+
+import java.lang.reflect.Field;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,10 +41,50 @@ public class BlobStoreRetryConfigurationTest {
     @Mock
     private ILogger logger;
     RequestRetryOptions defaultRequestRetryOptions = new RequestRetryOptions();
+    @Mock
+    private CoreLoggerFactory coreLoggerFactory;
+    @Mock
+    private CoreLogger coreLogger;
+
+    /**
+     * Workaround for inability to mock static methods like getInstance().
+     *
+     * @param mock CoreLoggerFactory mock instance
+     */
+    private void mockSingleton(CoreLoggerFactory mock) {
+        try {
+            Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(null, mock);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Reset workaround for inability to mock static methods like getInstance().
+     */
+    private void resetSingleton() {
+        try {
+            Field instance = CoreLoggerFactory.class.getDeclaredField("instance");
+            instance.setAccessible(true);
+            instance.set(null, null);
+            instance.setAccessible(false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @BeforeEach
     void setUp() {
         openMocks(this);
+        mockSingleton(coreLoggerFactory);
+        when(coreLoggerFactory.getLogger(anyString())).thenReturn(coreLogger);
+    }
+
+    @AfterEach
+    public void takeDown() {
+        resetSingleton();
     }
 
     @Test

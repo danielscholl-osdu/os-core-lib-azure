@@ -18,12 +18,10 @@ import com.azure.storage.common.policy.RequestRetryOptions;
 import com.azure.storage.common.policy.RetryPolicyType;
 import lombok.Getter;
 import lombok.Setter;
-import org.opengroup.osdu.core.common.logging.ILogger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
-import java.util.Collections;
 
 /**
  * Config for BlogStorage Retry.
@@ -34,8 +32,9 @@ import java.util.Collections;
 @Setter
 public class BlobStoreRetryConfiguration {
 
-    @Autowired
-    private ILogger logger;
+    public static final String LOGGER_NAME = BlobStoreRetryConfiguration.class.getName();
+
+
     private static final int DEFAULT_INT_VALUE = -1;
     private static final String DEFAULT_STRING_VALUE = "";
 
@@ -52,7 +51,7 @@ public class BlobStoreRetryConfiguration {
      * @return true if value is configured in app.properties
      */
     private boolean valueConfigured(final int val) {
-        if (val != -1) {
+        if (val != DEFAULT_INT_VALUE) {
             return true;
         }
         return false;
@@ -64,7 +63,7 @@ public class BlobStoreRetryConfiguration {
      * @return true if value is configured in app.properties
      */
     private boolean valueConfigured(final String val) {
-        if (val == null || val.isEmpty()) {
+        if (val == null || val.equals(DEFAULT_STRING_VALUE)) {
             return false;
         }
         return true;
@@ -79,8 +78,13 @@ public class BlobStoreRetryConfiguration {
         // Check whether the variables have been set, else keep them as null.
         // Value has to be sent as null incase where they are not configured to use the default configurations (As specified in RequestRetryOptions.class)
         // https://azure.github.io/azure-storage-java-async/com/microsoft/azure/storage/blob/RequestRetryOptions.html
+        RetryPolicyType retryPolicyType;
+        try {
+            retryPolicyType = valueConfigured(retryPolicyTypeValue) ? RetryPolicyType.valueOf(retryPolicyTypeValue) : RetryPolicyType.EXPONENTIAL;
+        } catch (Exception ex) {
+            retryPolicyType = RetryPolicyType.EXPONENTIAL;
+        }
 
-        RetryPolicyType retryPolicyType = valueConfigured(retryPolicyTypeValue) ? RetryPolicyType.valueOf(retryPolicyTypeValue) : RetryPolicyType.EXPONENTIAL;
         Integer maxTriesValue = valueConfigured(this.maxTries) ? this.maxTries : null;
         Duration tryTimeout = valueConfigured(tryTimeoutInSeconds) ? Duration.ofSeconds((long) tryTimeoutInSeconds) : null;
         Duration retryDelay = valueConfigured(retryDelayInMs) ? Duration.ofMillis(retryDelayInMs) : null;
@@ -90,8 +94,8 @@ public class BlobStoreRetryConfiguration {
         RequestRetryOptions requestRetryOptions = new RequestRetryOptions(retryPolicyType, maxTriesValue, tryTimeout, retryDelay, maxRetryDelay, secondaryHostValue);
 
 
-        this.logger.info("BlobStoreRetryConfiguration", String.format("Retry Options on BlobStorage with RetryPolicyType = %s , maxTries = %d , tryTimeout = %d , retryDelay = %d , maxRetryDelay = %d , secondaryHost = %s.",
-                retryPolicyType.toString(), requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost()), Collections.emptyMap());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("Retry Options on BlobStorage with RetryPolicyType = %s , maxTries = %d , tryTimeout = %d , retryDelay = %d , maxRetryDelay = %d , secondaryHost = %s.",
+                retryPolicyType.toString(), requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost()));
 
         return requestRetryOptions;
     }
