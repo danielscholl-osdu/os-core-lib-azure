@@ -32,7 +32,7 @@ import java.time.Duration;
 @Setter
 public class CosmosRetryConfiguration {
     public static final String LOGGER_NAME = CosmosRetryConfiguration.class.getName();
-    public static int DEFAULT_INT_VALUE = -1;
+    public static final int DEFAULT_INT_VALUE = -1;
     /**
      * Value for max Retry Count on Throttled Requests for Cosmos.
      */
