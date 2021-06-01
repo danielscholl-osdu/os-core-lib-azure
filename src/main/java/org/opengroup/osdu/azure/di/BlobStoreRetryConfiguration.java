@@ -34,28 +34,15 @@ public class BlobStoreRetryConfiguration {
 
     public static final String LOGGER_NAME = BlobStoreRetryConfiguration.class.getName();
 
-
-    private static final int DEFAULT_INT_VALUE = -1;
+    private final RequestRetryOptions defaultRequestRetryOptions = new RequestRetryOptions();
     private static final String DEFAULT_STRING_VALUE = "";
 
-    private int maxTries = DEFAULT_INT_VALUE;
-    private int tryTimeoutInSeconds = DEFAULT_INT_VALUE;
-    private int retryDelayInMs = DEFAULT_INT_VALUE;
-    private int maxRetryDelayInMs = DEFAULT_INT_VALUE;
+    private int maxTries = defaultRequestRetryOptions.getMaxTries();
+    private long tryTimeoutInSeconds = defaultRequestRetryOptions.getTryTimeoutDuration().getSeconds();
+    private long retryDelayInMs = defaultRequestRetryOptions.getRetryDelay().toMillis();
+    private long maxRetryDelayInMs = defaultRequestRetryOptions.getMaxRetryDelay().toMillis();
     private String retryPolicyTypeValue = DEFAULT_STRING_VALUE;
     private String secondaryHost = DEFAULT_STRING_VALUE;
-
-    /**
-     * Checks whether an int variable value is configured or not.
-     * @param val integer value to be checked
-     * @return true if value is configured in app.properties
-     */
-    private boolean valueConfigured(final int val) {
-        if (val != DEFAULT_INT_VALUE) {
-            return true;
-        }
-        return false;
-    }
 
     /**
      * Checks whether an string variable value is configured or not.
@@ -81,21 +68,17 @@ public class BlobStoreRetryConfiguration {
         RetryPolicyType retryPolicyType;
         try {
             retryPolicyType = valueConfigured(retryPolicyTypeValue) ? RetryPolicyType.valueOf(retryPolicyTypeValue) : RetryPolicyType.EXPONENTIAL;
-        } catch (Exception ex) {
+        } catch (Exception ex) { // For wrong values of Retry Policy, it will default to Exponential.
             retryPolicyType = RetryPolicyType.EXPONENTIAL;
         }
 
-        Integer maxTriesValue = valueConfigured(this.maxTries) ? this.maxTries : null;
-        Duration tryTimeout = valueConfigured(tryTimeoutInSeconds) ? Duration.ofSeconds((long) tryTimeoutInSeconds) : null;
-        Duration retryDelay = valueConfigured(retryDelayInMs) ? Duration.ofMillis(retryDelayInMs) : null;
-        Duration maxRetryDelay = valueConfigured(maxRetryDelayInMs) ? Duration.ofMillis(maxRetryDelayInMs) : null;
         String secondaryHostValue = valueConfigured(this.secondaryHost) ? this.secondaryHost : null;
 
-        RequestRetryOptions requestRetryOptions = new RequestRetryOptions(retryPolicyType, maxTriesValue, tryTimeout, retryDelay, maxRetryDelay, secondaryHostValue);
+        RequestRetryOptions requestRetryOptions = new RequestRetryOptions(retryPolicyType, maxTries, Duration.ofSeconds(tryTimeoutInSeconds), Duration.ofMillis(retryDelayInMs), Duration.ofMillis(maxRetryDelayInMs), secondaryHostValue);
 
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("Retry Options on BlobStorage with RetryPolicyType = %s , maxTries = %d , tryTimeout = %d , retryDelay = %d , maxRetryDelay = %d , secondaryHost = %s.",
-                retryPolicyType.toString(), requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost()));
+                retryPolicyType, requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost()));
 
         return requestRetryOptions;
     }
