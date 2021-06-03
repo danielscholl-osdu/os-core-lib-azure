@@ -71,7 +71,7 @@ public class PartitionServiceEventGridClient {
         Validators.checkNotNullAndNotEmpty(partitionId, "partitionId");
         Validators.checkNotNullAndNotEmpty(topicName, "topicName");
 
-        Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzure = getAllEventGridTopicsInPartition(partitionId);
+        Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzure = getAllEventGridTopicsInPartition(partitionId, topicName);
 
         if (!eventGridTopicPartitionInfoAzure.containsKey(topicName)) {
             throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Invalid EventGrid Partition configuration for the partition " + partitionId, "Please refer to wiki here <>");
@@ -83,17 +83,18 @@ public class PartitionServiceEventGridClient {
      * Get partition info.
      *
      * @param partitionId Partition Id
+     * @param topicName Topic Name
      * @return Partition info
      * @throws AppException       Exception thrown by {@link IPartitionFactory}
      * @throws PartitionException Exception thrown by {@link IPartitionFactory}
      */
-    Map<String, EventGridTopicPartitionInfoAzure> getAllEventGridTopicsInPartition(final String partitionId) throws AppException, PartitionException {
+    Map<String, EventGridTopicPartitionInfoAzure> getAllEventGridTopicsInPartition(final String partitionId, final String topicName) throws AppException, PartitionException {
         PartitionInfo partitionInfo = getPartitionInfo(partitionId);
         Map<String, Property> propertyMap = partitionInfo.getProperties();
         Map<String, EventGridTopicPartitionInfoAzure> topics = new HashMap<>();
 
         for (Map.Entry<String, Property> property : propertyMap.entrySet()) {
-            if (isEventGridProperty(property)) {
+            if (isEventGridProperty(property) && property.getKey().contains(topicName)) {
                 StringTokenizer stringTokenizer = new StringTokenizer(property.getKey(), "-");
                 if (stringTokenizer.countTokens() == 2) {
                     addEventGridTopicName(topics, property, stringTokenizer);
