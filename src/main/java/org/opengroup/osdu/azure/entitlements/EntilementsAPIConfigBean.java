@@ -14,21 +14,22 @@
 
 package org.opengroup.osdu.azure.entitlements;
 
+import lombok.Data;
 import org.opengroup.osdu.core.common.entitlements.EntitlementsAPIConfig;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * Creates bean of EntitlementsAPIConfig
  */
+@Data
 @Component
+@ConfigurationProperties
 public class EntilementsAPIConfigBean extends AbstractFactoryBean<EntitlementsAPIConfig> {
 
-    @Value("${AUTHORIZE_API}")
     private String AUTHORIZE_API;
 
-    @Value("${AUTHORIZE_API_KEY:}")
     private String AUTHORIZE_API_KEY;
 
     /**

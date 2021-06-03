@@ -15,7 +15,7 @@
 package org.opengroup.osdu.azure.httpconfig;
 
 import org.apache.http.client.config.RequestConfig;
-import org.opengroup.osdu.azure.di.RetryAndTimeoutsConfiguration;
+import org.opengroup.osdu.azure.di.HttpConfiguration;
 import org.opengroup.osdu.core.common.http.HttpClientHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
@@ -28,13 +28,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class HttpClientHandlerAzure extends HttpClientHandler {
 
-    @Autowired
-    private RetryAndTimeoutsConfiguration configuration;
+    private HttpConfiguration configuration;
 
     /**
      * Constructor to set request and timeout configuration of HttpClientHandler.
      */
-    public HttpClientHandlerAzure() {
+    @Autowired
+    public HttpClientHandlerAzure(HttpConfiguration configuration) {
+        this.configuration = configuration;
         super.REQUEST_CONFIG = RequestConfig.custom()
                 .setConnectTimeout(configuration.getConnectTimeout())
                 .setConnectionRequestTimeout(configuration.getRequestTimeout())

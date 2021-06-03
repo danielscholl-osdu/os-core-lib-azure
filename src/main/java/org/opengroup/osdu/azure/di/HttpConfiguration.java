@@ -16,14 +16,16 @@ package org.opengroup.osdu.azure.di;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * Configuration bean for setting up retry and timeouts variables.
  */
 
 @Data
+@Component
 @ConfigurationProperties(prefix = "azure.service.retry.config")
-public class RetryAndTimeoutsConfiguration {
+public class HttpConfiguration {
 
     private int maxRetry = 3;
     private int connectTimeout = 60000;
