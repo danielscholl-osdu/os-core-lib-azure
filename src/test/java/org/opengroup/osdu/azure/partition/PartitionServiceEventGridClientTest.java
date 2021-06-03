@@ -84,7 +84,7 @@ public class PartitionServiceEventGridClientTest {
 
         // Act
         Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzureMap =
-                partitionServiceClientSpy.getAllEventGridTopicsInPartition("tenant1", "recordstopic");
+                partitionServiceClientSpy.getAllRelevantEventGridTopicsInPartition("tenant1", "recordstopic");
 
         // Assert
         assertEquals(eventGridTopicPartitionInfoAzureMap.size(), 1);
