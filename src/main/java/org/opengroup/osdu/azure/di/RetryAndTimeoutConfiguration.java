@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "azure.service.retry.config")
-public class HttpConfiguration {
+public class RetryAndTimeoutConfiguration {
 
     private int maxRetry = 3;
     private int connectTimeout = 60000;

@@ -40,7 +40,7 @@ public class HttpClientAzure extends UrlFetchServiceImpl implements IHttpClient 
      * @return HttpResponse
      */
     @Override
-    public HttpResponse send(HttpRequest httpRequest) {
+    public HttpResponse send(final HttpRequest httpRequest) {
         org.opengroup.osdu.core.common.model.http.HttpResponse response = null;
         try {
             response = super.sendRequest(FetchServiceHttpRequest.builder()
@@ -51,7 +51,7 @@ public class HttpClientAzure extends UrlFetchServiceImpl implements IHttpClient 
                     .headers(httpRequest.getHeaders())
                     .build());
         } catch (URISyntaxException e) {
-            throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getReason(), "URI Syntax is not correct",e);
+            throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getReason(), "URI Syntax is not correct", e);
         }
         HttpResponse httpResponse = new HttpResponse();
         httpResponse.setBody(response.getBody());

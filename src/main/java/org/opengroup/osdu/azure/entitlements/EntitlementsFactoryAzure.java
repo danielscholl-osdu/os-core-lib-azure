@@ -43,15 +43,15 @@ public class EntitlementsFactoryAzure implements IEntitlementsFactory {
     /**
      * Constructor Injection for above 3 fields.
      *
-     * @param config EntitlementsAPIConfig
-     * @param mapper HttpResponseBodyMapper
-     * @param client IHttpClient
+     * @param entitlementsConfig EntitlementsAPIConfig
+     * @param httpMapper HttpResponseBodyMapper
+     * @param httpClient IHttpClient
      */
     @Autowired
-    public EntitlementsFactoryAzure(EntitlementsAPIConfig config, HttpResponseBodyMapper mapper, IHttpClient client) {
-        this.config = config;
-        this.mapper = mapper;
-        this.client = client;
+    public EntitlementsFactoryAzure(final EntitlementsAPIConfig entitlementsConfig, final HttpResponseBodyMapper httpMapper, final IHttpClient httpClient) {
+        this.config = entitlementsConfig;
+        this.mapper = httpMapper;
+        this.client = httpClient;
     }
 
     /**
@@ -61,7 +61,7 @@ public class EntitlementsFactoryAzure implements IEntitlementsFactory {
      * @return IEntitlementsService
      */
     @Override
-    public IEntitlementsService create(DpsHeaders headers) {
+    public IEntitlementsService create(final DpsHeaders headers) {
         Objects.requireNonNull(headers, "headers cannot be null");
 
         return new EntitlementsService(this.config,

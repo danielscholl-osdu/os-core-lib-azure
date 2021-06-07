@@ -28,9 +28,9 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties
 public class EntilementsAPIConfigBean extends AbstractFactoryBean<EntitlementsAPIConfig> {
 
-    private String AUTHORIZE_API;
+    private String authorizeAPI;
 
-    private String AUTHORIZE_API_KEY;
+    private String authorizeAPIKey;
 
     /**
      * Abstract method of AbstractBeanFactory<T>.
@@ -52,8 +52,8 @@ public class EntilementsAPIConfigBean extends AbstractFactoryBean<EntitlementsAP
     protected EntitlementsAPIConfig createInstance() throws Exception {
         return EntitlementsAPIConfig
                 .builder()
-                .rootUrl(AUTHORIZE_API)
-                .apiKey(AUTHORIZE_API_KEY)
+                .rootUrl(authorizeAPI)
+                .apiKey(authorizeAPIKey)
                 .build();
     }
 }
