@@ -15,13 +15,13 @@ limitations under the License.
 # Introduction
 
 This repository houses code that is used across the Microsoft Azure hosted OSDU and OpenDES platforms. The intention of this repository is to minimize code duplication for common scenarios such as dependency configuration for services in Azure (KeyVault, Cosmos, Storage and others).
-
+ 
 # Pre-requisites
 
 You need
-
-1. Maven 3.6.x
-2. Java 1.8
+ 
+ 1. Maven 3.6.x
+ 2. Java 1.8
 
 # Local Usage
 
@@ -72,7 +72,7 @@ which can be fixed by excluding some of the logger dependencies.
 
 Note: Below are reference PRs for exclusion and might change from service to service
 
-Refer this [MR](https://community.opengroup.org/osdu/platform/security-and-compliance/entitlements-azure/-/merge_requests/13) as reference on how to exclude dependencies along with how to enable the
+Refer this [MR](https://community.opengroup.org/osdu/platform/security-and-compliance/entitlements-azure/-/merge_requests/13) as reference on how to exclude dependencies along with how to enable the 
 Enabled transaction logger and slf4jlogger
 
 ## Environment variables to be added in application.properties to consume the TenantFactoryImpl
@@ -87,10 +87,3 @@ Enabled transaction logger and slf4jlogger
 | ---  | ---   | ---         |
 | `azure.blobStore.required` | `true` | - |
 | `azure.storage.account-name` | ex `testStorage` | storage account name |
-
-## Settings to configure retries for Azure Infrastructure
-### 1. Cosmos
-| name | value | description |
-| ---  | ---   | ---         |
-| `azure.cosmos.maxRetryCount ` | ex `9` | Integer value for max Retry Count on Throttled Requests |
-| `azure.cosmos.retryWaitTimeout ` | ex `30` | max retry wait time in seconds |
