@@ -42,7 +42,6 @@ public class BlobStoreRetryConfiguration {
     private long retryDelayInMs = defaultRequestRetryOptions.getRetryDelay().toMillis();
     private long maxRetryDelayInMs = defaultRequestRetryOptions.getMaxRetryDelay().toMillis();
     private String retryPolicyTypeValue = DEFAULT_STRING_VALUE;
-    private String secondaryHost = DEFAULT_STRING_VALUE;
 
     /**
      * Checks whether an string variable value is configured or not.
@@ -72,13 +71,12 @@ public class BlobStoreRetryConfiguration {
             retryPolicyType = RetryPolicyType.EXPONENTIAL;
         }
 
-        String secondaryHostValue = valueConfigured(this.secondaryHost) ? this.secondaryHost : null;
 
-        RequestRetryOptions requestRetryOptions = new RequestRetryOptions(retryPolicyType, maxTries, Duration.ofSeconds(tryTimeoutInSeconds), Duration.ofMillis(retryDelayInMs), Duration.ofMillis(maxRetryDelayInMs), secondaryHostValue);
+        RequestRetryOptions requestRetryOptions = new RequestRetryOptions(retryPolicyType, maxTries, Duration.ofSeconds(tryTimeoutInSeconds), Duration.ofMillis(retryDelayInMs), Duration.ofMillis(maxRetryDelayInMs), null);
 
 
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("Retry Options on BlobStorage with RetryPolicyType = %s , maxTries = %d , tryTimeout = %d , retryDelay = %d , maxRetryDelay = %d , secondaryHost = %s.",
-                retryPolicyType, requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis(), requestRetryOptions.getSecondaryHost()));
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("Retry Options on BlobStorage with RetryPolicyType = %s , maxTries = %d , tryTimeout = %d , retryDelay = %d , maxRetryDelay = %d .",
+                retryPolicyType, requestRetryOptions.getMaxTries(), requestRetryOptions.getTryTimeoutDuration().getSeconds(), requestRetryOptions.getRetryDelay().toMillis(), requestRetryOptions.getMaxRetryDelay().toMillis()));
 
         return requestRetryOptions;
     }

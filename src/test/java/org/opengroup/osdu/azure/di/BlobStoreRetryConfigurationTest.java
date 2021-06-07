@@ -95,7 +95,6 @@ public class BlobStoreRetryConfigurationTest {
         assertEquals(requestRetryOptions.getTryTimeoutDuration(), defaultRequestRetryOptions.getTryTimeoutDuration());
         assertEquals(requestRetryOptions.getRetryDelay(), defaultRequestRetryOptions.getRetryDelay());
         assertEquals(requestRetryOptions.getMaxRetryDelay(), defaultRequestRetryOptions.getMaxRetryDelay());
-        assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
     @Test
@@ -108,7 +107,6 @@ public class BlobStoreRetryConfigurationTest {
         assertEquals(requestRetryOptions.getTryTimeoutDuration(), defaultRequestRetryOptions.getTryTimeoutDuration());
         assertEquals(requestRetryOptions.getRetryDelay(), defaultRequestRetryOptions.getRetryDelay());
         assertEquals(requestRetryOptions.getMaxRetryDelay(), defaultRequestRetryOptions.getMaxRetryDelay());
-        assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
     @Test
@@ -121,7 +119,6 @@ public class BlobStoreRetryConfigurationTest {
         assertEquals(requestRetryOptions.getTryTimeoutDuration(), Duration.ofSeconds(tryTimeoutValue));
         assertEquals(requestRetryOptions.getRetryDelay(), defaultRequestRetryOptions.getRetryDelay());
         assertEquals(requestRetryOptions.getMaxRetryDelay(), defaultRequestRetryOptions.getMaxRetryDelay());
-        assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
     @Test
@@ -136,7 +133,6 @@ public class BlobStoreRetryConfigurationTest {
         assertEquals(requestRetryOptions.getTryTimeoutDuration(), defaultRequestRetryOptions.getTryTimeoutDuration());
         assertEquals(requestRetryOptions.getRetryDelay(), Duration.ofMillis(retryDelayValue));
         assertEquals(requestRetryOptions.getMaxRetryDelay(), Duration.ofMillis(maxRetryDelayValue));
-        assertEquals(requestRetryOptions.getSecondaryHost(), defaultRequestRetryOptions.getSecondaryHost());
     }
 
 }
