@@ -31,7 +31,9 @@ public class HttpClientHandlerAzure extends HttpClientHandler {
     private HttpConfiguration configuration;
 
     /**
-     * Constructor to set request and timeout configuration of HttpClientHandler.
+     * Constuctor injection for HttpConfiguration.
+     *
+     * @param configuration of type HttpConfiguration
      */
     @Autowired
     public HttpClientHandlerAzure(HttpConfiguration configuration) {

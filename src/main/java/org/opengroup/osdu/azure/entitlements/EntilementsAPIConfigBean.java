@@ -21,7 +21,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Creates bean of EntitlementsAPIConfig
+ * Creates bean of EntitlementsAPIConfig.
  */
 @Data
 @Component
