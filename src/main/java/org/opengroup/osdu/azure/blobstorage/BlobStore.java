@@ -21,6 +21,7 @@ import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
+import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
@@ -253,6 +254,8 @@ public class BlobStore {
     }
 
     /**
+     * This method is used to generate pre-signed url for file (blob).
+     * NOTE: Using the below method will require BlobServiceClient to be instantiated using StorageSharedKeyCredential
      * @param dataPartitionId Data partition id
      * @param filePath        Path of file (blob) for which SAS token needs to be generated
      * @param containerName   Name of the storage container
@@ -267,8 +270,8 @@ public class BlobStore {
     }
 
     /**
-     * Generates pre-signed url to a blob container.
-     *
+     * This method is used to generate pre-signed url for blob container.
+     * NOTE: Using the below method will require BlobServiceClient to be instantiated using StorageSharedKeyCredential
      * @param dataPartitionId data partition id
      * @param containerName   Name of the storage container
      * @param expiryTime      Time after which the token expires
@@ -278,6 +281,30 @@ public class BlobStore {
     public String generatePreSignedURL(final String dataPartitionId, final String containerName, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         return blobContainerClient.getBlobContainerUrl() + "?" + generateSASToken(blobContainerClient, expiryTime, permissions);
+    }
+
+    /**
+     * Generates pre-signed url to a blob container using the user delegation key.
+     *
+     * @param dataPartitionId data partition id
+     * @param containerName   Name of the storage container
+     * @param startTime       Time after which the token is activated (null in case of instant activation)
+     * @param expiryTime      Time after which the token expires
+     * @param permissions     permissions for the given container
+     * @return Generates pre-signed url for a given container
+     */
+    public String generatePreSignedUrlWithUserDelegationSas(final String dataPartitionId, final String containerName, final OffsetDateTime startTime, final OffsetDateTime expiryTime, final BlobContainerSasPermission permissions) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
+        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(startTime, expiryTime);
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions).setStartTime(startTime);
+
+        final long start = System.currentTimeMillis();
+        String sasToken = blobContainerClient.generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey);
+        final long timeTaken = System.currentTimeMillis() - start;
+
+        logDependency("GENERATE_PRESIGNED_URL_USER_DELEGATION_SAS", blobContainerClient.getBlobContainerName(), blobContainerClient.getBlobContainerUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return blobContainerClient.getBlobContainerUrl() + "?" + sasToken;
     }
 
     /**

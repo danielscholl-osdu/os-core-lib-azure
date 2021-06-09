@@ -58,6 +58,12 @@ public class PartitionInfoAzure {
     @SerializedName("storage-account-name")
     private Property storageAccountNameConfig;
 
+    @SerializedName("ingest-storage-account-key")
+    private Property ingestStorageAccountKeyConfig;
+
+    @SerializedName("ingest-storage-account-name")
+    private Property ingestStorageAccountNameConfig;
+
     @SerializedName("sb-namespace")
     private Property sbNamespaceConfig;
 
@@ -228,6 +234,26 @@ public class PartitionInfoAzure {
             return getSecret(this.getStorageAccountNameConfig());
         }
         return String.valueOf(this.getStorageAccountNameConfig().getValue());
+    }
+
+    /**
+     * @return ingestion storage account key
+     */
+    public String getIngestStorageAccountKey() {
+        if (this.getIngestStorageAccountKeyConfig().isSensitive()) {
+            return getSecret(this.getIngestStorageAccountKeyConfig());
+        }
+        return String.valueOf(this.getIngestStorageAccountKeyConfig().getValue());
+    }
+
+    /**
+     * @return ingestion storage account name
+     */
+    public String getIngestStorageAccountName() {
+        if (this.getIngestStorageAccountNameConfig().isSensitive()) {
+            return getSecret(this.getIngestStorageAccountNameConfig());
+        }
+        return String.valueOf(this.getIngestStorageAccountNameConfig().getValue());
     }
 
     /**

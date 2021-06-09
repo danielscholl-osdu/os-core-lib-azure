@@ -24,6 +24,7 @@ import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlockBlobClient;
+import org.apache.catalina.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -419,6 +420,45 @@ public class BlobStoreTest {
         verify(blobContainerClient).generateSas(blobServiceSasSignatureValuesArgumentCaptor.capture());
 
         assertEquals(blobContainerSasPermission.toString(), blobServiceSasSignatureValuesArgumentCaptor.getValue().getPermissions());
+        assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
+        assertEquals(containerPreSignedUrl, obtainedPreSignedUrl);
+    }
+
+    @Test
+    public void generatePreSignedUrlWithUserDelegationSas_NullPreSignedTokenObtained() {
+        int expiryDays = 1;
+        OffsetDateTime startTime = OffsetDateTime.now();
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobContainerSasPermission blobContainerSasPermission = (new BlobContainerSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedUrlWithUserDelegationSas(PARTITION_ID, STORAGE_CONTAINER_NAME, startTime, expiryTime, blobContainerSasPermission);
+        assertEquals("null?null", obtainedPreSignedUrl);
+    }
+
+    @Test
+    public void generatePreSignedURLlWithUserDelegationSas_whenContainerPreSignedUrl_thenReturnsValidSasToken() {
+        UserDelegationKey userDelegationKey = mock(UserDelegationKey.class);
+
+        String containerSasToken = "containerSasToken";
+        String containerUrl = "containerUrl";
+        String containerPreSignedUrl = containerUrl + "?" + containerSasToken;
+
+        doReturn(userDelegationKey).when(blobServiceClient).getUserDelegationKey(any(OffsetDateTime.class), any(OffsetDateTime.class));
+        doReturn(containerUrl).when(blobContainerClient).getBlobContainerUrl();
+        doReturn(containerSasToken).when(blobContainerClient).generateUserDelegationSas(any(BlobServiceSasSignatureValues.class), any(UserDelegationKey.class));
+
+        int expiryDays = 1;
+        OffsetDateTime startTime = OffsetDateTime.now();
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobContainerSasPermission blobContainerSasPermission = (new BlobContainerSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedUrlWithUserDelegationSas(PARTITION_ID, STORAGE_CONTAINER_NAME, startTime, expiryTime, blobContainerSasPermission);
+
+        ArgumentCaptor<BlobServiceSasSignatureValues> blobServiceSasSignatureValuesArgumentCaptor = ArgumentCaptor.forClass(BlobServiceSasSignatureValues.class);
+        ArgumentCaptor<UserDelegationKey> userDelegationKeyArgumentCaptor = ArgumentCaptor.forClass(UserDelegationKey.class);
+        verify(blobContainerClient).generateUserDelegationSas(blobServiceSasSignatureValuesArgumentCaptor.capture(), userDelegationKeyArgumentCaptor.capture());
+
+        assertEquals(blobContainerSasPermission.toString(), blobServiceSasSignatureValuesArgumentCaptor.getValue().getPermissions());
+        assertEquals(userDelegationKey, userDelegationKeyArgumentCaptor.getValue());
+        assertEquals(startTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getStartTime());
         assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
         assertEquals(containerPreSignedUrl, obtainedPreSignedUrl);
     }
