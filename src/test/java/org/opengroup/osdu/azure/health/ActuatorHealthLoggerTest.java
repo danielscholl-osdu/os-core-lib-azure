@@ -1,6 +1,5 @@
 package org.opengroup.osdu.azure.health;
 
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,11 +26,9 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 /**
  * Tests for LoggingHealthEndPointWebExtension.
@@ -42,7 +39,6 @@ public class ActuatorHealthLoggerTest {
     private static ActuatorHealthLogger loggingHealthEndpointWebExtension;
     private static HealthContributorRegistry registry;
     private static HealthEndpointGroups groups;
-
 
     @Mock
     private CoreLoggerFactory coreLoggerFactory;
@@ -66,12 +62,11 @@ public class ActuatorHealthLoggerTest {
     }
 
     @BeforeEach
-    public  void setup() {
+    public void setup() {
 
         registry = mock(HealthContributorRegistry.class);
         groups = mock(HealthEndpointGroups.class);
     }
-
 
     @Mock
     SecurityContext securityContext;
@@ -83,87 +78,51 @@ public class ActuatorHealthLoggerTest {
     CompositeHealth compositeHealth;
 
     @Test
-    public void healthTest_whenStatusIs_DOWN()
-    {
+    public void healthTest_whenStatusIs_DOWN() {
         String[] path = new String[0];
         mockSingleton(coreLoggerFactory);
         when(coreLoggerFactory.getLogger(anyString())).thenReturn(logger);
         Mockito.when(health.getStatus()).thenReturn(Status.DOWN);
 
         Map<String, HealthComponent> map = new HashMap<>();
-        map.put("keyvault",health);
+        map.put("keyvault", health);
 
         Mockito.when(compositeHealth.getComponents()).thenReturn(map);
-        WebEndpointResponse<HealthComponent> expected = new WebEndpointResponse<>(compositeHealth,WebEndpointResponse.STATUS_SERVICE_UNAVAILABLE);
+        WebEndpointResponse<HealthComponent> expected = new WebEndpointResponse<>(compositeHealth, WebEndpointResponse.STATUS_SERVICE_UNAVAILABLE);
         loggingHealthEndpointWebExtension = new ActuatorHealthLogger(registry, groups) {
             @Override
-            protected WebEndpointResponse<HealthComponent> superClassCall(ApiVersion apiVersion,SecurityContext securityContext,
+            protected WebEndpointResponse<HealthComponent> superClassCall(ApiVersion apiVersion, SecurityContext securityContext,
                                                                           boolean showAll, String... path) {
                 return expected;
             }
         };
 
 
+        WebEndpointResponse<HealthComponent> actual = loggingHealthEndpointWebExtension.health(ApiVersion.LATEST, securityContext, true, path);
 
-        WebEndpointResponse<HealthComponent> actual = loggingHealthEndpointWebExtension.health(ApiVersion.LATEST,securityContext,true, path);
-
-        verify(logger, times(1)).error(anyString() , any() ,any());
+        verify(logger, times(1)).error(anyString(), any(), any());
 
     }
 
-
     @Test
-    public void healthTest_whenStatusIs_UP()
-    {
+    public void healthTest_whenStatusIs_UP() {
         String[] path = new String[0];
-
         Mockito.when(health.getStatus()).thenReturn(Status.UP);
-
         Map<String, HealthComponent> map = new HashMap<>();
-        map.put("keyvault",health);
-
+        map.put("keyvault", health);
         Mockito.when(compositeHealth.getComponents()).thenReturn(map);
-        WebEndpointResponse<HealthComponent> expected = new WebEndpointResponse<>(compositeHealth,WebEndpointResponse.STATUS_SERVICE_UNAVAILABLE);
+        WebEndpointResponse<HealthComponent> expected = new WebEndpointResponse<>(compositeHealth, WebEndpointResponse.STATUS_SERVICE_UNAVAILABLE);
         loggingHealthEndpointWebExtension = new ActuatorHealthLogger(registry, groups) {
             @Override
-            protected WebEndpointResponse<HealthComponent> superClassCall(ApiVersion apiVersion,SecurityContext securityContext,
+            protected WebEndpointResponse<HealthComponent> superClassCall(ApiVersion apiVersion, SecurityContext securityContext,
                                                                           boolean showAll, String... path) {
                 return expected;
             }
         };
 
-
-        WebEndpointResponse<HealthComponent> actual = loggingHealthEndpointWebExtension.health(ApiVersion.LATEST,securityContext,true, path);
-
-        verify(logger, times(0)).error(anyString() , any() ,any());
+        WebEndpointResponse<HealthComponent> actual = loggingHealthEndpointWebExtension.health(ApiVersion.LATEST, securityContext, true, path);
+        verify(logger, times(0)).error(anyString(), any(), any());
 
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
