@@ -1,8 +1,5 @@
 package org.opengroup.osdu.azure.health;
 
-
-
-
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.http.ApiVersion;
@@ -26,22 +23,16 @@ public class ActuatorHealthLogger extends HealthEndpointWebExtension {
 
     private static final String LOGGER_NAME = ActuatorHealthLogger.class.getName();
 
-
     /**
-     *
      * @param registry the HealthContributorRegistry
-     * @param groups the HealthEndpointGroups
-
+     * @param groups   the HealthEndpointGroups
      */
     public ActuatorHealthLogger(final HealthContributorRegistry registry, final HealthEndpointGroups groups) {
         super(registry, groups);
 
-        }
-
-
+    }
 
     /**
-     *
      * @param apiVersion
      * @param securityContext
      * @param showAll
@@ -69,19 +60,15 @@ public class ActuatorHealthLogger extends HealthEndpointWebExtension {
             }
         }
         return response;
-
     }
 
-
     /**
-     *
-     * @param apiVersion the Api Version
+     * @param apiVersion      the Api Version
      * @param securityContext the security Context
-     * @param showAll the boolean flag
-     * @param path the path
+     * @param showAll         the boolean flag
+     * @param path            the path
      * @return the webEndpointResponse object
-     *
-     * */
+     */
     protected WebEndpointResponse<HealthComponent> superClassCall(final ApiVersion apiVersion, final SecurityContext securityContext, final boolean showAll, final String... path) {
         return super.health(apiVersion, securityContext, showAll, path);
     }
