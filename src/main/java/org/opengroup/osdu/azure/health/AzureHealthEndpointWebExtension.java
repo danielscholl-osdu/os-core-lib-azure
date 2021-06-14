@@ -1,3 +1,4 @@
+package org.opengroup.osdu.azure.health;
 //  Copyright © Microsoft Corporation
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +13,6 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package org.opengroup.osdu.azure.health;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.http.ApiVersion;
