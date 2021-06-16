@@ -6,13 +6,11 @@ import com.microsoft.azure.documentdb.DocumentClient;
 import com.microsoft.azure.documentdb.DocumentClientException;
 import com.microsoft.azure.documentdb.DocumentCollection;
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
-import com.microsoft.azure.documentdb.RetryOptions;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 
-import org.opengroup.osdu.azure.di.CosmosBulkRetryConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -41,9 +39,6 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
 
     @Autowired
     private int documentClientMaxPoolSize;
-
-    @Autowired
-    private CosmosBulkRetryConfiguration cosmosBulkRetryConfiguration;
 
     @Autowired
     private int bulkExecutorMaxRUs;
@@ -98,7 +93,6 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
             DocumentClient client = getDocumentClient(pi.getCosmosEndpoint(),
                     pi.getCosmosPrimaryKey());
 
-            RetryOptions retryOptions = cosmosBulkRetryConfiguration.getRetryOptions();
             String collectionLink = String.format(unformattedCollectionLink, cosmosDBName, collectionName);
             DocumentCollection collection = client.readCollection(collectionLink, null).getResource();
             DocumentBulkExecutor executor = DocumentBulkExecutor.builder().from(
@@ -107,7 +101,7 @@ public class CosmosBulkExecutorFactoryImpl implements ICosmosBulkExecutorFactory
                     collectionName,
                     collection.getPartitionKey(),
                     bulkExecutorMaxRUs
-            ).withInitializationRetryOptions(retryOptions).build();
+            ).build();
 
             // Set client retry options to 0 because retries are handled by DocumentBulkExecutor class.
             client.getConnectionPolicy().getRetryOptions().setMaxRetryAttemptsOnThrottledRequests(0);
