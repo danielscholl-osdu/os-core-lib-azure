@@ -2,11 +2,14 @@ package org.opengroup.osdu.azure.cosmosdb;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 
+import com.azure.cosmos.ThrottlingRetryOptions;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.azure.di.CosmosRetryConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -26,6 +29,9 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     private PartitionServiceClient partitionService;
 
     private Map<String, CosmosClient> cosmosClientMap;
+
+    @Autowired
+    private CosmosRetryConfiguration cosmosRetryConfiguration;
 
     /**
      * Initializes the private variables as required.
@@ -58,9 +64,13 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
      */
     private CosmosClient createCosmosClient(final String dataPartitionId) {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+
         CosmosClient cosmosClient = new CosmosClientBuilder()
                 .endpoint(pi.getCosmosEndpoint())
                 .key(pi.getCosmosPrimaryKey())
+                .throttlingRetryOptions(throttlingRetryOptions)
                 .buildClient();
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
                 .info("Created CosmosClient for dataPartition {}.", dataPartitionId);
