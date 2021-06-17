@@ -115,7 +115,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             blockBlobClient.download(downloadStream);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done reading from {}", filePath).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done reading from {}", filePath).getMessage());
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -152,7 +152,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try {
             blockBlobClient.delete();
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting blob at {}", filePath).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done deleting blob at {}", filePath).getMessage());
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
@@ -187,7 +187,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
             blockBlobClient.upload(dataStream, bytesSize, true);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done uploading file content to {}", filePath).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done uploading file content to {}", filePath).getMessage());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
             throw handleBlobStoreException(500, "Failed to upload file content.", ex);
@@ -213,7 +213,7 @@ public class BlobStore {
         BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
         try {
             blobServiceClient.createBlobContainer(containerName);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done creating container with name {}", containerName).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done creating container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
             throw handleBlobStoreException(500, "Failed to create blob container", ex);
@@ -232,7 +232,7 @@ public class BlobStore {
         BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
         try {
             blobServiceClient.deleteBlobContainer(containerName);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done deleting container with name {}", containerName).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done deleting container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
             throw handleBlobStoreException(500, "Failed to delete blob container", ex);

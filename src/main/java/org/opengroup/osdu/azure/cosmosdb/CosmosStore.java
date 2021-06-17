@@ -111,7 +111,7 @@ public class CosmosStore {
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
             PartitionKey key = new PartitionKey(partitionKey);
             T item = container.readItem(id, key, options, clazz).getItem();
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("READ_ITEM with id=%s and partition_key=%s", id, partitionKey));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("READ_ITEM with id=%s and partition_key=%s", id, partitionKey));
             return Optional.ofNullable((T) item);
         } catch (NotFoundException e) {
             statusCode = HttpStatus.SC_NOT_FOUND;
@@ -151,7 +151,7 @@ public class CosmosStore {
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
             container.deleteItem(id, key, options);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("DELETE_ITEM with id=%s and partition_key=%s", id, partitionKey));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("DELETE_ITEM with id=%s and partition_key=%s", id, partitionKey));
         } catch (NotFoundException e) {
             statusCode = HttpStatus.SC_NOT_FOUND;
             String errorMessage = "Item was unexpectedly not found";
@@ -191,7 +191,7 @@ public class CosmosStore {
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
             cosmosContainer.upsertItem(item, key, options);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("UPSERT_ITEM with partition_key=%s", partitionKey));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("UPSERT_ITEM with partition_key=%s", partitionKey));
         } catch (CosmosException e) {
             statusCode = e.getStatusCode();
             String errorMessage = "Unexpectedly failed to put item into CosmosDB";
@@ -267,7 +267,7 @@ public class CosmosStore {
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
             cosmosContainer.createItem(item, key, options);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("CREATE_ITEM with partition_key=%s", partitionKey));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("CREATE_ITEM with partition_key=%s", partitionKey));
         } catch (ConflictException e) {
             statusCode = e.getStatusCode();
             String errorMessage = "Resource with specified id or name already exists.";
@@ -328,14 +328,14 @@ public class CosmosStore {
         final long start = System.currentTimeMillis();
         CosmosPagedIterable<T> paginatedResponse = cosmosContainer.queryItems(query, options, clazz);
         paginatedResponse.iterableByPage(PREFERRED_PAGE_SIZE).forEach(cosmosItemPropertiesFeedResponse -> {
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Got a page of query result with {} items(s)",
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Got a page of query result with {} items(s)",
                     cosmosItemPropertiesFeedResponse.getResults().size());
             results.addAll(cosmosItemPropertiesFeedResponse.getResults());
         });
         final long timeTaken = System.currentTimeMillis() - start;
         final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
         final String dependencyData = String.format("query=%s", query.getQueryText());
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Done. Retrieved {} results", results.size());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
         logDependency("QUERY_ITEMS", dependencyData, dependencyTarget, timeTaken, HttpStatus.SC_OK, true);
 
         return results;
@@ -389,8 +389,8 @@ public class CosmosStore {
         List<T> results = new ArrayList<>();
         CosmosContainer container = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
 
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Receiving a set of query response pages.");
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Continuation Token: " + internalcontinuationToken + "\n");
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Receiving a set of query response pages.");
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Continuation Token: " + internalcontinuationToken + "\n");
 
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
 
@@ -401,7 +401,7 @@ public class CosmosStore {
         Iterator<FeedResponse<T>> iterator = feedResponseIterator.iterator();
         if (iterator.hasNext()) {
             FeedResponse<T> page = feedResponseIterator.iterator().next();
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("Current page number: %d", currentPageNumber));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("Current page number: %d", currentPageNumber));
             // Access all of the documents in this result page
             for (T item : page.getResults()) {
                 documentNumber++;
@@ -409,7 +409,7 @@ public class CosmosStore {
             }
 
             // Page count so far
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info(String.format("Total documents received so far: %d", documentNumber));
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("Total documents received so far: %d", documentNumber));
 
             // Along with page results, get a continuation token
             // which enables the client to "pick up where it left off"
@@ -422,7 +422,7 @@ public class CosmosStore {
         final long timeTaken = System.currentTimeMillis() - start;
         final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
         final String dependencyData = String.format("query=%s", query.getQueryText());
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Done. Retrieved {} results", results.size());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
         logDependency("QUERY_ITEMS_PAGE", dependencyData, dependencyTarget, timeTaken, HttpStatus.SC_OK, true);
 
         CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
