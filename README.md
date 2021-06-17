@@ -87,3 +87,11 @@ Enabled transaction logger and slf4jlogger
 | ---  | ---   | ---         |
 | `azure.blobStore.required` | `true` | - |
 | `azure.storage.account-name` | ex `testStorage` | storage account name |
+
+# Default retry and timeout values for service-to-service communication
+| name | default value |
+| ---  | ---   | 
+| `maxRetry` | `3` |
+| `connectTimeout` | `60000` |
+| `requestTimeout` | `60000` |
+| `socketTimeout` | `60000` |
