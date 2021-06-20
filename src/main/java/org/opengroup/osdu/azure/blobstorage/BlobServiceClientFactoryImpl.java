@@ -17,10 +17,13 @@ package org.opengroup.osdu.azure.blobstorage;
 import com.azure.identity.DefaultAzureCredential;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.common.policy.RequestRetryOptions;
 import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
+import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Implementation for IBlobServiceClientFactory.
@@ -29,6 +32,9 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     private DefaultAzureCredential defaultAzureCredential;
     private PartitionServiceClient partitionService;
     private BlobServiceClientCache clientCache;
+
+    @Autowired
+    private BlobStoreRetryConfiguration blobStoreRetryConfiguration;
 
     /**
      * Constructor to initialize instance of {@link BlobServiceClientFactoryImpl}.
@@ -61,9 +67,12 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
         String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
 
+        RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
+
         BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
                 .endpoint(endpoint)
                 .credential(defaultAzureCredential)
+                .retryOptions(requestRetryOptions)
                 .buildClient();
 
         this.clientCache.put(cacheKey, blobServiceClient);

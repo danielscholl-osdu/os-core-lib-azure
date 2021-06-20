@@ -66,7 +66,6 @@ public class PartitionServiceEventGridClientTest {
         final String eventGridTopicName2 = "testEventGridTopicName2";
         final String eventGridTopicAccessKey2 = "testEventGridTopicAccessKey2";
         final String topicId1 = "recordstopic";
-        final String topicId2 = "testtopic";
         Map<String, Property> properties = new HashMap<>();
         properties.put("id", Property.builder().value(PARTITION_ID).build());
 
@@ -85,18 +84,15 @@ public class PartitionServiceEventGridClientTest {
 
         // Act
         Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzureMap =
-                partitionServiceClientSpy.getAllEventGridTopicsInPartition("tenant1");
+                partitionServiceClientSpy.getAllRelevantEventGridTopicsInPartition("tenant1", "recordstopic");
 
         // Assert
-        assertEquals(eventGridTopicPartitionInfoAzureMap.size(), 2);
+        assertEquals(eventGridTopicPartitionInfoAzureMap.size(), 1);
         assertTrue(eventGridTopicPartitionInfoAzureMap.containsKey(topicId1));
-        assertTrue(eventGridTopicPartitionInfoAzureMap.containsKey(topicId2));
 
         // Validate that the EventGridTopicPartitionInfo is mapped correctly.
         assertEquals(eventGridTopicPartitionInfoAzureMap.get(topicId1).getTopicName(), eventGridTopicName1);
         assertEquals(eventGridTopicPartitionInfoAzureMap.get(topicId1).getTopicAccessKey(), eventGridTopicAccessKey1);
-        assertEquals(eventGridTopicPartitionInfoAzureMap.get(topicId2).getTopicName(), eventGridTopicName2);
-        assertEquals(eventGridTopicPartitionInfoAzureMap.get(topicId2).getTopicAccessKey(), eventGridTopicAccessKey2);
     }
 
     @Test
