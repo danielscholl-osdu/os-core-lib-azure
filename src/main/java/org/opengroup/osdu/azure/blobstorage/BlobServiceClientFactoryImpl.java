@@ -15,9 +15,12 @@
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
+import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.common.policy.RequestRetryOptions;
+import org.opengroup.osdu.azure.KeyVaultFacade;
+import org.opengroup.osdu.azure.blobstorage.system.config.SystemBlobStoreConfig;
 import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
 import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
@@ -32,9 +35,16 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     private DefaultAzureCredential defaultAzureCredential;
     private PartitionServiceClient partitionService;
     private BlobServiceClientCache clientCache;
+    private static final String SYSTEM_STORAGE_CACHE_KEY = "system_storage";
 
     @Autowired
     private BlobStoreRetryConfiguration blobStoreRetryConfiguration;
+
+    @Autowired
+    private SecretClient secretClient;
+
+    @Autowired
+    private SystemBlobStoreConfig systemBlobStoreConfig;
 
     /**
      * Constructor to initialize instance of {@link BlobServiceClientFactoryImpl}.
@@ -78,5 +88,38 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
         this.clientCache.put(cacheKey, blobServiceClient);
 
         return blobServiceClient;
+    }
+
+    /**
+     * @return BlobServiceClient for system resources.
+     */
+    @Override
+    public BlobServiceClient getSystemBlobServiceClient() {
+        Validators.checkNotNull(defaultAzureCredential, "Credential");
+
+        if (this.clientCache.containsKey(SYSTEM_STORAGE_CACHE_KEY)) {
+            return this.clientCache.get(SYSTEM_STORAGE_CACHE_KEY);
+        }
+
+        String endpoint = String.format("https://%s.blob.core.windows.net", getSecret(systemBlobStoreConfig.getStorageAccountNameKeyName()));
+        RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
+
+        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                .endpoint(endpoint)
+                .credential(defaultAzureCredential)
+                .retryOptions(requestRetryOptions)
+                .buildClient();
+
+        this.clientCache.put(SYSTEM_STORAGE_CACHE_KEY, blobServiceClient);
+
+        return blobServiceClient;
+    }
+
+    /**
+     * @param keyName Name of the key to be read from key vault.
+     * @return secret value
+     */
+    private String getSecret(final String keyName) {
+        return KeyVaultFacade.getSecretWithValidation(secretClient, keyName);
     }
 }

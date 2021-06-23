@@ -14,4 +14,9 @@ public interface ICosmosClientFactory {
      */
     CosmosClient getClient(String dataPartitionId);
 
+    /**
+     * @return Cosmos client instance for system resources.
+     */
+    CosmosClient getSystemClient();
+
 }
