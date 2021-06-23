@@ -110,30 +110,19 @@ public class BlobStore {
             final String filePath,
             final String containerName) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
-        final long start = System.currentTimeMillis();
-        int statusCode = HttpStatus.SC_OK;
-        try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
-            blockBlobClient.download(downloadStream);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done reading from {}", filePath).getMessage());
-            return downloadStream.toString(StandardCharsets.UTF_8.name());
-        } catch (BlobStorageException ex) {
-            statusCode = ex.getStatusCode();
-            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                throw handleBlobStoreException(404, "Specified blob was not found", ex);
-            }
-            throw handleBlobStoreException(500, "Failed to read specified blob", ex);
-        } catch (UnsupportedEncodingException ex) {
-            statusCode = HttpStatus.SC_BAD_REQUEST;
-            throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
-        } catch (IOException ex) {
-            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
-        } finally {
-            final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyData = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
-            logDependency("READ_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
-        }
+        return this.readFromStorageContainerInternal(filePath, containerName, blobContainerClient);
+    }
+
+    /**
+     * @param filePath        Path of file to be read.
+     * @param containerName   Name of the storage container
+     * @return the content of file with provided file path.
+     */
+    public String readFromStorageContainer(
+            final String filePath,
+            final String containerName) {
+        BlobContainerClient blobContainerClient = getSystemBlobContainerClient(containerName);
+        return this.readFromStorageContainerInternal(filePath, containerName, blobContainerClient);
     }
 
     /**
@@ -147,24 +136,19 @@ public class BlobStore {
             final String filePath,
             final String containerName) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
-        final long start = System.currentTimeMillis();
-        int statusCode = HttpStatus.SC_OK;
-        try {
-            blockBlobClient.delete();
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done deleting blob at {}", filePath).getMessage());
-            return true;
-        } catch (BlobStorageException ex) {
-            statusCode = ex.getStatusCode();
-            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                throw handleBlobStoreException(404, "Specified blob was not found", ex);
-            }
-            throw handleBlobStoreException(500, "Failed to delete blob", ex);
-        } finally {
-            final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyData = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
-            logDependency("DELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
-        }
+        return this.deleteFromStorageContainerInternal(filePath, containerName, blobContainerClient);
+    }
+
+    /**
+     * @param filePath        Path of file to be deleted.
+     * @param containerName   Name of the storage container
+     * @return boolean indicating whether the deletion of given file was successful or not.
+     */
+    public boolean deleteFromStorageContainer(
+            final String filePath,
+            final String containerName) {
+        BlobContainerClient blobContainerClient = getSystemBlobContainerClient(containerName);
+        return this.deleteFromStorageContainerInternal(filePath, containerName, blobContainerClient);
     }
 
     /**
@@ -178,27 +162,21 @@ public class BlobStore {
             final String filePath,
             final String content,
             final String containerName) {
-        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        int bytesSize = bytes.length;
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        this.writeToStorageContainerInternal(filePath, content, containerName, blobContainerClient);
+    }
 
-        final long start = System.currentTimeMillis();
-        int statusCode = HttpStatus.SC_OK;
-        try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
-            blockBlobClient.upload(dataStream, bytesSize, true);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done uploading file content to {}", filePath).getMessage());
-        } catch (BlobStorageException ex) {
-            statusCode = ex.getStatusCode();
-            throw handleBlobStoreException(500, "Failed to upload file content.", ex);
-        } catch (IOException ex) {
-            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
-        } finally {
-            final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyData = MessageFormatter.format("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
-            logDependency("WRITE_TO_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
-        }
+    /**
+     * @param filePath        Path of file to be written at.
+     * @param content         Content to be written in the file.
+     * @param containerName   Name of the storage container
+     */
+    public void writeToStorageContainer(
+            final String filePath,
+            final String content,
+            final String containerName) {
+        BlobContainerClient blobContainerClient = getSystemBlobContainerClient(containerName);
+        this.writeToStorageContainerInternal(filePath, content, containerName, blobContainerClient);
     }
 
     /**
@@ -333,6 +311,105 @@ public class BlobStore {
     }
 
     /**
+     * @param filePath              Path of file to be read.
+     * @param containerName         Name of the storage container
+     * @param blobContainerClient   Blob container client
+     * @return the content of file with provided file path.
+     */
+    private String readFromStorageContainerInternal(
+            final String filePath,
+            final String containerName,
+            final BlobContainerClient blobContainerClient) {
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
+        try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
+            blockBlobClient.download(downloadStream);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done reading from {}", filePath).getMessage());
+            return downloadStream.toString(StandardCharsets.UTF_8.name());
+        } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
+            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
+                throw handleBlobStoreException(404, "Specified blob was not found", ex);
+            }
+            throw handleBlobStoreException(500, "Failed to read specified blob", ex);
+        } catch (UnsupportedEncodingException ex) {
+            statusCode = HttpStatus.SC_BAD_REQUEST;
+            throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
+        } catch (IOException ex) {
+            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
+            logDependency("READ_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
+        }
+    }
+
+    /**
+     * @param filePath        Path of file to be deleted.
+     * @param containerName   Name of the storage container
+     * @param blobContainerClient   Blob container client
+     * @return boolean indicating whether the deletion of given file was successful or not.
+     */
+    private boolean deleteFromStorageContainerInternal(
+            final String filePath,
+            final String containerName,
+            final BlobContainerClient blobContainerClient) {
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
+        try {
+            blockBlobClient.delete();
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done deleting blob at {}", filePath).getMessage());
+            return true;
+        } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
+            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
+                throw handleBlobStoreException(404, "Specified blob was not found", ex);
+            }
+            throw handleBlobStoreException(500, "Failed to delete blob", ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
+            logDependency("DELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
+        }
+    }
+
+    /**
+     * @param filePath        Path of file to be written at.
+     * @param content         Content to be written in the file.
+     * @param containerName   Name of the storage container
+     * @param blobContainerClient   Blob container client
+     */
+    private void writeToStorageContainerInternal(
+            final String filePath,
+            final String content,
+            final String containerName,
+            final BlobContainerClient blobContainerClient) {
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        int bytesSize = bytes.length;
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
+        try (ByteArrayInputStream dataStream = new ByteArrayInputStream(bytes)) {
+            blockBlobClient.upload(dataStream, bytesSize, true);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done uploading file content to {}", filePath).getMessage());
+        } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
+            throw handleBlobStoreException(500, "Failed to upload file content.", ex);
+        } catch (IOException ex) {
+            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.format("{}/{}", new String[]{containerName, filePath}).getMessage();
+            logDependency("WRITE_TO_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
+        }
+    }
+
+    /**
      * @param blockBlobClient Blob client
      * @param expiryTime      Time after which SAS Token expires
      * @param permissions     Permissions for the given blob
@@ -370,6 +447,21 @@ public class BlobStore {
     private BlobContainerClient getBlobContainerClient(final String dataPartitionId, final String containerName) {
         try {
             BlobServiceClient serviceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
+            return serviceClient.getBlobContainerClient(containerName);
+        } catch (AppException ex) {
+            throw handleBlobStoreException(ex.getError().getCode(), "Error creating creating blob container client.", ex);
+        } catch (Exception ex) {
+            throw handleBlobStoreException(500, "Error creating creating blob container client.", ex);
+        }
+    }
+
+    /**
+     * @param containerName   Name of storage container.
+     * @return blob container client corresponding for system resources.
+     */
+    private BlobContainerClient getSystemBlobContainerClient(final String containerName) {
+        try {
+            BlobServiceClient serviceClient = blobServiceClientFactory.getSystemBlobServiceClient();
             return serviceClient.getBlobContainerClient(containerName);
         } catch (AppException ex) {
             throw handleBlobStoreException(ex.getError().getCode(), "Error creating creating blob container client.", ex);

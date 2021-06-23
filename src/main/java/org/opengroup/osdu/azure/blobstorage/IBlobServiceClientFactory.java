@@ -27,4 +27,10 @@ public interface IBlobServiceClientFactory {
      * @return      BlobServiceClient corresponding to the given data partition id.
      */
     BlobServiceClient getBlobServiceClient(String dataPartitionId);
+
+    /**
+     *
+     * @return      BlobServiceClient for system resources.
+     */
+    BlobServiceClient getSystemBlobServiceClient();
 }
