@@ -138,6 +138,7 @@ class CosmosStoreTest {
         lenient().doReturn(cosmosResponse).when(container).readItem(any(), any(), any(), any());
         //lenient().doReturn(cosmosItemProperties).when(cosmosResponse).getProperties();
         lenient().doReturn(cosmosClient).when(cosmosClientFactory).getClient(anyString());
+        lenient().doReturn(cosmosClient).when(cosmosClientFactory).getSystemClient();
         lenient().doReturn(cosmosDatabase).when(cosmosClient).getDatabase(any());
         lenient().doReturn(container).when(cosmosDatabase).getContainer(anyString());
     }
@@ -157,10 +158,29 @@ class CosmosStoreTest {
     }
 
     @Test
+    void delete_throws404_ifNotFound_System() throws CosmosException {
+        doThrow(NotFoundException.class).when(container).deleteItem(any(), any(), any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.deleteItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
+        });
+        assertEquals(404, exception.getError().getCode());
+    }
+
+
+    @Test
     void delete_throws500_ifUnknownError() throws CosmosException {
         doThrow(CosmosException.class).when(container).deleteItem(any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
             cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
+        });
+        assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    void delete_throws500_ifUnknownError_System() throws CosmosException {
+        doThrow(CosmosException.class).when(container).deleteItem(any(), any(), any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.deleteItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(500, exception.getError().getCode());
     }
@@ -172,10 +192,26 @@ class CosmosStoreTest {
     }
 
     @Test
+    void findItem_returnsEmpty_ifNotFound_System() throws CosmosException {
+        doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
+        assertFalse(cosmosStore.findItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY, Object.class).isPresent());
+        verify(this.cosmosClientFactory, times(1)).getSystemClient();
+    }
+
+    @Test
     void findItem_throws500_ifUnknownError() throws CosmosException {
         doThrow(CosmosException.class).when(container).readItem(any(), any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
             cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class));
+        });
+        assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    void findItem_throws500_ifUnknownError_System() throws CosmosException {
+        lenient().doThrow(CosmosException.class).when(container).readItem(any(), any(), any(), any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.findItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class));
         });
         assertEquals(500, exception.getError().getCode());
     }
@@ -233,6 +269,15 @@ class CosmosStoreTest {
     }
 
     @Test
+    void createItem_throws409_ifDuplicateDocument_System() throws CosmosException {
+        lenient().doThrow(ConflictException.class).when(container).createItem(any(), any(), any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
+        });
+        assertEquals(409, exception.getError().getCode());
+    }
+
+    @Test
     void createItem_throws500_ifUnknownError() throws CosmosException {
         doThrow(CosmosException.class).when(container).createItem(any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
@@ -245,6 +290,15 @@ class CosmosStoreTest {
     void createItem_Success() throws CosmosException {
         try {
             cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
+        } catch (Exception ex) {
+            fail("Should not fail.");
+        }
+    }
+
+    @Test
+    void createItem_Success_System() throws CosmosException {
+        try {
+            cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
         } catch (Exception ex) {
             fail("Should not fail.");
         }

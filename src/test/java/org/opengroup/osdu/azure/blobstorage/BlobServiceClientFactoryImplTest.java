@@ -15,6 +15,8 @@
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
+import com.azure.security.keyvault.secrets.SecretClient;
+import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.common.policy.RequestRetryOptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.blobstorage.system.config.SystemBlobStoreConfig;
 import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
@@ -50,16 +53,27 @@ public class BlobServiceClientFactoryImplTest {
     private BlobStoreRetryConfiguration blobStoreRetryConfiguration;
     @Mock
     private ILogger logger;
+    @Mock
+    private SystemBlobStoreConfig systemBlobStoreConfig;
+    @Mock
+    private SecretClient secretClient;
+    @Mock
+    private KeyVaultSecret keyVaultSecret;
     @InjectMocks
     private BlobServiceClientFactoryImpl sut;
 
     private static final String ACCOUNT_NAME = "testAccount";
     private static final String PARTITION_ID = "dataPartitionId";
+    private static final String SYSTEM_STORAGE_KEY_NAME = "system-storage";
+    private static final String SYSTEM_STORAGE_KEY_VALUE = "dummyURL";
 
     @BeforeEach
     void init() {
         initMocks(this);
         lenient().doReturn(ACCOUNT_NAME).when(configuration).getStorageAccountName();
+        lenient().doReturn(SYSTEM_STORAGE_KEY_NAME).when(systemBlobStoreConfig).getStorageAccountNameKeyName();
+        lenient().doReturn(SYSTEM_STORAGE_KEY_VALUE).when(keyVaultSecret).getValue();
+        lenient().doReturn(keyVaultSecret).when(secretClient).getSecret(SYSTEM_STORAGE_KEY_NAME);
     }
 
     @Test
@@ -93,6 +107,14 @@ public class BlobServiceClientFactoryImplTest {
         when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
 
         BlobServiceClient serviceClient = this.sut.getBlobServiceClient(PARTITION_ID);
+        assertNotNull(serviceClient);
+    }
+
+    @Test
+    public void should_return_validContainer_System() {
+        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
+
+        BlobServiceClient serviceClient = this.sut.getSystemBlobServiceClient();
         assertNotNull(serviceClient);
     }
 
