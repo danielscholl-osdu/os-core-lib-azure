@@ -21,6 +21,7 @@ import org.opengroup.osdu.core.common.http.IHttpClient;
 import org.opengroup.osdu.core.common.http.HttpResponse;
 import org.opengroup.osdu.core.common.http.UrlFetchServiceImpl;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -31,8 +32,10 @@ import java.net.URISyntaxException;
  */
 @Primary
 @Component
-public class HttpClientAzure extends UrlFetchServiceImpl implements IHttpClient {
+public class HttpClientAzure implements IHttpClient {
 
+    @Autowired
+    private UrlFetchServiceImpl urlFetchService;
     /**
      * calls urlfetchservice's send request.
      *
@@ -43,7 +46,7 @@ public class HttpClientAzure extends UrlFetchServiceImpl implements IHttpClient 
     public HttpResponse send(final HttpRequest httpRequest) {
         org.opengroup.osdu.core.common.model.http.HttpResponse response = null;
         try {
-            response = super.sendRequest(FetchServiceHttpRequest.builder()
+            response = this.urlFetchService.sendRequest(FetchServiceHttpRequest.builder()
                     .body(httpRequest.getBody())
                     .httpMethod(httpRequest.getHttpMethod())
                     .queryParams(httpRequest.getQueryParams())
