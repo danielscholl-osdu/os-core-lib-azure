@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
  * EventGridTopic settings.
  */
 @Configuration
-@ConfigurationProperties("azure.eventgridtopic")
+@ConfigurationProperties("azure.eventgrid.topic")
 @Getter
 @Setter
 public class EventGridTopicRetryConfiguration {
