@@ -46,7 +46,7 @@ public class EventGridTopicRetryConfiguration {
      * @return True if retry is configured.
      */
     public boolean isTimeoutConfigured() {
-        if (this.longRunningOperationRetryTimeout != DEFAULT_INT_VALUE) {
+        if (this.getLongRunningOperationRetryTimeout() != DEFAULT_INT_VALUE) {
             return true;
         }
         return false;
