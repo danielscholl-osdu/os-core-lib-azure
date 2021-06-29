@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.EventGridTopicClientCache;
+import org.opengroup.osdu.azure.di.EventGridTopicRetryConfiguration;
 import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.core.common.partition.PartitionException;
@@ -42,6 +43,9 @@ class EventGridTopicClientFactoryImplTest {
 
     @Mock
     private PartitionServiceEventGridClient partitionService;
+
+    @Mock
+    private EventGridTopicRetryConfiguration eventGridTopicRetryConfiguration;
 
     @InjectMocks
     private EventGridTopicClientFactoryImpl sut;
@@ -74,7 +78,7 @@ class EventGridTopicClientFactoryImplTest {
     }
 
     @Test
-    public void should_return_validClient_given_validPartitionId() throws PartitionException {
+    public void should_return_validClient_given_validPartitionId_without_retrytimeout() throws PartitionException {
         // Setup
         when(this.partitionService.getEventGridTopicInPartition(VALID_DATA_PARTIION_ID, "validtopic")).thenReturn(
                 EventGridTopicPartitionInfoAzure.builder()
@@ -82,6 +86,7 @@ class EventGridTopicClientFactoryImplTest {
                         .topicAccessKey(VALID_TOPICKEY_NAME).build());
 
         when(this.clientCache.containsKey(any())).thenReturn(false);
+        when(this.eventGridTopicRetryConfiguration.isTimeoutConfigured()).thenReturn(false);
 
         // Act
         EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, "validtopic");
@@ -89,6 +94,29 @@ class EventGridTopicClientFactoryImplTest {
         // Assert
         assertNotNull(eventGridClient);
         verify(this.clientCache, times(1)).put(any(), any());
+        verify(this.eventGridTopicRetryConfiguration,times(0)).getLongRunningOperationRetryTimeout();
+    }
+
+    @Test
+    public void should_return_validClient_given_validPartitionId_with_retrytimeout() throws PartitionException {
+        // Setup
+        when(this.partitionService.getEventGridTopicInPartition(VALID_DATA_PARTIION_ID, "validtopic")).thenReturn(
+                EventGridTopicPartitionInfoAzure.builder()
+                        .topicName(VALID_TOPIC_NAME)
+                        .topicAccessKey(VALID_TOPICKEY_NAME).build());
+
+        when(this.clientCache.containsKey(any())).thenReturn(false);
+        when(this.eventGridTopicRetryConfiguration.isTimeoutConfigured()).thenReturn(true);
+        when(this.eventGridTopicRetryConfiguration.getLongRunningOperationRetryTimeout()).thenReturn(20);
+
+        // Act
+        EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, "validtopic");
+
+        // Assert
+        assertNotNull(eventGridClient);
+        assertEquals(eventGridClient.longRunningOperationRetryTimeout(),  20);
+        verify(this.clientCache, times(1)).put(any(), any());
+        verify(this.eventGridTopicRetryConfiguration,times(1)).getLongRunningOperationRetryTimeout();
     }
 }
 
