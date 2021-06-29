@@ -107,12 +107,14 @@ class EventGridTopicClientFactoryImplTest {
 
         when(this.clientCache.containsKey(any())).thenReturn(false);
         when(this.eventGridTopicRetryConfiguration.isTimeoutConfigured()).thenReturn(true);
+        when(this.eventGridTopicRetryConfiguration.getLongRunningOperationRetryTimeout()).thenReturn(20);
 
         // Act
         EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, "validtopic");
 
         // Assert
         assertNotNull(eventGridClient);
+        assertEquals(eventGridClient.longRunningOperationRetryTimeout(),  20);
         verify(this.clientCache, times(1)).put(any(), any());
         verify(this.eventGridTopicRetryConfiguration,times(1)).getLongRunningOperationRetryTimeout();
     }
