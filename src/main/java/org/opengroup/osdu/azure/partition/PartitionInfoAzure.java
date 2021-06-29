@@ -82,6 +82,20 @@ public class PartitionInfoAzure {
     @SerializedName("policy-service-enabled")
     private Property policyServiceConfig = Property.builder().sensitive(false).build();
 
+    @Builder.Default
+    @SerializedName("airflow-enabled")
+    private Property airflowEnabledConfig = Property.builder().value("false").sensitive(false).build();
+
+    @SerializedName("airflow-endpoint")
+    private Property airflowEndpointConfig;
+
+    @SerializedName("airflow-username")
+    private Property airflowUsernameConfig;
+
+    @SerializedName("airflow-password")
+    private Property airflowPasswordConfig;
+
+
     private Property azureSubscriptionIdConfig = Property.builder().value("subscription-id").sensitive(true).build();
 
     private Property servicePrincipalAppIdConfig = Property.builder().value("app-dev-sp-username").sensitive(true).build();
@@ -154,6 +168,43 @@ public class PartitionInfoAzure {
             return getSecret(this.getElasticPasswordConfig());
         }
         return String.valueOf(this.getElasticPasswordConfig().getValue());
+    }
+
+    /**
+     * @return partition airflow endpoint
+     */
+    public Boolean getAirflowEnabled() {
+        return Boolean.parseBoolean((String) this.getAirflowEnabledConfig().getValue());
+    }
+
+    /**
+     * @return partition airflow endpoint
+     */
+    public String getAirflowEndpoint() {
+        if (this.getAirflowEndpointConfig().isSensitive()) {
+            return getSecret(this.getAirflowEndpointConfig());
+        }
+        return String.valueOf(this.getAirflowEndpointConfig().getValue());
+    }
+
+    /**
+     * @return partition airflow username
+     */
+    public String getAirflowUsername() {
+        if (this.getAirflowUsernameConfig().isSensitive()) {
+            return getSecret(this.getAirflowUsernameConfig());
+        }
+        return String.valueOf(this.getAirflowUsernameConfig().getValue());
+    }
+
+    /**
+     * @return partition airflow password
+     */
+    public String getAirflowPassword() {
+        if (this.getAirflowPasswordConfig().isSensitive()) {
+            return getSecret(this.getAirflowPasswordConfig());
+        }
+        return String.valueOf(this.getAirflowPasswordConfig().getValue());
     }
 
     /**
