@@ -257,6 +257,7 @@ CDDL-1.1
 ========================================================================
 The following software have components provided under the terms of this license:
 
+- JavaBeans Activation Framework (from )
 - tomcat-embed-core (from http://tomcat.apache.org/)
 
 ========================================================================
@@ -304,6 +305,7 @@ GPL-2.0-only
 The following software have components provided under the terms of this license:
 
 - Expression Language 3.0 (from https://projects.eclipse.org/projects/ee4j.el)
+- JavaBeans Activation Framework (from )
 - jakarta.annotation-api (from https://projects.eclipse.org/projects/ee4j.ca)
 - javax.annotation-api (from http://jcp.org/en/jsr/detail?id=250)
 - tomcat-embed-core (from http://tomcat.apache.org/)
@@ -314,6 +316,7 @@ GPL-2.0-with-classpath-exception
 The following software have components provided under the terms of this license:
 
 - Expression Language 3.0 (from https://projects.eclipse.org/projects/ee4j.el)
+- JavaBeans Activation Framework (from )
 - jakarta.annotation-api (from https://projects.eclipse.org/projects/ee4j.ca)
 - tomcat-embed-core (from http://tomcat.apache.org/)
 
