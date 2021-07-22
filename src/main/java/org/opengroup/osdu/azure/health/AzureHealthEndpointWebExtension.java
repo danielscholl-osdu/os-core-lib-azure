@@ -33,7 +33,7 @@ import java.util.Map;
  * All services can pick up this class from core-lib-azure from the usual dependency that’s added.
  */
 @Configuration
-@ConditionalOnProperty(value = "health.endpoint.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(value = "azure.health.endpoint.enabled", havingValue = "true", matchIfMissing = false)
 public class AzureHealthEndpointWebExtension extends HealthEndpointWebExtension {
 
     private static final String LOGGER_NAME = AzureHealthEndpointWebExtension.class.getName();
