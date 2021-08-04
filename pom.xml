@@ -46,6 +46,7 @@
     <azure.servicebus.version>3.6.3</azure.servicebus.version>
     <io.micrometer.version>1.6.6</io.micrometer.version>
     <azure-spring-data-cosmos.version>3.7.0</azure-spring-data-cosmos.version>
+    <resilience4jVersion>1.7.0</resilience4jVersion>
 
   </properties>
 
@@ -252,6 +253,22 @@
           <artifactId>logback-classic</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <!-- dependencies for resilience4j -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-all</artifactId>
+      <version>${resilience4jVersion}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
