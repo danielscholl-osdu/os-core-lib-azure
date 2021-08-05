@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.KeyVaultFacade;
+import org.opengroup.osdu.azure.cache.PartitionServiceEventGridCache;
 import org.opengroup.osdu.azure.util.AzureServicePrincipleTokenService;
 import org.opengroup.osdu.common.Validators;
 import org.opengroup.osdu.core.common.model.http.AppException;
@@ -57,6 +58,8 @@ public class PartitionServiceEventGridClient {
     private AzureServicePrincipleTokenService tokenService;
     @Autowired
     private DpsHeaders headers;
+    @Autowired
+    private PartitionServiceEventGridCache partitionServiceEventGridCache;
 
     /**
      * Get TopicInfo for a given topic.
@@ -71,7 +74,15 @@ public class PartitionServiceEventGridClient {
         Validators.checkNotNullAndNotEmpty(partitionId, "partitionId");
         Validators.checkNotNullAndNotEmpty(topicName, "topicName");
 
-        Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzure = getAllRelevantEventGridTopicsInPartition(partitionId, topicName);
+        Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzure;
+
+        String cacheKey = String.format("%s-%s-eventGridTopicPartitionInfoAzure", partitionId, topicName);
+        if (partitionServiceEventGridCache.containsKey(cacheKey)) {
+            eventGridTopicPartitionInfoAzure = partitionServiceEventGridCache.get(cacheKey);
+        } else {
+            eventGridTopicPartitionInfoAzure = getAllRelevantEventGridTopicsInPartition(partitionId, topicName);
+            partitionServiceEventGridCache.put(cacheKey, eventGridTopicPartitionInfoAzure);
+        }
 
         if (!eventGridTopicPartitionInfoAzure.containsKey(topicName)) {
             throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Invalid EventGrid Partition configuration for the partition " + partitionId, "Please refer to wiki here <>");

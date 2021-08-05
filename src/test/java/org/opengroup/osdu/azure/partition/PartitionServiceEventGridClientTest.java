@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.azure.cache.PartitionServiceEventGridCache;
 import org.opengroup.osdu.azure.util.AzureServicePrincipleTokenService;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
@@ -55,6 +56,8 @@ public class PartitionServiceEventGridClientTest {
     private AzureServicePrincipleTokenService tokenService;
     @Mock
     private DpsHeaders headers;
+    @Mock
+    private PartitionServiceEventGridCache partitionServiceEventGridCache;
     @InjectMocks
     private PartitionServiceEventGridClient sut;
 
@@ -121,6 +124,26 @@ public class PartitionServiceEventGridClientTest {
         // Assert negative
         AppException exception = assertThrows(AppException.class, () -> partitionServiceClientSpy.getEventGridTopicInPartition("tenant1", "recordschangedtopic"));
         assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    public void should_get_eventGridTopic_from_cache_when_available() throws PartitionException{
+        String testPartitionId = "testPartition";
+        String testTopicName = "testTopic";
+
+        Map<String, EventGridTopicPartitionInfoAzure> testEventGridTopicPartitionInfoAzure = new HashMap<>();
+        EventGridTopicPartitionInfoAzure testEventGrid = new EventGridTopicPartitionInfoAzure();
+        testEventGrid.setTopicName(testTopicName);
+        testEventGrid.setTopicAccessKey("testAccessKey");
+        testEventGridTopicPartitionInfoAzure.put(testTopicName, testEventGrid);
+
+        String cacheKey = String.format("%s-%s-eventGridTopicPartitionInfoAzure", testPartitionId, testTopicName);
+        when(partitionServiceEventGridCache.containsKey(cacheKey)).thenReturn(true);
+        when(partitionServiceEventGridCache.get(cacheKey)).thenReturn(testEventGridTopicPartitionInfoAzure);
+        EventGridTopicPartitionInfoAzure result = sut.getEventGridTopicInPartition(testPartitionId, testTopicName);
+
+        assertEquals(result.getTopicName(), testTopicName);
+        assertEquals(result.getTopicAccessKey(), "testAccessKey");
     }
 
     @Test
