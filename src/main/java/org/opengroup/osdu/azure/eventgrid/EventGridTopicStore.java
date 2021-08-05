@@ -17,7 +17,6 @@ package org.opengroup.osdu.azure.eventgrid;
 import com.microsoft.azure.eventgrid.EventGridClient;
 import com.microsoft.azure.eventgrid.models.EventGridEvent;
 import lombok.SneakyThrows;
-import org.opengroup.osdu.azure.cosmosdb.CosmosStoreBulkOperations;
 import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
@@ -61,7 +60,7 @@ import java.util.List;
 @ConditionalOnProperty(value = "azure.eventgrid.topic.enabled", havingValue = "true", matchIfMissing = true)
 public class EventGridTopicStore {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStoreBulkOperations.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventGridTopicStore.class.getName());
     @Autowired
     private IEventGridTopicClientFactory eventGridTopicClientFactory;
     @Autowired
