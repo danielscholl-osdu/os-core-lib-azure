@@ -195,7 +195,7 @@ The following software have components provided under the terms of this license:
 - swagger-annotations (from https://repo1.maven.org/maven2/io/swagger/swagger-annotations)
 - swagger-jaxrs (from )
 - tomcat-embed-core (from http://tomcat.apache.org/)
-- tomcat-embed-websocket (from http://tomcat.apache.org/)
+- tomcat-embed-websocket (from https://tomcat.apache.org/)
 - x-content (from https://github.com/elastic/elasticsearch)
 
 ========================================================================
