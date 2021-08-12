@@ -17,13 +17,18 @@ package org.opengroup.osdu.azure.blobstorage;
 import com.azure.identity.DefaultAzureCredential;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
-import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
+import com.azure.storage.common.StorageSharedKeyCredential;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation for IBlobContainerClientFactory.
@@ -32,6 +37,8 @@ import org.springframework.stereotype.Component;
 @Lazy
 public class BlobContainerClientFactoryImpl implements IBlobContainerClientFactory {
 
+    private Map<String, BlobContainerClient> blobContainerClientMap;
+
     @Autowired
     private DefaultAzureCredential defaultAzureCredential;
 
@@ -39,7 +46,15 @@ public class BlobContainerClientFactoryImpl implements IBlobContainerClientFacto
     private PartitionServiceClient partitionService;
 
     @Autowired
-    private BlobContainerClientCache clientCache;
+    private MSIConfiguration msiConfiguration;
+
+    /**
+     * Initializes the private variables as required.
+     */
+    @PostConstruct
+    public void initialize() {
+        blobContainerClientMap = new ConcurrentHashMap<>();
+    }
 
     /**
      * @param dataPartitionId Data partition id
@@ -53,21 +68,36 @@ public class BlobContainerClientFactoryImpl implements IBlobContainerClientFacto
         Validators.checkNotNullAndNotEmpty(containerName, "containerName");
 
         String cacheKey = String.format("%s-%s", dataPartitionId, containerName);
-        if (this.clientCache.containsKey(cacheKey)) {
-            return this.clientCache.get(cacheKey);
+        if (this.blobContainerClientMap.containsKey(cacheKey)) {
+            return this.blobContainerClientMap.get(cacheKey);
         }
+        return this.blobContainerClientMap.computeIfAbsent(cacheKey, blobContainerClient -> createBlobContainerClient(dataPartitionId, containerName));
+    }
 
+    /**
+     * @param dataPartitionId Data partition id
+     * @param containerName   Blob container name
+     * @return the blob container client instance.
+     */
+    private BlobContainerClient createBlobContainerClient(final String dataPartitionId, final String containerName) {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
         String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
 
-        BlobContainerClient blobContainerClient = new BlobContainerClientBuilder()
+        BlobContainerClientBuilder blobContainerClientBuilder = new BlobContainerClientBuilder()
                 .endpoint(endpoint)
-                .credential(defaultAzureCredential)
-                .containerName(containerName)
-                .buildClient();
+                .containerName(containerName);
 
-        this.clientCache.put(cacheKey, blobContainerClient);
+        if (msiConfiguration.getIsEnabled()) {
+            return blobContainerClientBuilder.credential(defaultAzureCredential)
+                    .buildClient();
+        } else {
+            StorageSharedKeyCredential storageSharedKeyCredential = new StorageSharedKeyCredential(
+                    pi.getStorageAccountName(),
+                    pi.getStorageAccountKey()
+            );
 
-        return blobContainerClient;
+            return blobContainerClientBuilder.credential(storageSharedKeyCredential)
+                    .buildClient();
+        }
     }
 }

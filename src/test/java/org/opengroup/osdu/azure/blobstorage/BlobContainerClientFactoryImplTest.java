@@ -8,11 +8,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.cache.BlobContainerClientCache;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
-import org.opengroup.osdu.core.common.partition.Property;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -24,15 +25,22 @@ public class BlobContainerClientFactoryImplTest {
     @Mock
     private DefaultAzureCredential credential;
     @Mock
+    private Map<String, BlobContainerClient> blobContainerClientMap;
+    @Mock
     private PartitionServiceClient partitionService;
     @Mock
-    private BlobContainerClientCache clientCache;
-    @Mock
     private BlobStoreConfiguration configuration;
+    @Mock
+    private PartitionInfoAzure partitionInfoAzure;
+    @Mock
+    private BlobContainerClient blobContainerClient;
+    @Mock
+    private MSIConfiguration msiConfiguration;
     @InjectMocks
     private BlobContainerClientFactoryImpl sut;
 
     private static final String ACCOUNT_NAME = "testAccount";
+    private static final String ACCOUNT_KEY = "testAccountKey";
     private static final String PARTITION_ID = "dataPartitionId";
     private static final String STORAGE_CONTAINER_NAME = "containerName";
 
@@ -65,31 +73,13 @@ public class BlobContainerClientFactoryImplTest {
     }
 
     @Test
-    public void should_return_validContainer_given_validPartitionId() {
-        when(this.partitionService.getPartition(PARTITION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(PARTITION_ID).build())
-                        .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-
-        BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
-        assertNotNull(containerClient);
-    }
-
-    @Test
     public void should_return_cachedContainer_when_cachedEarlier() {
-        when(this.partitionService.getPartition(PARTITION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(PARTITION_ID).build())
-                        .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
+        final String cacheKey = String.format("%s-%s", PARTITION_ID, STORAGE_CONTAINER_NAME);
+        when(this.blobContainerClientMap.containsKey(cacheKey)).thenReturn(true);
+        when(this.blobContainerClientMap.get(cacheKey)).thenReturn(blobContainerClient);
 
         BlobContainerClient containerClient = this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
         assertNotNull(containerClient);
-
-        final String cacheKey = String.format("%s-%s", PARTITION_ID, STORAGE_CONTAINER_NAME);
-        when(this.clientCache.containsKey(cacheKey)).thenReturn(true);
-        when(this.clientCache.get(cacheKey)).thenReturn(containerClient);
-
-        this.sut.getClient(PARTITION_ID, STORAGE_CONTAINER_NAME);
-        verify(this.partitionService, times(1)).getPartition(PARTITION_ID);
     }
+
 }

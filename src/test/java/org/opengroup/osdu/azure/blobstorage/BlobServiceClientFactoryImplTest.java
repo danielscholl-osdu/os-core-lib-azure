@@ -26,13 +26,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.blobstorage.system.config.SystemBlobStoreConfig;
-import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
 import org.opengroup.osdu.azure.di.BlobStoreConfiguration;
 import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
-import org.opengroup.osdu.core.common.partition.Property;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -46,7 +47,7 @@ public class BlobServiceClientFactoryImplTest {
     @Mock
     private PartitionServiceClient partitionService;
     @Mock
-    private BlobServiceClientCache clientCache;
+    private Map<String, BlobServiceClient> blobServiceClientMap;
     @Mock
     private BlobStoreConfiguration configuration;
     @Mock
@@ -59,20 +60,36 @@ public class BlobServiceClientFactoryImplTest {
     private SecretClient secretClient;
     @Mock
     private KeyVaultSecret keyVaultSecret;
+    @Mock
+    private PartitionInfoAzure partitionInfoAzure;
+    @Mock
+    private BlobServiceClient blobServiceClient;
+    @Mock
+    private RequestRetryOptions retryOptions;
+    @Mock
+    private MSIConfiguration msiConfiguration;
     @InjectMocks
     private BlobServiceClientFactoryImpl sut;
 
     private static final String ACCOUNT_NAME = "testAccount";
+    private static final String ACCOUNT_KEY = "testAccountKey";
     private static final String PARTITION_ID = "dataPartitionId";
-    private static final String SYSTEM_STORAGE_KEY_NAME = "system-storage";
-    private static final String SYSTEM_STORAGE_KEY_VALUE = "dummyURL";
+    private static final String SYSTEM_STORAGE_ACCOUNT_NAME = "system-storage-account";
+    private static final String SYSTEM_STORAGE_ACCOUNT_VALUE = "system-storage-account-value";
+    private static final String SYSTEM_STORAGE_KEY_NAME = "system-storage-key";
+    private static final String SYSTEM_STORAGE_KEY_VALUE = "system-storage-key-value";
 
     @BeforeEach
     void init() {
         initMocks(this);
         lenient().doReturn(ACCOUNT_NAME).when(configuration).getStorageAccountName();
-        lenient().doReturn(SYSTEM_STORAGE_KEY_NAME).when(systemBlobStoreConfig).getStorageAccountNameKeyName();
+        lenient().doReturn(SYSTEM_STORAGE_ACCOUNT_NAME).when(systemBlobStoreConfig).getStorageAccountNameKeyName();
+        lenient().doReturn(SYSTEM_STORAGE_KEY_NAME).when(systemBlobStoreConfig).getStorageKeyKeyName();
+
+        lenient().doReturn(SYSTEM_STORAGE_ACCOUNT_VALUE).when(keyVaultSecret).getValue();
         lenient().doReturn(SYSTEM_STORAGE_KEY_VALUE).when(keyVaultSecret).getValue();
+
+        lenient().doReturn(keyVaultSecret).when(secretClient).getSecret(SYSTEM_STORAGE_ACCOUNT_NAME);
         lenient().doReturn(keyVaultSecret).when(secretClient).getSecret(SYSTEM_STORAGE_KEY_NAME);
     }
 
@@ -99,41 +116,28 @@ public class BlobServiceClientFactoryImplTest {
     }
 
     @Test
-    public void should_return_validContainer_given_validPartitionId() {
-        when(this.partitionService.getPartition(PARTITION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(PARTITION_ID).build())
-                        .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
-
-        BlobServiceClient serviceClient = this.sut.getBlobServiceClient(PARTITION_ID);
-        assertNotNull(serviceClient);
-    }
-
-    @Test
-    public void should_return_validContainer_System() {
-        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
-
-        BlobServiceClient serviceClient = this.sut.getSystemBlobServiceClient();
-        assertNotNull(serviceClient);
-    }
-
-    @Test
     public void should_return_cachedContainer_when_cachedEarlier() {
-        when(this.partitionService.getPartition(PARTITION_ID)).thenReturn(
-                PartitionInfoAzure.builder()
-                        .idConfig(Property.builder().value(PARTITION_ID).build())
-                        .storageAccountNameConfig(Property.builder().value(ACCOUNT_NAME).build()).build());
-        when(this.blobStoreRetryConfiguration.getRequestRetryOptions()).thenReturn(new RequestRetryOptions());
-
-        BlobServiceClient serviceClient = this.sut.getBlobServiceClient(PARTITION_ID);
-        assertNotNull(serviceClient);
-
         final String cacheKey = String.format("%s-blobServiceClient", PARTITION_ID);
-        when(this.clientCache.containsKey(cacheKey)).thenReturn(true);
-        when(this.clientCache.get(cacheKey)).thenReturn(serviceClient);
+        when(this.blobServiceClientMap.containsKey(cacheKey)).thenReturn(true);
+        when(this.blobServiceClientMap.get(cacheKey)).thenReturn(blobServiceClient);
 
-        this.sut.getBlobServiceClient(PARTITION_ID);
-        verify(this.partitionService, times(1)).getPartition(PARTITION_ID);
+        BlobServiceClient client = this.sut.getBlobServiceClient(PARTITION_ID);
+        assertNotNull(client);
+        verify(this.blobServiceClientMap, times(1)).containsKey(cacheKey);
+        verify(this.blobServiceClientMap, times(1)).get(cacheKey);
+        verify(this.partitionService, never()).getPartition(PARTITION_ID);
+    }
+
+    @Test
+    public void should_return_validContainer_system_whenCached() {
+        final String cacheKey = "system_storage";
+        when(this.blobServiceClientMap.containsKey(cacheKey)).thenReturn(true);
+        when(this.blobServiceClientMap.get(cacheKey)).thenReturn(blobServiceClient);
+
+        BlobServiceClient client = this.sut.getSystemBlobServiceClient();
+        assertNotNull(client);
+        verify(this.blobServiceClientMap, times(1)).containsKey(cacheKey);
+        verify(this.blobServiceClientMap, times(1)).get(cacheKey);
+        verify(this.partitionService, never()).getPartition(PARTITION_ID);
     }
 }

@@ -1,7 +1,6 @@
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
-import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,14 +17,12 @@ public class BlobStoreProvider {
      * Creates instance of {@link IBlobServiceClientFactory}.
      * @param defaultAzureCredential Azure credentials to use.
      * @param partitionServiceClient Partition service client to use.
-     * @param blobServiceClientCache Blob service client cache to use.
      * @return instance of {@link BlobServiceClientFactoryImpl}
      */
     @Bean
     public IBlobServiceClientFactory buildBlobClientFactory(final DefaultAzureCredential defaultAzureCredential,
-                                                            final PartitionServiceClient partitionServiceClient,
-                                                            final BlobServiceClientCache blobServiceClientCache) {
-        return new BlobServiceClientFactoryImpl(defaultAzureCredential, partitionServiceClient, blobServiceClientCache);
+                                                            final PartitionServiceClient partitionServiceClient) {
+        return new BlobServiceClientFactoryImpl(defaultAzureCredential, partitionServiceClient);
     }
 
     /**

@@ -9,8 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.opengroup.osdu.azure.cache.TopicClientCache;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -26,7 +27,7 @@ public class TopicClientFactoryImplTest {
     @Mock
     private PartitionServiceClient partitionService;
     @Mock
-    private TopicClientCache clientCache;
+    private Map<String, TopicClient> topicClientMap;
     @InjectMocks
     private TopicClientFactoryImpl sut;
 
@@ -64,8 +65,8 @@ public class TopicClientFactoryImplTest {
     public void should_return_cachedClient_when_cachedEarlier() throws ServiceBusException, InterruptedException {
         TopicClient topicClient = mock(TopicClient.class);
         final String cacheKey = String.format("%s-%s", PARTITION_ID, TOPIC_NAME);
-        when(this.clientCache.containsKey(cacheKey)).thenReturn(true);
-        when(this.clientCache.get(cacheKey)).thenReturn(topicClient);
+        when(this.topicClientMap.containsKey(cacheKey)).thenReturn(true);
+        when(this.topicClientMap.get(cacheKey)).thenReturn(topicClient);
 
         this.sut.getClient(PARTITION_ID, TOPIC_NAME);
         verify(this.partitionService, never()).getPartition(PARTITION_ID);
