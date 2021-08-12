@@ -18,15 +18,19 @@ import com.azure.identity.DefaultAzureCredential;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.common.policy.RequestRetryOptions;
 import org.opengroup.osdu.azure.KeyVaultFacade;
 import org.opengroup.osdu.azure.blobstorage.system.config.SystemBlobStoreConfig;
-import org.opengroup.osdu.azure.cache.BlobServiceClientCache;
 import org.opengroup.osdu.azure.di.BlobStoreRetryConfiguration;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation for IBlobServiceClientFactory.
@@ -34,7 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     private DefaultAzureCredential defaultAzureCredential;
     private PartitionServiceClient partitionService;
-    private BlobServiceClientCache clientCache;
+    private Map<String, BlobServiceClient> blobServiceClientMap;
     private static final String SYSTEM_STORAGE_CACHE_KEY = "system_storage";
 
     @Autowired
@@ -44,20 +48,21 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     private SecretClient secretClient;
 
     @Autowired
+    private MSIConfiguration msiConfiguration;
+
+    @Autowired
     private SystemBlobStoreConfig systemBlobStoreConfig;
 
     /**
      * Constructor to initialize instance of {@link BlobServiceClientFactoryImpl}.
      * @param credentials Azure Credentials to use
      * @param partitionServiceClient Partition service client to use
-     * @param blobServiceClientCache Blob service client cache to use
      */
     public BlobServiceClientFactoryImpl(final DefaultAzureCredential credentials,
-                                        final PartitionServiceClient partitionServiceClient,
-                                        final BlobServiceClientCache blobServiceClientCache) {
+                                        final PartitionServiceClient partitionServiceClient) {
         this.defaultAzureCredential = credentials;
         this.partitionService = partitionServiceClient;
-        this.clientCache = blobServiceClientCache;
+        blobServiceClientMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -70,24 +75,10 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
         Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
 
         String cacheKey = String.format("%s-blobServiceClient", dataPartitionId);
-        if (this.clientCache.containsKey(cacheKey)) {
-            return this.clientCache.get(cacheKey);
+        if (this.blobServiceClientMap.containsKey(cacheKey)) {
+            return this.blobServiceClientMap.get(cacheKey);
         }
-
-        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
-        String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
-
-        RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
-
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(endpoint)
-                .credential(defaultAzureCredential)
-                .retryOptions(requestRetryOptions)
-                .buildClient();
-
-        this.clientCache.put(cacheKey, blobServiceClient);
-
-        return blobServiceClient;
+        return this.blobServiceClientMap.computeIfAbsent(cacheKey, blobServiceClient -> createBlobServiceClient(dataPartitionId));
     }
 
     /**
@@ -97,22 +88,66 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     public BlobServiceClient getSystemBlobServiceClient() {
         Validators.checkNotNull(defaultAzureCredential, "Credential");
 
-        if (this.clientCache.containsKey(SYSTEM_STORAGE_CACHE_KEY)) {
-            return this.clientCache.get(SYSTEM_STORAGE_CACHE_KEY);
+        if (this.blobServiceClientMap.containsKey(SYSTEM_STORAGE_CACHE_KEY)) {
+            return this.blobServiceClientMap.get(SYSTEM_STORAGE_CACHE_KEY);
         }
 
+        return this.blobServiceClientMap.computeIfAbsent(SYSTEM_STORAGE_CACHE_KEY, blobServiceClient -> createSystemBlobServiceClient());
+    }
+
+    /**
+     * @param dataPartitionId data partition id.
+     * @return BlobServiceClient
+     */
+    private BlobServiceClient createBlobServiceClient(final String dataPartitionId) {
+
+        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+        String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
+        BlobServiceClientBuilder blobServiceClientBuilder = getBlobServiceClientBuilder(endpoint);
+
+        if (msiConfiguration.getIsEnabled()) {
+            return blobServiceClientBuilder.credential(defaultAzureCredential)
+                    .buildClient();
+        } else {
+            StorageSharedKeyCredential storageSharedKeyCredential = new StorageSharedKeyCredential(
+                    pi.getStorageAccountName(),
+                    pi.getStorageAccountKey()
+            );
+            return blobServiceClientBuilder.credential(storageSharedKeyCredential)
+                    .buildClient();
+        }
+    }
+
+    /**
+     * @return BlobServiceClient for system resources.
+     */
+    private BlobServiceClient createSystemBlobServiceClient() {
+
         String endpoint = String.format("https://%s.blob.core.windows.net", getSecret(systemBlobStoreConfig.getStorageAccountNameKeyName()));
+        BlobServiceClientBuilder blobServiceClientBuilder = getBlobServiceClientBuilder(endpoint);
+
+        if (msiConfiguration.getIsEnabled()) {
+            return blobServiceClientBuilder.credential(defaultAzureCredential)
+                    .buildClient();
+        } else {
+            StorageSharedKeyCredential storageSharedKeyCredential = new StorageSharedKeyCredential(
+                    getSecret(systemBlobStoreConfig.getStorageAccountNameKeyName()),
+                    getSecret(systemBlobStoreConfig.getStorageKeyKeyName())
+            );
+            return blobServiceClientBuilder.credential(storageSharedKeyCredential)
+                    .buildClient();
+        }
+    }
+
+    /**
+     * @param storageAccountEndpoint EndpointName of the Storage account.
+     * @return BlobServiceClientBuilder for system resources.
+     */
+    private BlobServiceClientBuilder getBlobServiceClientBuilder(final String storageAccountEndpoint) {
         RequestRetryOptions requestRetryOptions = blobStoreRetryConfiguration.getRequestRetryOptions();
-
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(endpoint)
-                .credential(defaultAzureCredential)
-                .retryOptions(requestRetryOptions)
-                .buildClient();
-
-        this.clientCache.put(SYSTEM_STORAGE_CACHE_KEY, blobServiceClient);
-
-        return blobServiceClient;
+        return new BlobServiceClientBuilder()
+                .endpoint(storageAccountEndpoint)
+                .retryOptions(requestRetryOptions);
     }
 
     /**

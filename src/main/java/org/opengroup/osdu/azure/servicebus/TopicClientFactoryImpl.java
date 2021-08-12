@@ -3,15 +3,21 @@ package org.opengroup.osdu.azure.servicebus;
 import com.azure.identity.DefaultAzureCredential;
 import com.microsoft.azure.servicebus.ClientSettings;
 import com.microsoft.azure.servicebus.TopicClient;
+import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
-import org.opengroup.osdu.azure.cache.TopicClientCache;
 import org.opengroup.osdu.azure.dependencies.DefaultAzureServiceBusCredential;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation for ITopicClientFactory.
@@ -20,6 +26,9 @@ import org.springframework.stereotype.Component;
 @Lazy
 public class TopicClientFactoryImpl implements ITopicClientFactory {
 
+    private static final String LOGGER_NAME = TopicClientFactoryImpl.class.getName();
+    private Map<String, TopicClient> topicClientMap;
+
     @Autowired
     private DefaultAzureCredential defaultAzureCredential;
 
@@ -27,7 +36,15 @@ public class TopicClientFactoryImpl implements ITopicClientFactory {
     private PartitionServiceClient partitionService;
 
     @Autowired
-    private TopicClientCache clientCache;
+    private MSIConfiguration msiConfiguration;
+
+    /**
+     * Initializes the private variables as required.
+     */
+    @PostConstruct
+    public void initialize() {
+        topicClientMap = new ConcurrentHashMap<>();
+    }
 
     /**
      * @param dataPartitionId Data Partition Id
@@ -43,18 +60,39 @@ public class TopicClientFactoryImpl implements ITopicClientFactory {
         Validators.checkNotNullAndNotEmpty(topicName, "topicName");
 
         String cacheKey = String.format("%s-%s", dataPartitionId, topicName);
-        if (this.clientCache.containsKey(cacheKey)) {
-            return this.clientCache.get(cacheKey);
+        if (this.topicClientMap.containsKey(cacheKey)) {
+            return this.topicClientMap.get(cacheKey);
         }
+        return this.topicClientMap.computeIfAbsent(cacheKey, topicClient -> {
+            try {
+                return createTopicClient(dataPartitionId, topicName);
+            } catch (Exception e) {
+                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(e.getMessage(), e);
+                return null;
+            }
+        });
+    }
 
+    /**
+     * @param dataPartitionId Data Partition Id
+     * @param topicName       Service Bus topic
+     * @return A client configured to communicate with a Service Bus Topic
+     * @throws ServiceBusException  Exception thrown by {@link TopicClient}
+     * @throws InterruptedException Exception thrown by {@link TopicClient}
+     */
+    private TopicClient createTopicClient(final String dataPartitionId, final String topicName) throws ServiceBusException, InterruptedException {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
-        final ClientSettings clientSettings = new ClientSettings(
-                new DefaultAzureServiceBusCredential(defaultAzureCredential));
 
-        TopicClient topicClient = new TopicClient(pi.getSbNamespace(), topicName, clientSettings);
-
-        this.clientCache.put(cacheKey, topicClient);
-
-        return topicClient;
+        if (msiConfiguration.getIsEnabled()) {
+            final ClientSettings clientSettings = new ClientSettings(
+                    new DefaultAzureServiceBusCredential(defaultAzureCredential));
+            return new TopicClient(pi.getSbNamespace(), topicName, clientSettings);
+        } else {
+            ConnectionStringBuilder connectionStringBuilder = new ConnectionStringBuilder(
+                    pi.getSbConnection(),
+                    topicName
+            );
+            return new TopicClient(connectionStringBuilder);
+        }
     }
 }
