@@ -3,6 +3,7 @@ package org.opengroup.osdu.azure.util;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import org.apache.http.HttpStatus;
+import org.opengroup.osdu.azure.di.PodIdentityConfiguration;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.search.IdToken;
 import org.springframework.context.annotation.Lazy;
@@ -33,6 +34,8 @@ public class AzureServicePrincipleTokenService {
     @Named("APP_DEV_SP_TENANT_ID")
     private String tenantId;
 
+    private PodIdentityConfiguration podIdentityConfiguration;
+
     private final AzureServicePrincipal azureServicePrincipal = new AzureServicePrincipal();
 
     private Map<String, Object> tokenCache = new HashMap<>();
@@ -47,7 +50,11 @@ public class AzureServicePrincipleTokenService {
             if (!IdToken.refreshToken(cachedToken)) {
                 return cachedToken.getTokenValue();
             }
-            accessToken = this.azureServicePrincipal.getIdToken(clientID, clientSecret, tenantId, aadClientId);
+            if (!podIdentityConfiguration.getIsEnabled()) {
+                accessToken = this.azureServicePrincipal.getIdToken(clientID, clientSecret, tenantId, aadClientId);
+            } else {
+                accessToken = this.azureServicePrincipal.getMSIToken();
+            }
             IdToken idToken = IdToken.builder()
                     .tokenValue(accessToken)
                     .expirationTimeMillis(JWT.decode(accessToken).getExpiresAt().getTime())
