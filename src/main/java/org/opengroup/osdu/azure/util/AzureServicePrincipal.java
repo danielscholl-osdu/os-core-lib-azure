@@ -64,6 +64,26 @@ public final class AzureServicePrincipal {
     }
 
     /**
+     * Method to generate MSI tokens.
+     * @return AUTHENTICATION TOKEN
+     */
+    public String getMSIToken() {
+
+        String aadEndpoint = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/";
+        HttpRequest httpRequest = new HttpRequest(HttpMethod.GET, aadEndpoint);
+        httpRequest.setHeader("Metadata", "true");
+
+        HttpClient client = createHttpClient();
+
+        Mono<HttpResponse> response = client.send(httpRequest);
+        String content = Objects.requireNonNull(response.block()).getBodyAsString().block();
+
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(content, JsonObject.class);
+        return jsonObject.get("access_token").getAsString();
+    }
+
+    /**
      * @param params    Map of request parameters
      * @return          parameter string
      * @throws UnsupportedEncodingException throws exception unsupported encoding is found

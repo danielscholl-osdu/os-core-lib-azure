@@ -60,6 +60,27 @@ public class AzureServicePrincipalTest {
 
     }
 
+    @Test
+    public void ShouldSuccessfullyGenerateMsiToken() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("access_token", accessToken);
+
+        Mono<String> contentMono = Mono.just(jsonObject.toString());
+
+        when(azureServicePrincipal.createHttpClient()).thenReturn(httpClient);
+        when(httpClient.send(any(HttpRequest.class))).thenReturn(responseMono);
+        when(responseMono.block()).thenReturn(httpResponse);
+        when(httpResponse.getBodyAsString()).thenReturn(contentMono);
+
+        String result = azureServicePrincipal.getMSIToken();
+
+        assertEquals(accessToken, result);
+        verify(httpClient, times(1)).send(any(HttpRequest.class));
+        verify(responseMono, times(1)).block();
+        verify(httpResponse, times(1)).getBodyAsString();
+
+    }
+
     /**
      *  This test is added for end to verification whether tokens are getting generated.
      */
