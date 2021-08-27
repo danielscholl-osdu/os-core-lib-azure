@@ -6,6 +6,7 @@ import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.di.PodIdentityConfiguration;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.search.IdToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +35,7 @@ public class AzureServicePrincipleTokenService {
     @Named("APP_DEV_SP_TENANT_ID")
     private String tenantId;
 
+    @Autowired
     private PodIdentityConfiguration podIdentityConfiguration;
 
     private final AzureServicePrincipal azureServicePrincipal = new AzureServicePrincipal();

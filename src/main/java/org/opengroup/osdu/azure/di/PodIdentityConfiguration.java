@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
  * A configuration bean class Enable/Disable PaaS Pod MSI (Managed Service Identity).
  */
 @Configuration
-@ConfigurationProperties(prefix = "azure.paas.podIdentity")
+@ConfigurationProperties(prefix = "azure.paas.podidentity")
 @Getter
 @Setter
 public class PodIdentityConfiguration {
