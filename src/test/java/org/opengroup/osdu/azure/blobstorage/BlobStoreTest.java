@@ -57,6 +57,8 @@ public class BlobStoreTest {
     private static final String CONTENT = "hello world";
     private static final String STORAGE_CONTAINER_NAME = "containerName";
     private static final String SOURCE_FILE_URL = "http://someURL";
+    private static final String FILE_NAME="test.json";
+    private static final String FILE_CONTENT_TYPE = "application/json";
 
     @Mock
     private CoreLoggerFactory coreLoggerFactory;
@@ -605,7 +607,38 @@ public class BlobStoreTest {
         assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
         assertEquals(containerPreSignedUrl, obtainedPreSignedUrl);
     }
+    @Test
+    public void generatePreSignedURLForBlob_whenBlobPreSignedUrl_thenReturnsValidSasToken() {
+        String blobSasToken = "blobSasToken";
+        String blobUrl = "blobUrl";
+        String blobPreSignedUrl = blobUrl + "?" + blobSasToken;
 
+        doReturn(blobSasToken).when(blockBlobClient).generateSas(any(BlobServiceSasSignatureValues.class));
+        doReturn(blobUrl).when(blockBlobClient).getBlobUrl();
+
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobSasPermission blobSasPermission = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedURL(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission, FILE_NAME, FILE_CONTENT_TYPE);
+        
+        ArgumentCaptor<BlobServiceSasSignatureValues> blobServiceSasSignatureValuesArgumentCaptor = ArgumentCaptor.forClass(BlobServiceSasSignatureValues.class);
+        verify(blockBlobClient).generateSas(blobServiceSasSignatureValuesArgumentCaptor.capture());
+
+        assertEquals(blobSasPermission.toString(), blobServiceSasSignatureValuesArgumentCaptor.getValue().getPermissions());
+        assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
+        assertEquals(blobPreSignedUrl, obtainedPreSignedUrl);
+    }
+
+    @Test
+    public void generatePreSignedURLForBlob_NullPreSignedTokenObtained() {
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobSasPermission blobSasPermission = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedURL(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission, FILE_NAME, FILE_CONTENT_TYPE);
+        assertEquals("null?null", obtainedPreSignedUrl);
+    }
+
+    
     private BlobStorageException mockStorageException(BlobErrorCode errorCode) {
         BlobStorageException mockException = mock(BlobStorageException.class);
         lenient().when(mockException.getErrorCode()).thenReturn(errorCode);

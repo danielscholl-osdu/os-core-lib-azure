@@ -248,6 +248,28 @@ public class BlobStore {
     }
 
     /**
+     * This method is used to generate pre-signed url for file (blob). NOTE: Using
+     * the below method will require BlobServiceClient to be instantiated using
+     * StorageSharedKeyCredential
+     * @param dataPartitionId Data partition id
+     * @param filePath Path of file (blob) for which SAS token needs to be generated
+     * @param fileName Name of the file
+     * @param contentType Content type of the file
+     * @param containerName Name of the storage container
+     * @param expiryTime Time after which the token expires
+     * @param permissions Permissions for the given blob
+     * @return Generates Pre-Signed URL for a given blob.
+     */
+    public String generatePreSignedURL(final String dataPartitionId, final String filePath, final String containerName,
+            final OffsetDateTime expiryTime, final BlobSasPermission permissions, final String fileName,
+            final String contentType) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        return blockBlobClient.getBlobUrl() + "?"
+                + generateSASToken(blockBlobClient, expiryTime, permissions, fileName, contentType);
+    }
+
+    /**
      * This method is used to generate pre-signed url for blob container.
      * NOTE: Using the below method will require BlobServiceClient to be instantiated using StorageSharedKeyCredential
      * @param dataPartitionId data partition id
@@ -421,6 +443,28 @@ public class BlobStore {
         String sasToken = blockBlobClient.generateSas(blobServiceSasSignatureValues);
         final long timeTaken = System.currentTimeMillis() - start;
         logDependency("GENERATE_SAS_TOKEN", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
+    }
+
+    /**
+     * @param blockBlobClient Blob client
+     * @param expiryTime Time after which SAS Token expires
+     * @param permissions Permissions for the given blob
+     * @param fileName name of the file
+     * @param contentType Content type of the file
+     * @return Generates SAS Token.
+     */
+    private String generateSASToken(final BlockBlobClient blockBlobClient, final OffsetDateTime expiryTime,
+            final BlobSasPermission permissions, final String fileName, final String contentType) {
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime,
+                permissions);
+        blobServiceSasSignatureValues.setContentType(contentType);
+        blobServiceSasSignatureValues.setContentDisposition("attachment; filename= " + fileName);
+        final long start = System.currentTimeMillis();
+        String sasToken = blockBlobClient.generateSas(blobServiceSasSignatureValues);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken,
+                String.valueOf(HttpStatus.SC_OK), true);
         return sasToken;
     }
 
