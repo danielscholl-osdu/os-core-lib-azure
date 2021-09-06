@@ -1,5 +1,6 @@
 package org.opengroup.osdu.azure.legal;
 
+import org.opengroup.osdu.azure.di.LegalAPIConfiguration;
 import org.opengroup.osdu.core.common.http.IHttpClient;
 import org.opengroup.osdu.core.common.http.json.HttpResponseBodyMapper;
 import org.opengroup.osdu.core.common.legal.ILegalFactory;
@@ -22,9 +23,10 @@ import java.util.Objects;
 @ConditionalOnProperty(value = "azure.legal.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class LegalFactoryAzure implements ILegalFactory {
 
-    private final LegalAPIConfig config;
+    private LegalAPIConfig config;
     private final HttpResponseBodyMapper mapper;
     private final IHttpClient client;
+    private final LegalAPIConfiguration legalAPIConfiguration;
 
     /**
      * Constructor Injection for following 3 parameter.
@@ -34,10 +36,14 @@ public class LegalFactoryAzure implements ILegalFactory {
      * @param httpClient    IHttpClient
      */
     @Autowired
-    public LegalFactoryAzure(final LegalAPIConfig configuration, final HttpResponseBodyMapper bodyMapper, final IHttpClient httpClient) {
-        this.config = configuration;
+    public LegalFactoryAzure(final HttpResponseBodyMapper bodyMapper, final IHttpClient httpClient, final LegalAPIConfiguration configuration) {
         this.mapper = bodyMapper;
         this.client = httpClient;
+        this.legalAPIConfiguration = configuration;
+        this.config = LegalAPIConfig.builder()
+                .rootUrl(legalAPIConfiguration.getLegalTagApi())
+                .apiKey(legalAPIConfiguration.getLegalApiKey())
+                .build();
     }
 
     /**
