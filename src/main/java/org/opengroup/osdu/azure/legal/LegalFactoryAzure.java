@@ -17,6 +17,7 @@ import java.util.Objects;
 
 /**
  * Implements ILegalFactory.
+ * Please use LEGAL_TAG_API nomenclature for legal api url in application.properties to use this class.
  */
 @Component
 @Primary
