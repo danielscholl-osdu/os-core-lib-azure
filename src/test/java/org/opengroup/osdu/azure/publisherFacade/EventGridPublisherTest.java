@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.eventgrid.EventGridTopicStore;
+import org.opengroup.osdu.azure.publisherFacade.models.PubSubAttributesBuilder;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 
@@ -51,9 +52,11 @@ public class EventGridPublisherTest {
     @Mock
     private JaxRsDpsLog logger;
     @Mock
-    EventGridTopicStore eventGridTopicStore;
+    private EventGridTopicStore eventGridTopicStore;
+    @Mock
+    private PubSubAttributesBuilder pubSubAttributesBuilder;
     @InjectMocks
-    EventGridPublisher sut;
+    private EventGridPublisher sut;
 
     @BeforeEach
     public void init() throws ServiceBusException, InterruptedException {
@@ -66,6 +69,7 @@ public class EventGridPublisherTest {
         Mockito.lenient().doReturn(CORRELATION_ID).when(dpsHeaders).getCorrelationId();
         Mockito.lenient().doReturn(EVENT_GRID_TOPIC_NAME).when(publisherInfo).getEventGridTopicName();
         Mockito.lenient().doReturn(batch).when(publisherInfo).getBatch();
+        Mockito.lenient().doReturn(dpsHeaders.getHeaders()).when(pubSubAttributesBuilder).createAttributesMap();
     }
 
     @Test

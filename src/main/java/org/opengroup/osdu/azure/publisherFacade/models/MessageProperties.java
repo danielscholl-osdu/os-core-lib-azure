@@ -12,24 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.opengroup.osdu.azure.publisherFacade;
+package org.opengroup.osdu.azure.publisherFacade.models;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import com.google.gson.JsonElement;
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 /**
- * A configuration bean class to set up PubSub info.
- */
-@Configuration
-@Getter
-public class PubsubConfiguration {
-    // Service Bus Configuration
-    @Value("${azure.serviceBus.enabled:false}")
-    private String isServiceBusEnabled;
+ * Data model for Message properties.
+ **/
+@Data
+@Builder
+@AllArgsConstructor
+public class MessageProperties {
 
-    // Event Grid Configuration
-    @Value("${azure.eventGrid.enabled:false}")
-    private String isEventGridEnabled;
+    private JsonElement data;
+
+    @SerializedName("account-id")
+    private String accountId;
+
+    @SerializedName("data-partition-id")
+    private String partitionId;
+
+    @SerializedName("correlation-id")
+    private String correlationId;
 
 }
