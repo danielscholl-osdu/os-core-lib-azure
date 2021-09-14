@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.opengroup.osdu.azure.publisherFacade.models.PubSubAttributesBuilder;
 import org.opengroup.osdu.azure.servicebus.TopicClientFactoryImpl;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
@@ -50,6 +51,8 @@ public class ServiceBusPublisherTest {
     private TopicClientFactoryImpl topicClientFactory;
     @Mock
     private PublisherInfo publisherInfo;
+    @Mock
+    private PubSubAttributesBuilder pubSubAttributesBuilder;
     @InjectMocks
     private ServiceBusPublisher sut;
 
@@ -57,11 +60,12 @@ public class ServiceBusPublisherTest {
     public void init() throws ServiceBusException, InterruptedException {
         initMocks(this);
 
-        Mockito.lenient().doReturn(DATA_PARTITION_WITH_FALLBACK_ACCOUNT_ID).when(dpsHeaders).getPartitionIdWithFallbackToAccountId();
-        Mockito.lenient().doReturn(PARTITION_ID).when(dpsHeaders).getPartitionId();
-        Mockito.lenient().doReturn(CORRELATION_ID).when(dpsHeaders).getCorrelationId();
-        Mockito.lenient().doReturn(SERVICE_BUS_TOPIC_NAME).when(publisherInfo).getServiceBusTopicName();
-        Mockito.lenient().doReturn(batch).when(publisherInfo).getBatch();
+        lenient().doReturn(DATA_PARTITION_WITH_FALLBACK_ACCOUNT_ID).when(dpsHeaders).getPartitionIdWithFallbackToAccountId();
+        lenient().doReturn(PARTITION_ID).when(dpsHeaders).getPartitionId();
+        lenient().doReturn(CORRELATION_ID).when(dpsHeaders).getCorrelationId();
+        lenient().doReturn(SERVICE_BUS_TOPIC_NAME).when(publisherInfo).getServiceBusTopicName();
+        lenient().doReturn(batch).when(publisherInfo).getBatch();
+        lenient().doReturn(dpsHeaders.getHeaders()).when(pubSubAttributesBuilder).createAttributesMap();
         lenient().doReturn(topicClient).when(topicClientFactory).getClient(any(), any());
     }
 

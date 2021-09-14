@@ -17,14 +17,14 @@ package org.opengroup.osdu.azure.publisherFacade;
 import com.google.common.base.Preconditions;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
  * Implementation of message publisher.
  */
 @Component
-@ConditionalOnExpression("${azure.serviceBus.enabled:true} || ${azure.eventGrid.enabled:true}")
+@ConditionalOnProperty(value = "azure.pubsub.publish", havingValue = "true", matchIfMissing = false)
 public class MessagePublisher {
     @Autowired
     private EventGridPublisher eventGridPublisher;

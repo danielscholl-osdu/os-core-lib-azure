@@ -17,6 +17,7 @@ package org.opengroup.osdu.azure.publisherFacade;
 import com.microsoft.azure.eventgrid.models.EventGridEvent;
 import org.joda.time.DateTime;
 import org.opengroup.osdu.azure.eventgrid.EventGridTopicStore;
+import org.opengroup.osdu.azure.publisherFacade.models.PubSubAttributesBuilder;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +34,13 @@ import java.util.UUID;
  * Implementation of Event Grid publisher.
  */
 @Component
-@ConditionalOnProperty(value = "azure.eventGrid.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(value = "azure.pubsub.publish", havingValue = "true", matchIfMissing = false)
 public class EventGridPublisher {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventGridPublisher.class);
     @Autowired
     private EventGridTopicStore eventGridTopicStore;
+    @Autowired
+    private PubSubAttributesBuilder pubSubAttributesBuilder;
 
     /**
      * @param publisherInfo Contains Event grid batch and publishing details
@@ -45,12 +48,9 @@ public class EventGridPublisher {
      */
     public void publishToEventGrid(final DpsHeaders headers, final PublisherInfo publisherInfo) {
         List<EventGridEvent> eventsList = new ArrayList<>();
-
-        HashMap<String, Object> data = new HashMap<>();
+        PubSubAttributesBuilder pubSubBuilder = PubSubAttributesBuilder.builder().dpsHeaders(headers).build();
+        HashMap<String, Object> data = pubSubBuilder.createAttributesMap();
         data.put("data", publisherInfo.getBatch());
-        data.put(DpsHeaders.ACCOUNT_ID, headers.getPartitionIdWithFallbackToAccountId());
-        data.put(DpsHeaders.DATA_PARTITION_ID, headers.getPartitionIdWithFallbackToAccountId());
-        data.put(DpsHeaders.CORRELATION_ID, headers.getCorrelationId());
 
         String messageId = UUID.randomUUID().toString();
         eventsList.add(new EventGridEvent(
