@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LegalAPIConfiguration {
 
-    private String legalTagApi = "https://os-legal-dot-opendes.appspot.com/api/legal/v1";
+    private String legalTagApi;
 
     private String legalApiKey = "OBSOLETE";
 }
