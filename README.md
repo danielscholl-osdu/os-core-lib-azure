@@ -95,3 +95,29 @@ Enabled transaction logger and slf4jlogger
 | `connectTimeout` | `60000` |
 | `requestTimeout` | `60000` |
 | `socketTimeout` | `60000` |
+
+# CircuitBreaker configuration 
+To enable circuitbreaker, set azure.circuitbreaker.enable=true in application.properties
+
+| name | default value | description |
+| ---  | ---           | ---         |   
+| `azure.circuitbreaker.enable` | `false` | To enable circuitbreaker in your service |
+| `azure.circuitbreaker.defaultCircuitBreaker` | `false` | True if you wish to use default circuitbreaker values set by resilience4j
+| `azure.circuitbreaker.slidingWindowSize` | `50` | For COUNT_BASED, it's the number of calls to consider to calculate failure rate, for TIME_BASED, it's the number of seconds to consider to calculate failure rate.|
+| `azure.circuitbreaker.minimumNumberOfCalls` | `50` | Minimum number of calls in the slidingWindowSize to consider calculating failure rate. |
+| `azure.circuitbreaker.failureRate` | `50` | Failure threshold rate |
+| `azure.circuitbreaker.slidingWindowType` | `TIME_BASED` | TIME_BASED or COUNT_BASED |
+| `azure.circuitbreaker.permittedCallsInHalfOpenState` | `10` | Number of calls in Half Open State to decide the next state.|
+
+To read more about Circuitbreaker, please refer to https://resilience4j.readme.io/docs/circuitbreaker
+
+## CircuitBreaker Functioning
+The basic idea behind the circuit breaker is very simple. You wrap a protected function call in a circuit breaker object, which monitors for failures. Once the failures reach a certain threshold, the circuit breaker trips, and all further calls to the circuit breaker return with an error, without the protected call being made at all.
+
+All HTTP calls made by services will go through the circuitbreaker. If circuitbreaker detects failures and it crosses threshold, The APIs will start throwing Error 500 : Service Unavailable. The circuit will be open for a certain duration and then move to half open state. It will then assess whether to move to a closed state or open state. The diagram below depicts the state diagram for circuitbreaker.
+![Alt text](docs/circuitbreakerstatediagram.png "Circuitbreaker State Diagram")
+
+
+[Credits : Martin Fowler(https://martinfowler.com/bliki/CircuitBreaker.html)]
+
+

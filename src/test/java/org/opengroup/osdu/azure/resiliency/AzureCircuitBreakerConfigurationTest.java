@@ -16,14 +16,38 @@
 package org.opengroup.osdu.azure.resiliency;
 
 import io.jsonwebtoken.lang.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
+
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class AzureCircuitBreakerConfigurationTest {
-    AzureCircuitBreakerConfiguration circuitBreakerConfiguration = new AzureCircuitBreakerConfiguration();
+
+    @InjectMocks
+    @Spy
+    AzureCircuitBreakerConfiguration circuitBreakerConfiguration;
+
+    @BeforeEach
+    public void prepare() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        MockitoAnnotations.initMocks(this);
+        // Using reflection to call Postconstruct method of AzureCircuitBreakerConfiguration class
+        Method postConstruct =  AzureCircuitBreakerConfiguration.class.getDeclaredMethod("setCBR",null); // methodName,parameters
+        postConstruct.setAccessible(true);
+        postConstruct.invoke(circuitBreakerConfiguration);
+    }
 
     @Test
     public void should_create_CircuitBreakerRegistry() {
