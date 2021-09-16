@@ -15,38 +15,52 @@
 
 package org.opengroup.osdu.azure.resiliency;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import javax.annotation.PostConstruct;
 
 /**
  * Configuration for CircuitBreaker.
  */
-@Configuration
 @ConfigurationProperties("azure.circuitbreaker")
 @Getter
 @Setter
 public class AzureCircuitBreakerConfiguration {
 
-    /**
-     * Constructor which initializes CircuitBreakerRegistry.
-     */
-    public AzureCircuitBreakerConfiguration() {
-        this.setCBR();
-    }
-
     private boolean enable = false;
 
-    @Getter
+    private boolean defaultCircuitBreaker = false;
+    private int slidingWindowSize = 50;
+    private int minimumNumberOfCalls = 50;
+    private int failureRate = 50;
+    private String slidingWindowType = "TIME_BASED";
+    private int permittedCallsInHalfOpenState = 10;
+
     private CircuitBreakerRegistry circuitBreakerRegistry;
 
     /**
      * Create CircuitBreakerRegistry.
      */
+    @PostConstruct
     private void setCBR() {
-        // Create a CircuitBreakerRegistry with a custom global configuration
-         this.circuitBreakerRegistry = CircuitBreakerRegistry.ofDefaults();
+        if (this.isDefaultCircuitBreaker()) {
+            // Create a CircuitBreakerRegistry with a custom global configuration
+            this.circuitBreakerRegistry = CircuitBreakerRegistry.ofDefaults();
+        } else {
+            // Refer to documentation to understand meaning of these values
+            // https://resilience4j.readme.io/docs/circuitbreaker
+            CircuitBreakerConfig circuitBreakerConfig = new CircuitBreakerConfig.Builder()
+                    .failureRateThreshold(this.getFailureRate())
+                    .minimumNumberOfCalls(this.getMinimumNumberOfCalls())
+                    .slidingWindowSize(this.getSlidingWindowSize())
+                    .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.valueOf(this.getSlidingWindowType()))
+                    .permittedNumberOfCallsInHalfOpenState(this.getPermittedCallsInHalfOpenState())
+                    .build();
+
+            this.circuitBreakerRegistry = CircuitBreakerRegistry.of(circuitBreakerConfig);
+        }
     }
 }
