@@ -16,9 +16,6 @@
 package org.opengroup.osdu.azure.resiliency;
 
 import io.jsonwebtoken.lang.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
