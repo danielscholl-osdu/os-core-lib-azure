@@ -20,11 +20,14 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
 import javax.annotation.PostConstruct;
 
 /**
  * Configuration for CircuitBreaker.
  */
+@Configuration
 @ConfigurationProperties("azure.circuitbreaker")
 @Getter
 @Setter
