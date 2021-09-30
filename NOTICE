@@ -164,7 +164,7 @@ The following software have components provided under the terms of this license:
 - javatuples (from http://www.javatuples.org)
 - javax.inject (from http://code.google.com/p/atinject/)
 - lang-mustache (from https://github.com/elastic/elasticsearch)
-- lettuce (from http://github.com/mp911de/lettuce/wiki)
+- lettuce (from https://github.com/lettuce-io/lettuce-core/wiki)
 - mapper-extras (from https://github.com/elastic/elasticsearch)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
 - micrometer-registry-azure-monitor (from https://github.com/micrometer-metrics/micrometer)

@@ -1,0 +1,29 @@
+package org.opengroup.osdu.azure.util;
+
+import com.azure.cosmos.implementation.RequestRateTooLargeException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.core.common.model.http.AppError;
+import org.springframework.http.ResponseEntity;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+
+@ExtendWith(MockitoExtension.class)
+public class GlobalAzureExceptionMapperTest {
+
+    @InjectMocks
+    private GlobalAzureExceptionMapper sut;
+
+    @Test
+    public void should_returnServiceUnavailable_with_correct_reason_when_RequestRateTooLargeException_Is_Captured() {
+        RequestRateTooLargeException exception = mock(RequestRateTooLargeException.class);
+
+        ResponseEntity response = this.sut.handleCosmosdbException(exception);
+
+        assertEquals(503, response.getStatusCodeValue());
+        assertEquals("Service Unavailable", ((AppError) response.getBody()).getReason());
+    }
+}
