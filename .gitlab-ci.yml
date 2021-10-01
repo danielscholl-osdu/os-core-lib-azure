@@ -1,24 +1,24 @@
 include:
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'master'
+    ref: 'update-mvn-container-for-release-scripts'
     file: 'standard-setup.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'master'
+    ref: 'update-mvn-container-for-release-scripts'
     file: 'build/maven.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'master'
+    ref: 'update-mvn-container-for-release-scripts'
     file: 'scanners/gitlab-ultimate.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'master'
+    ref: 'update-mvn-container-for-release-scripts'
     file: 'scanners/fossa-maven.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'master'
+    ref: 'update-mvn-container-for-release-scripts'
     file: 'release/maven-release-candidates.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'master'
+    ref: 'update-mvn-container-for-release-scripts'
     file: 'publishing/pages.yml'
