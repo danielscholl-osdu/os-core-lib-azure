@@ -194,7 +194,7 @@ public class BlobStore {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done creating container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
-            throw handleBlobStoreException(500, "Failed to create blob container", ex);
+            throw handleBlobStorageException(500, "Failed to create blob container", ex);
         }
     }
 
@@ -213,7 +213,7 @@ public class BlobStore {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done deleting container with name {}", containerName).getMessage());
             return true;
         } catch (BlobStorageException ex) {
-            throw handleBlobStoreException(500, "Failed to delete blob container", ex);
+            throw handleBlobStorageException(500, "Failed to delete blob container", ex);
         }
     }
 
@@ -351,10 +351,7 @@ public class BlobStore {
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
-            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                throw handleBlobStoreException(404, "Specified blob was not found", ex);
-            }
-            throw handleBlobStoreException(500, "Failed to read specified blob", ex);
+            throw handleBlobStorageException(500, "Failed to read specified blob", ex);
         } catch (UnsupportedEncodingException ex) {
             statusCode = HttpStatus.SC_BAD_REQUEST;
             throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
@@ -387,10 +384,7 @@ public class BlobStore {
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
-            if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
-                throw handleBlobStoreException(404, "Specified blob was not found", ex);
-            }
-            throw handleBlobStoreException(500, "Failed to delete blob", ex);
+            throw handleBlobStorageException(500, "Failed to delete blob", ex);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
@@ -420,7 +414,7 @@ public class BlobStore {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done uploading file content to {}", filePath).getMessage());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
-            throw handleBlobStoreException(500, "Failed to upload file content.", ex);
+            throw handleBlobStorageException(500, "Failed to upload file content.", ex);
         } catch (IOException ex) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             throw handleBlobStoreException(500, MessageFormatter.format("Malformed document for item with name={}", filePath).getMessage(), ex);
@@ -512,6 +506,25 @@ public class BlobStore {
         } catch (Exception ex) {
             throw handleBlobStoreException(500, "Error creating creating blob container client.", ex);
         }
+    }
+
+    /**
+     * Logs and returns instance of AppException.
+     *
+     * @param status       Response status code
+     * @param errorMessage Error message
+     * @param ex           Original exception
+     * @return Instance of AppException
+     */
+    private AppException handleBlobStorageException(final int status, final String errorMessage, final BlobStorageException ex) {
+        if (ex.getErrorCode().equals(BlobErrorCode.BLOB_NOT_FOUND)) {
+            throw handleBlobStoreException(404, "Specified blob was not found", ex);
+        }
+        if (ex.getErrorCode().equals(BlobErrorCode.SERVER_BUSY)) {
+            throw handleBlobStoreException(503, "The server is busy, retry this request later", ex);
+        }
+
+        throw handleBlobStoreException(status, errorMessage, ex);
     }
 
     /**
