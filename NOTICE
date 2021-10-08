@@ -161,7 +161,7 @@ The following software have components provided under the terms of this license:
 - mapper-extras (from https://github.com/elastic/elasticsearch)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
 - micrometer-registry-azure-monitor (from https://github.com/micrometer-metrics/micrometer)
-- mockito-core (from http://mockito.org)
+- mockito-core (from https://github.com/mockito/mockito)
 - okhttp (from https://github.com/square/okhttp)
 - okhttp-logging-interceptor (from https://square.github.io/okhttp/)
 - okhttp-urlconnection (from https://github.com/square/okhttp)
@@ -338,7 +338,7 @@ The following software have components provided under the terms of this license:
 
 - Jakarta Annotations API (from https://projects.eclipse.org/projects/ee4j.ca)
 - Jakarta Expression Language 3.0 (from https://projects.eclipse.org/projects/ee4j.el)
-- Project Lombok (from http://projectlombok.org)
+- Project Lombok (from https://projectlombok.org)
 
 ========================================================================
 ImageMagick
@@ -418,7 +418,7 @@ The following software have components provided under the terms of this license:
 - Microsoft Azure internal Avro module for Storage (from https://github.com/Azure/azure-sdk-for-java)
 - Netty/Codec/HTTP (from https://repo1.maven.org/maven2/io/netty/netty-codec-http)
 - Netty/Common (from https://repo1.maven.org/maven2/io/netty/netty-common)
-- Project Lombok (from http://projectlombok.org)
+- Project Lombok (from https://projectlombok.org)
 - SLF4J API Module (from http://www.slf4j.org)
 - Spongy Castle (from http://rtyley.github.io/spongycastle/)
 - Spring Data for Azure Cosmos DB SQL API (from https://github.com/Azure/azure-sdk-for-java/tree/master/sdk/cosmos/azure-spring-data-cosmos)
@@ -427,7 +427,7 @@ The following software have components provided under the terms of this license:
 - documentdb-bulkexecutor (from http://azure.microsoft.com/en-us/services/documentdb/)
 - java jwt (from https://github.com/auth0/java-jwt)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
-- mockito-core (from http://mockito.org)
+- mockito-core (from https://github.com/mockito/mockito)
 - mockito-junit-jupiter (from https://github.com/mockito/mockito)
 - msal4j (from https://github.com/AzureAD/microsoft-authentication-library-for-java)
 - msal4j-persistence-extension (from https://github.com/AzureAD/microsoft-authentication-extensions-for-java)
@@ -504,7 +504,7 @@ The following software have components provided under the terms of this license:
 - Microsoft Azure SDK for EventGrid Management (from https://github.com/Azure/azure-sdk-for-java)
 - Microsoft Azure SDK for SQL API of Azure Cosmos DB Service (from https://github.com/Azure/azure-sdk-for-java)
 - Microsoft Azure client library for Blob Storage (from https://github.com/Azure/azure-sdk-for-java)
-- Project Lombok (from http://projectlombok.org)
+- Project Lombok (from https://projectlombok.org)
 - Spring Web (from https://github.com/spring-projects/spring-framework)
 - azure-documentdb (from https://azure.microsoft.com/en-us/services/cosmos-db/)
 - msal4j (from https://github.com/AzureAD/microsoft-authentication-library-for-java)

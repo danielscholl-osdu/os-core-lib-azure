@@ -436,6 +436,73 @@ public class BlobStoreTest {
     }
 
     @Test
+    public void createBlobContainer_ServerBusyError() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.SERVER_BUSY);
+        doThrow(exception).when(blobServiceClient).createBlobContainer(anyString());
+        String containerName = "containerName";
+        try {
+            blobStore.createBlobContainer(PARTITION_ID, containerName);
+        } catch (AppException ex) {
+            assertEquals(503, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void deleteBlobContainer_ServerBusyError() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.SERVER_BUSY);
+        doThrow(exception).when(blobServiceClient).deleteBlobContainer(anyString());
+        String containerName = "containerName";
+        try {
+            blobStore.deleteBlobContainer(PARTITION_ID, containerName);
+        } catch (AppException ex) {
+            assertEquals(503, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void readFromStorageContainer_ServerBusyError() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.SERVER_BUSY);
+        doThrow(exception).when(blockBlobClient).download(any());
+        try {
+            String content = blobStore.readFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(503, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void writeToStorageContainer_ServerBusyError() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.SERVER_BUSY);
+        doThrow(exception).when(blockBlobClient).upload(any(), anyLong(), eq(true));
+        try {
+            blobStore.writeToStorageContainer(PARTITION_ID, FILE_PATH, CONTENT, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(503, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void deleteFromStorageContainer_ServerBusyError() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.SERVER_BUSY);
+        doThrow(exception).when(blockBlobClient).delete();
+        try {
+            blobStore.deleteFromStorageContainer(FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(503, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
     public void copyFile_Success() {
         String copyId = "copyId";
         doReturn(copyId).when(blobCopyInfo).getCopyId();
