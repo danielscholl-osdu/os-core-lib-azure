@@ -275,7 +275,7 @@ EPL-1.0
 ========================================================================
 The following software have components provided under the terms of this license:
 
-- AspectJ weaver (from http://www.aspectj.org)
+- AspectJ Weaver (from https://www.eclipse.org/aspectj/)
 - JUnit Jupiter (Aggregator) (from https://junit.org/junit5/)
 - JUnit Jupiter API (from https://junit.org/junit5/)
 - JUnit Jupiter Engine (from https://junit.org/junit5/)
