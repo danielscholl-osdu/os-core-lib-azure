@@ -14,6 +14,9 @@ The following software have components provided under the terms of this license:
 - Apache Commons Lang (from http://commons.apache.org/proper/commons-lang/)
 - Apache Commons Logging (from http://commons.apache.org/proper/commons-logging/)
 - Apache HttpAsyncClient (from http://hc.apache.org/httpcomponents-asyncclient)
+- Apache HttpClient (from http://hc.apache.org/httpcomponents-client)
+- Apache HttpClient Cache (from http://hc.apache.org/httpcomponents-client)
+- Apache HttpCore (from http://hc.apache.org/httpcomponents-core-ga)
 - Apache HttpCore NIO (from http://hc.apache.org/httpcomponents-core-ga)
 - Apache Log4j API (from https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-api)
 - Apache Log4j Core (from https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-core)
@@ -39,9 +42,6 @@ The following software have components provided under the terms of this license:
 - HPPC Collections (from https://repo1.maven.org/maven2/com/carrotsearch/hppc)
 - HTTP functionality for the Reactor Netty library (from https://github.com/reactor/reactor-netty)
 - Hibernate Validator Engine (from https://repo1.maven.org/maven2/org/hibernate/validator/hibernate-validator)
-- HttpClient (from http://hc.apache.org/httpcomponents-client)
-- HttpClient Cache (from http://hc.apache.org/httpcomponents-client)
-- HttpCore (from http://hc.apache.org/httpcomponents-core-ga)
 - J2ObjC Annotations (from https://github.com/google/j2objc/)
 - JBoss Logging 3 (from http://www.jboss.org)
 - JCIP Annotations under Apache License (from http://stephenc.github.com/jcip-annotations)
@@ -79,8 +79,8 @@ The following software have components provided under the terms of this license:
 - Lucene Grouping (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-grouping)
 - Lucene Highlighter (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-highlighter)
 - Lucene Join (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-join)
-- Lucene Memory (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-backward-codecs)
 - Lucene Memory (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-memory)
+- Lucene Memory (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-backward-codecs)
 - Lucene Miscellaneous (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-misc)
 - Lucene Queries (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-queries)
 - Lucene QueryParsers (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-queryparser)
@@ -121,11 +121,12 @@ The following software have components provided under the terms of this license:
 - OpenCensus (from https://github.com/census-instrumentation/opencensus-java)
 - PWDB :: Database (from https://repo1.maven.org/maven2/org/linguafranca/pwdb/database)
 - Proton-J (from https://repo1.maven.org/maven2/org/apache/qpid/proton-j)
-- Reactive Streams Netty driver (from https://github.com/reactor/reactor-netty)
+- Reactor Netty with all modules (from https://github.com/reactor/reactor-netty)
 - Retrofit (from https://repo1.maven.org/maven2/com/squareup/retrofit2/retrofit)
 - SnakeYAML (from http://www.snakeyaml.org)
 - Spring AOP (from https://github.com/spring-projects/spring-framework)
 - Spring Beans (from https://github.com/spring-projects/spring-framework)
+- Spring Boot Web Starter (from https://projects.spring.io/spring-boot/#/spring-boot-parent/spring-boot-starters/spring-boot-starter-web)
 - Spring Commons Logging Bridge (from https://github.com/spring-projects/spring-framework)
 - Spring Context (from https://github.com/spring-projects/spring-framework)
 - Spring Core (from https://github.com/spring-projects/spring-framework)
@@ -144,7 +145,6 @@ The following software have components provided under the terms of this license:
 - Zipkin Reporter: Core (from https://repo1.maven.org/maven2/io/zipkin/reporter2/zipkin-reporter)
 - aalto-xml (from )
 - aggs-matrix-stats (from https://github.com/elastic/elasticsearch)
-- asm (from http://asm.ow2.io/)
 - compiler (from http://github.com/spullara/mustache.java)
 - elasticsearch-cli (from https://github.com/elastic/elasticsearch)
 - elasticsearch-core (from https://github.com/elastic/elasticsearch)
@@ -157,11 +157,11 @@ The following software have components provided under the terms of this license:
 - javatuples (from http://www.javatuples.org)
 - javax.inject (from http://code.google.com/p/atinject/)
 - lang-mustache (from https://github.com/elastic/elasticsearch)
-- lettuce (from https://github.com/lettuce-io/lettuce-core/wiki)
+- lettuce (from http://github.com/mp911de/lettuce/wiki)
 - mapper-extras (from https://github.com/elastic/elasticsearch)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
 - micrometer-registry-azure-monitor (from https://github.com/micrometer-metrics/micrometer)
-- mockito-core (from https://github.com/mockito/mockito)
+- mockito-core (from http://mockito.org)
 - okhttp (from https://github.com/square/okhttp)
 - okhttp-logging-interceptor (from https://square.github.io/okhttp/)
 - okhttp-urlconnection (from https://github.com/square/okhttp)
@@ -169,14 +169,14 @@ The following software have components provided under the terms of this license:
 - org.opentest4j:opentest4j (from https://github.com/ota4j-team/opentest4j)
 - parent-join (from https://github.com/elastic/elasticsearch)
 - rank-eval (from https://github.com/elastic/elasticsearch)
+- resilience4j (from https://github.com/resilience4j/resilience4j)
+- resilience4j (from https://resilience4j.readme.io)
 - resilience4j (from https://resilience4j.readme.io)
 - resilience4j (from https://resilience4j.readme.io)
 - resilience4j (from https://resilience4j.readme.io)
 - resilience4j (from https://resilience4j.readme.io)
 - resilience4j (from https://github.com/resilience4j/resilience4j)
 - resilience4j (from https://github.com/resilience4j/resilience4j)
-- resilience4j (from https://github.com/resilience4j/resilience4j)
-- resilience4j (from https://resilience4j.readme.io)
 - rest (from https://github.com/elastic/elasticsearch)
 - rest-high-level (from https://github.com/elastic/elasticsearch)
 - rxjava (from https://github.com/ReactiveX/RxJava)
@@ -192,7 +192,6 @@ The following software have components provided under the terms of this license:
 - spring-boot-starter-log4j2 (from https://spring.io/projects/spring-boot)
 - spring-boot-starter-tomcat (from https://spring.io/projects/spring-boot)
 - spring-boot-starter-validation (from https://spring.io/projects/spring-boot)
-- spring-boot-starter-web (from https://spring.io/projects/spring-boot)
 - swagger-annotations (from https://repo1.maven.org/maven2/io/swagger/swagger-annotations)
 - swagger-jaxrs (from https://repo1.maven.org/maven2/io/swagger/swagger-jaxrs)
 - tomcat-embed-core (from http://tomcat.apache.org/)
@@ -204,7 +203,6 @@ BSD-2-Clause
 The following software have components provided under the terms of this license:
 
 - Lucene Common Analyzers (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-analyzers-common)
-- Lucene Core (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-core)
 - Reflections (from http://github.com/ronmamo/reflections)
 - Stax2 API (from http://github.com/FasterXML/stax2-api)
 
@@ -263,19 +261,11 @@ The following software have components provided under the terms of this license:
 - tomcat-embed-core (from http://tomcat.apache.org/)
 
 ========================================================================
-DOC
-========================================================================
-The following software have components provided under the terms of this license:
-
-- Lucene Core (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-core)
-- Woodstox (from https://github.com/FasterXML/woodstox)
-
-========================================================================
 EPL-1.0
 ========================================================================
 The following software have components provided under the terms of this license:
 
-- AspectJ Weaver (from https://www.eclipse.org/aspectj/)
+- AspectJ weaver (from http://www.aspectj.org)
 - JUnit Jupiter (Aggregator) (from https://junit.org/junit5/)
 - JUnit Jupiter API (from https://junit.org/junit5/)
 - JUnit Jupiter Engine (from https://junit.org/junit5/)
@@ -339,14 +329,6 @@ The following software have components provided under the terms of this license:
 - Jakarta Annotations API (from https://projects.eclipse.org/projects/ee4j.ca)
 - Jakarta Expression Language 3.0 (from https://projects.eclipse.org/projects/ee4j.el)
 - Project Lombok (from https://projectlombok.org)
-
-========================================================================
-ImageMagick
-========================================================================
-The following software have components provided under the terms of this license:
-
-- Stax2 API (from http://github.com/FasterXML/stax2-api)
-- Woodstox (from https://github.com/FasterXML/woodstox)
 
 ========================================================================
 JSON
@@ -427,7 +409,7 @@ The following software have components provided under the terms of this license:
 - documentdb-bulkexecutor (from http://azure.microsoft.com/en-us/services/documentdb/)
 - java jwt (from https://github.com/auth0/java-jwt)
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
-- mockito-core (from https://github.com/mockito/mockito)
+- mockito-core (from http://mockito.org)
 - mockito-junit-jupiter (from https://github.com/mockito/mockito)
 - msal4j (from https://github.com/AzureAD/microsoft-authentication-library-for-java)
 - msal4j-persistence-extension (from https://github.com/AzureAD/microsoft-authentication-extensions-for-java)
@@ -482,13 +464,6 @@ WTFPL
 The following software have components provided under the terms of this license:
 
 - Reflections (from http://github.com/ronmamo/reflections)
-
-========================================================================
-X11
-========================================================================
-The following software have components provided under the terms of this license:
-
-- Lucene Core (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-core)
 
 ========================================================================
 public-domain
