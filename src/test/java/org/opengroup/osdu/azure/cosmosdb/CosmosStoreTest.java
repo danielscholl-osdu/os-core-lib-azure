@@ -23,6 +23,7 @@ import com.azure.cosmos.implementation.ConflictException;
 import com.azure.cosmos.implementation.NotFoundException;
 
 
+import com.azure.cosmos.implementation.RequestEntityTooLargeException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
@@ -223,6 +224,15 @@ class CosmosStoreTest {
             cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(500, exception.getError().getCode());
+    }
+
+    @Test
+    void upsertItem_throws413_ifRecordSizeTooLarge() throws CosmosException {
+        doThrow(RequestEntityTooLargeException.class).when(container).upsertItem(any(), any(), any());
+        AppException exception = assertThrows(AppException.class, () -> {
+            cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
+        });
+        assertEquals(413, exception.getError().getCode());
     }
 
     @Test

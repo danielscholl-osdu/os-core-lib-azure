@@ -18,6 +18,7 @@ import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.ConflictException;
 import com.azure.cosmos.implementation.NotFoundException;
+import com.azure.cosmos.implementation.RequestEntityTooLargeException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.FeedResponse;
@@ -519,6 +520,10 @@ public class CosmosStore {
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
             container.upsertItem(item, key, options);
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("UPSERT_ITEM with partition_key=%s", partitionKey));
+        } catch (RequestEntityTooLargeException e) {
+            String errorMessage = "Record metadata is too large";
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(errorMessage, e);
+            throw new AppException(413, errorMessage, e.getMessage(), e);
         } catch (CosmosException e) {
             statusCode = e.getStatusCode();
             String errorMessage = "Unexpectedly failed to put item into CosmosDB";
