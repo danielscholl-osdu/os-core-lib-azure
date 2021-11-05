@@ -523,7 +523,7 @@ public class CosmosStore {
         } catch (RequestEntityTooLargeException e) {
             String errorMessage = "Record metadata is too large";
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(errorMessage, e);
-            throw new AppException(413, errorMessage, e.getMessage(), e);
+            throw new AppException(413, errorMessage, "Request size is too large. The non-data properties on a record cannot be larger than 2MB", e);
         } catch (CosmosException e) {
             statusCode = e.getStatusCode();
             String errorMessage = "Unexpectedly failed to put item into CosmosDB";
