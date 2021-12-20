@@ -79,8 +79,8 @@ The following software have components provided under the terms of this license:
 - Lucene Grouping (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-grouping)
 - Lucene Highlighter (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-highlighter)
 - Lucene Join (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-join)
-- Lucene Memory (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-backward-codecs)
 - Lucene Memory (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-memory)
+- Lucene Memory (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-backward-codecs)
 - Lucene Miscellaneous (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-misc)
 - Lucene Queries (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-queries)
 - Lucene QueryParsers (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-queryparser)
@@ -90,6 +90,9 @@ The following software have components provided under the terms of this license:
 - Lucene Suggest (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-suggest)
 - Metrics Core (from )
 - Microsoft Application Insights Java SDK Core (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Spring Boot starter (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Web Module (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Log4j 2 Appender (from https://github.com/Microsoft/ApplicationInsights-Java)
 - Microsoft Azure Java Core Library (from https://github.com/Azure/azure-sdk-for-java)
 - Microsoft Azure Netty HTTP Client Library (from https://github.com/Azure/azure-sdk-for-java)
 - Microsoft Azure SDK for SQL API of Azure Cosmos DB Service (from https://github.com/Azure/azure-sdk-for-java)
@@ -178,10 +181,10 @@ The following software have components provided under the terms of this license:
 - resilience4j (from https://github.com/resilience4j/resilience4j)
 - resilience4j (from https://github.com/resilience4j/resilience4j)
 - resilience4j (from https://resilience4j.readme.io)
-- resilience4j (from https://resilience4j.readme.io)
-- resilience4j (from https://github.com/resilience4j/resilience4j)
 - resilience4j (from https://github.com/resilience4j/resilience4j)
 - resilience4j (from https://resilience4j.readme.io)
+- resilience4j (from https://resilience4j.readme.io)
+- resilience4j (from https://github.com/resilience4j/resilience4j)
 - resilience4j (from https://github.com/resilience4j/resilience4j)
 - rest (from https://github.com/elastic/elasticsearch)
 - rest-high-level (from https://github.com/elastic/elasticsearch)
@@ -220,6 +223,9 @@ The following software have components provided under the terms of this license:
 - Lucene Core (from )
 - Lucene Suggest (from https://repo1.maven.org/maven2/org/apache/lucene/lucene-suggest)
 - Microsoft Application Insights Java SDK Core (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Spring Boot starter (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Web Module (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Log4j 2 Appender (from https://github.com/Microsoft/ApplicationInsights-Java)
 - Netty/Codec/HTTP (from https://repo1.maven.org/maven2/io/netty/netty-codec-http)
 - Netty/Transport/Classes/KQueue (from https://repo1.maven.org/maven2/io/netty/netty-transport-classes-kqueue)
 - Reflections (from http://code.google.com/p/reflections/)
@@ -240,6 +246,9 @@ CC-BY-4.0
 The following software have components provided under the terms of this license:
 
 - Microsoft Application Insights Java SDK Core (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Spring Boot starter (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Web Module (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Log4j 2 Appender (from https://github.com/Microsoft/ApplicationInsights-Java)
 
 ========================================================================
 CC0-1.0
@@ -271,6 +280,9 @@ The following software have components provided under the terms of this license:
 - Jakarta Annotations API (from https://projects.eclipse.org/projects/ee4j.ca)
 - Jakarta Expression Language 4.0 (from https://projects.eclipse.org/projects/ee4j.el)
 - Microsoft Application Insights Java SDK Core (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Spring Boot starter (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Web Module (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Log4j 2 Appender (from https://github.com/Microsoft/ApplicationInsights-Java)
 - SnakeYAML (from https://bitbucket.org/snakeyaml/snakeyaml)
 - org.junit.jupiter:junit-jupiter-params (from http://junit.org/junit5/)
 
@@ -341,6 +353,9 @@ The following software have components provided under the terms of this license:
 - Java Native Access Platform (from https://github.com/java-native-access/jna)
 - Javassist (from http://www.javassist.org/)
 - Microsoft Application Insights Java SDK Core (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Spring Boot starter (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Web Module (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Log4j 2 Appender (from https://github.com/Microsoft/ApplicationInsights-Java)
 
 ========================================================================
 LGPL-2.1-or-later
@@ -373,6 +388,9 @@ The following software have components provided under the terms of this license:
 - Java Client Runtime for AutoRest (from https://github.com/Azure/autorest-clientruntime-for-java)
 - Lucene Core (from )
 - Microsoft Application Insights Java SDK Core (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Spring Boot starter (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Java SDK Web Module (from https://github.com/Microsoft/ApplicationInsights-Java)
+- Microsoft Application Insights Log4j 2 Appender (from https://github.com/Microsoft/ApplicationInsights-Java)
 - Microsoft Azure Java Core Library (from https://github.com/Azure/azure-sdk-for-java)
 - Microsoft Azure Netty HTTP Client Library (from https://github.com/Azure/azure-sdk-for-java)
 - Microsoft Azure SDK annotations (from https://github.com/Microsoft/java-api-annotations)
