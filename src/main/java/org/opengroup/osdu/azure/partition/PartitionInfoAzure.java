@@ -64,6 +64,12 @@ public class PartitionInfoAzure {
     @SerializedName("ingest-storage-account-name")
     private Property ingestStorageAccountNameConfig;
 
+    @SerializedName("hierarchical-storage-account-key")
+    private Property hierarchicalStorageAccountKeyConfig;
+
+    @SerializedName("hierarchical-storage-account-name")
+    private Property hierarchicalStorageAccountNameConfig;
+
     @SerializedName("sb-namespace")
     private Property sbNamespaceConfig;
 
@@ -305,6 +311,26 @@ public class PartitionInfoAzure {
             return getSecret(this.getIngestStorageAccountNameConfig());
         }
         return String.valueOf(this.getIngestStorageAccountNameConfig().getValue());
+    }
+
+    /**
+     * @return file collection feature storage account key
+     */
+    public String getHierarchicalStorageAccountKey() {
+        if (this.getHierarchicalStorageAccountKeyConfig().isSensitive()) {
+            return getSecret(this.getHierarchicalStorageAccountKeyConfig());
+        }
+        return String.valueOf(this.getHierarchicalStorageAccountKeyConfig().getValue());
+    }
+
+    /**
+     * @return file collection feature storage account name
+     */
+    public String getHierarchicalStorageAccountName() {
+        if (this.getHierarchicalStorageAccountNameConfig().isSensitive()) {
+            return getSecret(this.getHierarchicalStorageAccountNameConfig());
+        }
+        return String.valueOf(this.getHierarchicalStorageAccountNameConfig().getValue());
     }
 
     /**
