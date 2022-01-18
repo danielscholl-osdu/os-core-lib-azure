@@ -47,6 +47,8 @@
     <azure-spring-data-cosmos.version>3.7.0</azure-spring-data-cosmos.version>
     <resilience4jVersion>1.7.0</resilience4jVersion>
 
+    <azure-storage-file-datalake.version>12.6.0</azure-storage-file-datalake.version>
+    <azure-storage-blob.version>12.13.0</azure-storage-blob.version>
   </properties>
 
   <licenses>
@@ -90,6 +92,11 @@
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <version>${lombok.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-blob</artifactId>
+        <version>${azure-storage-blob.version}}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -170,6 +177,17 @@
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-servicebus</artifactId>
       <version>${azure.servicebus.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-blob</artifactId>
+      <version>${azure-storage-blob.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-file-datalake</artifactId>
+      <version>${azure-storage-file-datalake.version}</version>
     </dependency>
 
     <!-- App Insights dependencies -->
