@@ -39,10 +39,6 @@ public class ServiceBusPublisher {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceBusPublisher.class);
     @Autowired
     private ITopicClientFactory topicClientFactory;
-    @Autowired
-    private PubsubConfiguration pubsubConfiguration;
-    @Autowired
-    private PubSubAttributesBuilder pubSubAttributesBuilder;
 
     /**
      * @param publisherInfo Contains Service bus batch and publishing details

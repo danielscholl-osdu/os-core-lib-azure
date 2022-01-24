@@ -39,8 +39,6 @@ public class EventGridPublisher {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventGridPublisher.class);
     @Autowired
     private EventGridTopicStore eventGridTopicStore;
-    @Autowired
-    private PubSubAttributesBuilder pubSubAttributesBuilder;
 
     /**
      * @param publisherInfo Contains Event grid batch and publishing details

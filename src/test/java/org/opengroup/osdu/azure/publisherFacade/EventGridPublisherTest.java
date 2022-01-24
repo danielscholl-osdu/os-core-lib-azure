@@ -53,8 +53,6 @@ public class EventGridPublisherTest {
     private JaxRsDpsLog logger;
     @Mock
     private EventGridTopicStore eventGridTopicStore;
-    @Mock
-    private PubSubAttributesBuilder pubSubAttributesBuilder;
     @InjectMocks
     private EventGridPublisher sut;
 
@@ -69,7 +67,6 @@ public class EventGridPublisherTest {
         Mockito.lenient().doReturn(CORRELATION_ID).when(dpsHeaders).getCorrelationId();
         Mockito.lenient().doReturn(EVENT_GRID_TOPIC_NAME).when(publisherInfo).getEventGridTopicName();
         Mockito.lenient().doReturn(batch).when(publisherInfo).getBatch();
-        Mockito.lenient().doReturn(dpsHeaders.getHeaders()).when(pubSubAttributesBuilder).createAttributesMap();
     }
 
     @Test

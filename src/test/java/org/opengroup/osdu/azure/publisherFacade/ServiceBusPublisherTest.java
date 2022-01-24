@@ -51,8 +51,6 @@ public class ServiceBusPublisherTest {
     private TopicClientFactoryImpl topicClientFactory;
     @Mock
     private PublisherInfo publisherInfo;
-    @Mock
-    private PubSubAttributesBuilder pubSubAttributesBuilder;
     @InjectMocks
     private ServiceBusPublisher sut;
 
@@ -65,7 +63,6 @@ public class ServiceBusPublisherTest {
         lenient().doReturn(CORRELATION_ID).when(dpsHeaders).getCorrelationId();
         lenient().doReturn(SERVICE_BUS_TOPIC_NAME).when(publisherInfo).getServiceBusTopicName();
         lenient().doReturn(batch).when(publisherInfo).getBatch();
-        lenient().doReturn(dpsHeaders.getHeaders()).when(pubSubAttributesBuilder).createAttributesMap();
         lenient().doReturn(topicClient).when(topicClientFactory).getClient(any(), any());
     }
 
