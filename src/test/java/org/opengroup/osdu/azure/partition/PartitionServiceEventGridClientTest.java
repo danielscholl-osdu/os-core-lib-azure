@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.PartitionServiceEventGridCache;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.util.AzureServicePrincipleTokenService;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
@@ -58,6 +59,9 @@ public class PartitionServiceEventGridClientTest {
     private DpsHeaders headers;
     @Mock
     private PartitionServiceEventGridCache partitionServiceEventGridCache;
+    @Mock
+    private MSIConfiguration msiConfiguration;
+
     @InjectMocks
     private PartitionServiceEventGridClient sut;
 
@@ -84,6 +88,7 @@ public class PartitionServiceEventGridClientTest {
         PartitionInfo partitionInfo = PartitionInfo.builder().properties(properties).build();
         PartitionServiceEventGridClient partitionServiceClientSpy = Mockito.spy(sut);
         doReturn(partitionInfo).when(partitionServiceClientSpy).getPartitionInfo(anyString());
+        doReturn(false).when(msiConfiguration).getIsEnabled();
 
         // Act
         Map<String, EventGridTopicPartitionInfoAzure> eventGridTopicPartitionInfoAzureMap =
@@ -112,6 +117,7 @@ public class PartitionServiceEventGridClientTest {
         PartitionInfo partitionInfo = PartitionInfo.builder().properties(properties).build();
         PartitionServiceEventGridClient partitionServiceClientSpy = Mockito.spy(sut);
         doReturn(partitionInfo).when(partitionServiceClientSpy).getPartitionInfo(anyString());
+        doReturn(false).when(msiConfiguration).getIsEnabled();
 
         // Act
         EventGridTopicPartitionInfoAzure eventGridTopicPartitionInfoAzure =

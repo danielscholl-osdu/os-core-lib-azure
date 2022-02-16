@@ -14,8 +14,11 @@
 
 package org.opengroup.osdu.azure.serviceBusManager;
 
+import com.microsoft.azure.servicebus.ClientSettings;
 import com.microsoft.azure.servicebus.management.ManagementClient;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
+import com.microsoft.azure.servicebus.security.ManagedIdentityTokenProvider;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -27,6 +30,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,6 +47,9 @@ public class ManagementClientFactoryImpl implements IManagementClientFactory {
     private PartitionServiceClient partitionService;
 
     private Map<String, ManagementClient> managementClientMap;
+
+    @Autowired
+    private MSIConfiguration msiConfiguration;
 
     /**
      * Initializes the private variables as required.
@@ -73,11 +80,22 @@ public class ManagementClientFactoryImpl implements IManagementClientFactory {
      */
     private ManagementClient createManagementClient(final String partitionId) {
         try {
-            String cacheKey = partitionId + "-serviceBusManagementClient";
             PartitionInfoAzure pi = this.partitionService.getPartition(partitionId);
-            String serviceBusConnectionString = pi.getSbConnection();
-            ConnectionStringBuilder connectionStringBuilder = new ConnectionStringBuilder(serviceBusConnectionString);
-            ManagementClient managementClient = new ManagementClient(connectionStringBuilder);
+
+            ManagementClient managementClient;
+
+            if (msiConfiguration.getIsEnabled()) {
+                String serviceBusNamespace = pi.getSbNamespace();
+                URI namespaceEndpointURI = new URI(String.format("sb://%s.servicebus.windows.net/", serviceBusNamespace));
+
+                ClientSettings clientSettings = new ClientSettings(new ManagedIdentityTokenProvider());
+                managementClient = new ManagementClient(namespaceEndpointURI, clientSettings);
+            } else {
+                String serviceBusConnectionString = pi.getSbConnection();
+                ConnectionStringBuilder connectionStringBuilder = new ConnectionStringBuilder(serviceBusConnectionString);
+                managementClient = new ManagementClient(connectionStringBuilder);
+            }
+
             LOGGER.debug("Management client creation successful for partition Id : " + partitionId);
             return managementClient;
         } catch (Exception e) {

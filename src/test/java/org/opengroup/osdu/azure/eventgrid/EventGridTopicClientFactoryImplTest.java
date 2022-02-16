@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.EventGridTopicClientCache;
 import org.opengroup.osdu.azure.di.EventGridTopicRetryConfiguration;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.core.common.partition.PartitionException;
@@ -52,6 +53,9 @@ class EventGridTopicClientFactoryImplTest {
 
     @Mock
     private EventGridTopicClientCache clientCache;
+
+    @Mock
+    private MSIConfiguration msiConfiguration;
 
     @Test
     public void should_throwException_given_nullDataPartitionId() {
@@ -87,6 +91,7 @@ class EventGridTopicClientFactoryImplTest {
 
         when(this.clientCache.containsKey(any())).thenReturn(false);
         when(this.eventGridTopicRetryConfiguration.isTimeoutConfigured()).thenReturn(false);
+        when(this.msiConfiguration.getIsEnabled()).thenReturn(false);
 
         // Act
         EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, "validtopic");
@@ -108,6 +113,7 @@ class EventGridTopicClientFactoryImplTest {
         when(this.clientCache.containsKey(any())).thenReturn(false);
         when(this.eventGridTopicRetryConfiguration.isTimeoutConfigured()).thenReturn(true);
         when(this.eventGridTopicRetryConfiguration.getLongRunningOperationRetryTimeout()).thenReturn(20);
+        when(this.msiConfiguration.getIsEnabled()).thenReturn(false);
 
         // Act
         EventGridClient eventGridClient = this.sut.getClient(VALID_DATA_PARTIION_ID, "validtopic");

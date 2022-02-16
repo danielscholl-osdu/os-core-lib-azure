@@ -20,6 +20,7 @@ import com.google.gson.JsonElement;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.KeyVaultFacade;
 import org.opengroup.osdu.azure.cache.PartitionServiceEventGridCache;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.util.AzureServicePrincipleTokenService;
 import org.opengroup.osdu.common.Validators;
 import org.opengroup.osdu.core.common.model.http.AppException;
@@ -60,6 +61,8 @@ public class PartitionServiceEventGridClient {
     private DpsHeaders headers;
     @Autowired
     private PartitionServiceEventGridCache partitionServiceEventGridCache;
+    @Autowired
+    private MSIConfiguration msiConfiguration;
 
     /**
      * Get TopicInfo for a given topic.
@@ -110,7 +113,9 @@ public class PartitionServiceEventGridClient {
                 if (stringTokenizer.countTokens() == 2) {
                     addEventGridTopicName(topics, property, stringTokenizer);
                 } else if (stringTokenizer.countTokens() == 3) {
-                    addEventGridAccessKey(topics, property, stringTokenizer);
+                    if (!msiConfiguration.getIsEnabled()) {
+                        addEventGridAccessKey(topics, property, stringTokenizer);
+                    }
                 } else {
                     throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Invalid EventGrid Partition configuration for the partition " + partitionId, "Please reconfigure the partition service");
                 }
