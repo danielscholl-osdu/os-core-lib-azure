@@ -8,9 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 
 import com.azure.cosmos.ThrottlingRetryOptions;
+import com.azure.identity.DefaultAzureCredential;
 import com.azure.security.keyvault.secrets.SecretClient;
 import org.opengroup.osdu.azure.KeyVaultFacade;
 import org.opengroup.osdu.azure.cosmosdb.system.config.SystemCosmosConfig;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.di.CosmosRetryConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
@@ -43,6 +45,12 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
 
     @Autowired
     private CosmosRetryConfiguration cosmosRetryConfiguration;
+
+    @Autowired
+    private MSIConfiguration msiConfiguration;
+
+    @Autowired
+    private DefaultAzureCredential defaultAzureCredential;
 
     /**
      * Initializes the private variables as required.
@@ -91,12 +99,22 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
 
         ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+        CosmosClient cosmosClient;
 
-        CosmosClient cosmosClient = new CosmosClientBuilder()
-                .endpoint(pi.getCosmosEndpoint())
-                .key(pi.getCosmosPrimaryKey())
-                .throttlingRetryOptions(throttlingRetryOptions)
-                .buildClient();
+        if (msiConfiguration.getIsEnabled()) {
+            cosmosClient = new CosmosClientBuilder()
+                    .endpoint(pi.getCosmosEndpoint())
+                    .credential(defaultAzureCredential)
+                    .throttlingRetryOptions(throttlingRetryOptions)
+                    .buildClient();
+        } else {
+            cosmosClient = new CosmosClientBuilder()
+                    .endpoint(pi.getCosmosEndpoint())
+                    .key(pi.getCosmosPrimaryKey())
+                    .throttlingRetryOptions(throttlingRetryOptions)
+                    .buildClient();
+        }
+
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
                 .info("Created CosmosClient for dataPartition {}.", dataPartitionId);
         return cosmosClient;

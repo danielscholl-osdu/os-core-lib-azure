@@ -13,5 +13,5 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class MSIConfiguration {
-    private Boolean isEnabled = true;
+    private Boolean isEnabled = false;
 }

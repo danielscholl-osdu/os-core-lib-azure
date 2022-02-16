@@ -14,11 +14,14 @@
 
 package org.opengroup.osdu.azure.eventgrid;
 
+import com.microsoft.azure.AzureEnvironment;
+import com.microsoft.azure.credentials.MSICredentials;
 import com.microsoft.azure.eventgrid.EventGridClient;
 import com.microsoft.azure.eventgrid.TopicCredentials;
 import com.microsoft.azure.eventgrid.implementation.EventGridClientImpl;
 import org.opengroup.osdu.azure.cache.EventGridTopicClientCache;
 import org.opengroup.osdu.azure.di.EventGridTopicRetryConfiguration;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.EventGridTopicPartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceEventGridClient;
 import org.opengroup.osdu.common.Validators;
@@ -28,6 +31,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implementation for IEventGridTopicClientFactory.
@@ -45,6 +51,9 @@ public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFac
 
     @Autowired
     private EventGridTopicRetryConfiguration eventGridTopicRetryConfiguration;
+
+    @Autowired
+    private MSIConfiguration msiConfiguration;
 
     /**
      *
@@ -65,15 +74,27 @@ public class EventGridTopicClientFactoryImpl implements IEventGridTopicClientFac
         EventGridTopicPartitionInfoAzure eventGridTopicPartitionInfoAzure =
                 this.partitionService.getEventGridTopicInPartition(dataPartitionId, topicName);
 
-
-        TopicCredentials topicCredentials =
-                new TopicCredentials(eventGridTopicPartitionInfoAzure.getTopicAccessKey());
         EventGridClient eventGridClient;
-        if (eventGridTopicRetryConfiguration.isTimeoutConfigured()) {
-            eventGridClient = new EventGridClientImpl(topicCredentials).withLongRunningOperationRetryTimeout(eventGridTopicRetryConfiguration.getLongRunningOperationRetryTimeout());
+        EventGridClientImpl eventGridClientImpl;
+
+        if (msiConfiguration.getIsEnabled()) {
+            Map<String, String> audience = new HashMap<>();
+            audience.put("managementEndpointUrl", "https://eventgrid.azure.net");
+            AzureEnvironment azureEnvironment = new AzureEnvironment(audience);
+            MSICredentials msiCredentials = new MSICredentials(azureEnvironment);
+            eventGridClientImpl = new EventGridClientImpl(msiCredentials);
         } else {
-            eventGridClient = new EventGridClientImpl(topicCredentials);
+            TopicCredentials topicCredentials =
+                    new TopicCredentials(eventGridTopicPartitionInfoAzure.getTopicAccessKey());
+            eventGridClientImpl = new EventGridClientImpl(topicCredentials);
         }
+
+        if (eventGridTopicRetryConfiguration.isTimeoutConfigured()) {
+            eventGridClient = eventGridClientImpl.withLongRunningOperationRetryTimeout(eventGridTopicRetryConfiguration.getLongRunningOperationRetryTimeout());
+        } else {
+            eventGridClient = eventGridClientImpl;
+        }
+
         this.clientCache.put(cacheKey, eventGridClient);
         return eventGridClient;
     }

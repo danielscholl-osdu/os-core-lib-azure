@@ -1,10 +1,8 @@
 package org.opengroup.osdu.azure.servicebus;
 
 import com.microsoft.azure.servicebus.SubscriptionClient;
-import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.cache.SubscriptionClientCache;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.partition.Property;
@@ -30,6 +29,8 @@ public class SubscriptionClientFactoryImplTest {
     private PartitionServiceClient partitionServiceClient;
     @Mock
     private SubscriptionClientCache clientCache;
+    @Mock
+    private MSIConfiguration msiConfiguration;
 
     private static final String PARTITION_ID = "dataPartitionId";
     private static final String TOPIC_NAME = "testTopic";
@@ -103,6 +104,7 @@ public class SubscriptionClientFactoryImplTest {
         SubscriptionClient subscriptionClient = mock(SubscriptionClient.class);
         SubscriptionClientFactoryImpl subscriptionClientFactorySpy = Mockito.spy(subscriptionClientFactory);
         doReturn(subscriptionClient).when(subscriptionClientFactorySpy).getSubscriptionClient(anyString(), anyString());
+        when(this.msiConfiguration.getIsEnabled()).thenReturn(false);
         when(this.partitionServiceClient.getPartition(PARTITION_ID)).thenReturn(
                 PartitionInfoAzure.builder().sbConnectionConfig(Property.builder().value(SB_CONNECTION_STRING).build())
                         .build());
@@ -110,4 +112,5 @@ public class SubscriptionClientFactoryImplTest {
         assertNotNull(subscriptionClientFactorySpy.getClient(PARTITION_ID, TOPIC_NAME, SUBSCRIPTION_NAME));
         verify(this.clientCache, times(1)).put(any(), any());
     }
+
 }

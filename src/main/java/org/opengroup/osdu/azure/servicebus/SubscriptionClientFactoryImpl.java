@@ -1,10 +1,13 @@
 package org.opengroup.osdu.azure.servicebus;
 
+import com.microsoft.azure.servicebus.ClientSettings;
 import com.microsoft.azure.servicebus.ReceiveMode;
 import com.microsoft.azure.servicebus.SubscriptionClient;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
+import com.microsoft.azure.servicebus.security.ManagedIdentityTokenProvider;
 import org.opengroup.osdu.azure.cache.SubscriptionClientCache;
+import org.opengroup.osdu.azure.di.MSIConfiguration;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -24,6 +27,10 @@ public class SubscriptionClientFactoryImpl implements ISubscriptionClientFactory
 
     @Autowired
     private SubscriptionClientCache clientCache;
+
+    @Autowired
+    private MSIConfiguration msiConfiguration;
+
 
     /**
      * @param dataPartitionId  Data Partition Id
@@ -46,10 +53,17 @@ public class SubscriptionClientFactoryImpl implements ISubscriptionClientFactory
         }
 
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
-        String serviceBusConnectionString = pi.getSbConnection();
-        SubscriptionClient subscriptionClient = getSubscriptionClient(entityPath, serviceBusConnectionString);
-        this.clientCache.put(cacheKey, subscriptionClient);
+        SubscriptionClient subscriptionClient;
 
+        if (msiConfiguration.getIsEnabled()) {
+            String serviceBusNamespace = pi.getSbNamespace();
+            subscriptionClient = getSubscriptionClientMSI(entityPath, serviceBusNamespace);
+        } else {
+            String serviceBusConnectionString = pi.getSbConnection();
+            subscriptionClient = getSubscriptionClient(entityPath, serviceBusConnectionString);
+        }
+
+        this.clientCache.put(cacheKey, subscriptionClient);
         return subscriptionClient;
     }
 
@@ -65,7 +79,17 @@ public class SubscriptionClientFactoryImpl implements ISubscriptionClientFactory
                 serviceBusConnectionString,
                 entityPath
         );
-
         return new SubscriptionClient(connectionStringBuilder, ReceiveMode.PEEKLOCK);
+    }
+
+    /***
+     * @param entityPath                 Service Bus entity path
+     * @param namespace                  Service Bus namespace
+     * @return SubscriptionClient object
+     * @throws InterruptedException Exception thrown by {@link SubscriptionClient}
+     * @throws ServiceBusException  Exception thrown by {@link SubscriptionClient}
+     */
+    SubscriptionClient getSubscriptionClientMSI(final String entityPath, final String namespace) throws InterruptedException, ServiceBusException {
+        return new SubscriptionClient(namespace, entityPath, new ClientSettings(new ManagedIdentityTokenProvider()), ReceiveMode.PEEKLOCK);
     }
 }
