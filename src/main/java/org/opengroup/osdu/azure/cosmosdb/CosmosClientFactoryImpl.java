@@ -125,10 +125,20 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
      * @return cosmos client.
      */
     private CosmosClient createSystemCosmosClient() {
-        CosmosClient cosmosClient = new CosmosClientBuilder()
-                .endpoint(getSecret(systemCosmosConfig.getCosmosDBAccountKeyName()))
-                .key(getSecret(systemCosmosConfig.getCosmosPrimaryKeyName()))
-                .buildClient();
+
+        CosmosClient cosmosClient;
+        if (msiConfiguration.getIsEnabled()) {
+            cosmosClient = new CosmosClientBuilder()
+                    .endpoint(getSecret(systemCosmosConfig.getCosmosDBAccountKeyName()))
+                    .credential(defaultAzureCredential)
+                    .buildClient();
+        } else {
+            cosmosClient = new CosmosClientBuilder()
+                    .endpoint(getSecret(systemCosmosConfig.getCosmosDBAccountKeyName()))
+                    .key(getSecret(systemCosmosConfig.getCosmosPrimaryKeyName()))
+                    .buildClient();
+        }
+
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
                 .info("Created CosmosClient for system resources");
 

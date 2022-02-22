@@ -71,6 +71,7 @@
         <artifactId>azure-core</artifactId>
         <version>${azure-core.version}</version>
       </dependency>
+
       <dependency>
         <!--
         This dependency is added here to override the version coming from Azure Spring boot bom.
@@ -158,6 +159,13 @@
           </exclusion>
       </exclusions>
     </dependency>
+
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core</artifactId>
+      <version>${azure-core.version}</version>
+    </dependency>
+
     <!--
     azure-identity:1.2.5 comes with problem dependency: net.minidev:json-smart:jar:2.3
     because of that we need to enforce the higher version

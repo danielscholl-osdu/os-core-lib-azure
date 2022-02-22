@@ -308,6 +308,33 @@ public class BlobStore {
     }
 
     /**
+     * Generates pre-signed url to a blob block using the user delegation key.
+     *
+     * @param dataPartitionId data partition id
+     * @param containerName   Name of the storage container
+     * @param filePath        file Path
+     * @param expiryTime      Time after which the token expires
+     * @param permissions     permissions for the given container
+     * @return Generates pre-signed url for a given container
+     */
+    public String generatePreSignedUrlWithUserDelegationSas(final String dataPartitionId, final String containerName, final String filePath, final OffsetDateTime expiryTime, final BlobSasPermission permissions) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+
+        OffsetDateTime startTime = OffsetDateTime.now();
+        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(startTime, expiryTime);
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime, permissions).setStartTime(startTime);
+
+        final long start = System.currentTimeMillis();
+        String sasToken = blockBlobClient.generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey);
+        final long timeTaken = System.currentTimeMillis() - start;
+
+        logDependency("GENERATE_PRESIGNED_URL_USER_DELEGATION_SAS", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return blockBlobClient.getBlobUrl() + "?" + sasToken;
+    }
+
+    /**
      * Method is used to copy a file specified at Source URL to the provided destination.
      *
      * @param dataPartitionId Data partition id
