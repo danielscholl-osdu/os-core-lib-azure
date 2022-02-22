@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
  * This is configuration bean to provide DataLakeStore component.
  */
 @Configuration
-@ConditionalOnProperty(value = "azure.datalakestorage.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "azure.datalakestorage.enabled", havingValue = "true", matchIfMissing = false)
 public class DataLakeProvider {
     /**
      * Creates instance of {@link IDataLakeClientFactory}.
