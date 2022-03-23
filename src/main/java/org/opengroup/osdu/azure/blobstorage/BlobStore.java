@@ -335,6 +335,32 @@ public class BlobStore {
     }
 
     /**
+     * This method is used to generate pre-signed url for file (blob). NOTE: Using
+     * the below method will require BlobServiceClient to be instantiated using
+     * the user delegation key.
+     * @param dataPartitionId Data partition id
+     * @param filePath Path of file (blob) for which SAS token needs to be generated
+     * @param fileName Name of the file
+     * @param contentType Content type of the file
+     * @param containerName Name of the storage container
+     * @param expiryTime Time after which the token expires
+     * @param permissions Permissions for the given blob
+     * @return Generates Pre-Signed URL for a given blob.
+     */
+    public String generatePreSignedUrlWithUserDelegationSas(final String dataPartitionId, final String filePath, final String containerName,
+                                       final OffsetDateTime expiryTime, final BlobSasPermission permissions, final String fileName,
+                                       final String contentType) {
+        BlobServiceClient blobServiceClient = blobServiceClientFactory.getBlobServiceClient(dataPartitionId);
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+
+        OffsetDateTime startTime = OffsetDateTime.now();
+        UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(startTime, expiryTime);
+        return blockBlobClient.getBlobUrl() + "?"
+                + generateSASTokenWithUserDelegationKey(blockBlobClient, expiryTime, permissions, fileName, contentType, userDelegationKey);
+    }
+
+    /**
      * Method is used to copy a file specified at Source URL to the provided destination.
      *
      * @param dataPartitionId Data partition id
@@ -485,6 +511,29 @@ public class BlobStore {
         String sasToken = blockBlobClient.generateSas(blobServiceSasSignatureValues);
         final long timeTaken = System.currentTimeMillis() - start;
         logDependency("GENERATE_SAS_TOKEN", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken,
+                String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
+    }
+
+    /**
+     * @param blockBlobClient Blob client
+     * @param expiryTime Time after which SAS Token expires
+     * @param permissions Permissions for the given blob
+     * @param fileName name of the file
+     * @param contentType Content type of the file
+     * @param userDelegationKey user Delegation Key
+     * @return Generates SAS Token.
+     */
+    private String generateSASTokenWithUserDelegationKey(final BlockBlobClient blockBlobClient, final OffsetDateTime expiryTime,
+                                    final BlobSasPermission permissions, final String fileName, final String contentType, final UserDelegationKey userDelegationKey) {
+        BlobServiceSasSignatureValues blobServiceSasSignatureValues = new BlobServiceSasSignatureValues(expiryTime,
+                permissions);
+        blobServiceSasSignatureValues.setContentType(contentType);
+        blobServiceSasSignatureValues.setContentDisposition("attachment; filename= " + fileName);
+        final long start = System.currentTimeMillis();
+        String sasToken = blockBlobClient.generateUserDelegationSas(blobServiceSasSignatureValues, userDelegationKey);
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN_WITH_USER_DELEGATION_key", blockBlobClient.getBlobName(), blockBlobClient.getBlobUrl(), timeTaken,
                 String.valueOf(HttpStatus.SC_OK), true);
         return sasToken;
     }
