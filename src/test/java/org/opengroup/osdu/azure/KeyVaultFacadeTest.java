@@ -14,6 +14,8 @@
 
 package org.opengroup.osdu.azure;
 
+import com.azure.core.exception.ResourceModifiedException;
+import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import org.junit.jupiter.api.AfterEach;
@@ -28,8 +30,7 @@ import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 
 import java.lang.reflect.Field;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -116,5 +117,27 @@ class KeyVaultFacadeTest {
 
         String secretValue = KeyVaultFacade.getSecretWithValidation(kv, "secret-name");
         assertEquals("secret-value", secretValue);
+    }
+
+    @Test
+    void checkIfSecretExists_returnsFalseWhenSecretNotExists() {
+        doThrow(new ResourceNotFoundException("Secret not found", null)).when(kv).getSecret("secret-name");
+
+        assertFalse(KeyVaultFacade.checkIfSecretExists(kv, "secret-name"));
+    }
+
+    @Test
+    void checkIfSecretExists_returnsFalseWhenSecretIsDisabled() {
+        doThrow(new ResourceModifiedException("Secret is disabled", null)).when(kv).getSecret("secret-name");
+
+        assertFalse(KeyVaultFacade.checkIfSecretExists(kv, "secret-name"));
+    }
+
+    @Test
+    void checkIfSecretExists_returnsTrueWhenSecretExists() {
+        KeyVaultSecret secret = mock(KeyVaultSecret.class);
+        doReturn(secret).when(kv).getSecret("secret-name");
+
+        assertTrue(KeyVaultFacade.checkIfSecretExists(kv, "secret-name"));
     }
 }

@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.azure;
 
+import com.azure.core.exception.ResourceModifiedException;
 import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
@@ -89,6 +90,36 @@ public final class KeyVaultFacade {
             logDependency("GET_SECRET", secretName, kv.getVaultUrl(), timeTaken, statusCode);
         }
         return secret.getValue();
+    }
+
+    /**
+     * Check if given secret exists in the vault.
+     *
+     * @param kv           Client configured to the correct vault
+     * @param secretName   name of secret
+     * @return Status of secret existence in the vault.
+     */
+    public static boolean checkIfSecretExists(final SecretClient kv, final String secretName) {
+        Validators.checkNotNull(secretName, "Secret with name " + secretName);
+
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
+        try {
+            kv.getSecret(secretName);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Successfully retrieved {}.", secretName);
+        } catch (ResourceNotFoundException secretNotFound) {
+            statusCode = HttpStatus.SC_NOT_FOUND;
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Failed to retrieve {}. Not found.", secretName);
+            return false;
+        } catch (ResourceModifiedException secretDisabled) {
+            statusCode = HttpStatus.SC_FORBIDDEN;
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Failed to retrieve {}. Secret disabled.", secretName);
+            return false;
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            logDependency("GET_SECRET", secretName, kv.getVaultUrl(), timeTaken, statusCode);
+        }
+        return true;
     }
 
     /**
