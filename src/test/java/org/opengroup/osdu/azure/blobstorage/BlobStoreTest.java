@@ -733,6 +733,38 @@ public class BlobStoreTest {
     }
 
     @Test
+    public void generatePreSignedURLWithUserDelegationSasForBlob_NullPreSignedTokenObtained() {
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobSasPermission blobSasPermission = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedUrlWithUserDelegationSas(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission, FILE_NAME, FILE_CONTENT_TYPE);
+        assertEquals("null?null", obtainedPreSignedUrl);
+    }
+
+    @Test
+    public void generatePreSignedURLWithUserDelegationSasForBlob_whenBlobPreSignedUrl_thenReturnsValidSasToken() {
+        String blobSasToken = "blobSasToken";
+        String blobUrl = "blobUrl";
+        String blobPreSignedUrl = blobUrl + "?" + blobSasToken;
+        UserDelegationKey userDelegationKey = mock(UserDelegationKey.class);
+        doReturn(userDelegationKey).when(blobServiceClient).getUserDelegationKey(any(OffsetDateTime.class), any(OffsetDateTime.class));
+        doReturn(blobUrl).when(blockBlobClient).getBlobUrl();
+        doReturn(blobSasToken).when(blockBlobClient).generateUserDelegationSas(any(BlobServiceSasSignatureValues.class), any(UserDelegationKey.class));
+
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+        BlobSasPermission blobSasPermission = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
+        String obtainedPreSignedUrl = blobStore.generatePreSignedUrlWithUserDelegationSas(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission, FILE_NAME, FILE_CONTENT_TYPE);
+
+        ArgumentCaptor<BlobServiceSasSignatureValues> blobServiceSasSignatureValuesArgumentCaptor = ArgumentCaptor.forClass(BlobServiceSasSignatureValues.class);
+        verify(blockBlobClient).generateUserDelegationSas(blobServiceSasSignatureValuesArgumentCaptor.capture(), eq(userDelegationKey));
+
+        assertEquals(blobSasPermission.toString(), blobServiceSasSignatureValuesArgumentCaptor.getValue().getPermissions());
+        assertEquals(expiryTime, blobServiceSasSignatureValuesArgumentCaptor.getValue().getExpiryTime());
+        assertEquals(blobPreSignedUrl, obtainedPreSignedUrl);
+    }
+
+    @Test
     public void generatePreSignedURLForBlob_NullPreSignedTokenObtained() {
         int expiryDays = 1;
         OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
