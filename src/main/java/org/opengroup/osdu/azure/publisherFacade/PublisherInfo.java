@@ -37,5 +37,6 @@ public class PublisherInfo {
 
     private String serviceBusTopicName;
 
+    private String messageId;
 }
 

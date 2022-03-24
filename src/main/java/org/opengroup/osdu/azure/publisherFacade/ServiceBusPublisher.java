@@ -53,6 +53,7 @@ public class ServiceBusPublisher {
         Map<String, Object> properties = pubSubBuilder.createAttributesMap();
 
         message.setProperties(properties);
+        message.setMessageId(publisherInfo.getMessageId());
 
         // add all to body {"message": {"data":[], "id":...}}
         MessageProperties messageProperties = MessageProperties.builder()
