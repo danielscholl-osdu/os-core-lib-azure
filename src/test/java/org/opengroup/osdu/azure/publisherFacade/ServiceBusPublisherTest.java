@@ -20,11 +20,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.opengroup.osdu.azure.publisherFacade.models.PubSubAttributesBuilder;
 import org.opengroup.osdu.azure.servicebus.TopicClientFactoryImpl;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
+
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -37,6 +37,7 @@ public class ServiceBusPublisherTest {
     private static final String CORRELATION_ID = "correlation-id";
     private static final String PARTITION_ID = "partition-id";
     private static final String SERVICE_BUS_TOPIC_NAME = "recordstopic";
+    private static final String MESSAGE_ID = "message-id";
     @Mock
     private DpsHeaders dpsHeaders;
     @Mock
@@ -64,6 +65,7 @@ public class ServiceBusPublisherTest {
         lenient().doReturn(SERVICE_BUS_TOPIC_NAME).when(publisherInfo).getServiceBusTopicName();
         lenient().doReturn(batch).when(publisherInfo).getBatch();
         lenient().doReturn(topicClient).when(topicClientFactory).getClient(any(), any());
+        lenient().doReturn(MESSAGE_ID).when(publisherInfo).getMessageId();
     }
 
     @Test
