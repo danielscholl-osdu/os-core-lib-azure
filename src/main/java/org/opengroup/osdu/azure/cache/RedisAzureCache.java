@@ -1,8 +1,11 @@
 package org.opengroup.osdu.azure.cache;
 
 import org.opengroup.osdu.azure.di.RedisAzureConfiguration;
+import org.redisson.api.RedissonClient;
+import org.redisson.api.RLock;
 import org.opengroup.osdu.core.common.cache.IRedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Redis implementation for Azure.
@@ -18,6 +21,9 @@ public class RedisAzureCache<K, V> implements IRedisCache<K, V> {
     private Class<K> keyClass;
     private Class<V> valueClass;
     private RedisAzureConfiguration redisConfiguration;
+
+    @Value("${spring.application.name}:corelibazure")
+    private String applicationName;
 
     @Autowired
     private IRedisClientFactory redisClientFactory;
@@ -146,5 +152,19 @@ public class RedisAzureCache<K, V> implements IRedisCache<K, V> {
     public Long decrementBy(final K k, final long l) {
         IRedisCache<K, V> redisCache = redisClientFactory.getClient(keyClass, valueClass, redisConfiguration);
         return redisCache.decrementBy(k, l);
+    }
+
+    /**
+     * Get redis lock for the given lockKey.
+     * @param lockKey name of the lockKey.
+     * @return lock object
+     */
+    public RLock getLock(final String lockKey) {
+        RedissonClient redissonClient = redisClientFactory.getRedissonClient(applicationName, redisConfiguration);
+        if (redissonClient == null) {
+            return null;
+        }
+
+        return redissonClient.getLock(lockKey);
     }
 }
