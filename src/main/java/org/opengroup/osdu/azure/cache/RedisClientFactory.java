@@ -8,6 +8,9 @@ import org.opengroup.osdu.azure.di.RedisAzureConfiguration;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.core.common.cache.IRedisCache;
 import org.opengroup.osdu.core.common.cache.RedisCache;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -29,6 +32,7 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
     private static final String LOGGER_NAME = RedisClientFactory.class.getName();
     private static final String HOST_KEY = "redis-hostname";
     private static final String PASSWORD_KEY = "redis-password";
+    private static RedissonClient redissonClient = null;
 
     @Autowired
     private SecretClient secretClient;
@@ -85,6 +89,30 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
                 .socketOptions(SocketOptions.builder().connectTimeout(redisConfiguration.getTimeout(), TimeUnit.SECONDS).build())
                 .build();
         return new RedisCache<K, V>(host, redisConfiguration.getPort(), password, redisConfiguration.getExpiration(), redisConfiguration.getDatabase(), keyClass, valueClass);
+    }
+
+    /**
+     * Create RedissonClient instance assuming redis-host and redis-password already exists.
+     * @param applicationName application name.
+     * @param redisAzureConfiguration configuration for redis client.
+     * @return Redisson client instance
+     */
+    @Override
+    public RedissonClient getRedissonClient(final String applicationName, final RedisAzureConfiguration redisAzureConfiguration) {
+        if (redissonClient == null) {
+            synchronized (RedissonClient.class) {
+                if (redissonClient == null && secretExists(HOST_KEY) && secretExists(PASSWORD_KEY)) {
+                    Config config = new Config();
+                    config.useSingleServer().setAddress(String.format("rediss://%s:%d", getSecret(HOST_KEY), redisAzureConfiguration.getPort()))
+                            .setPassword(getSecret(PASSWORD_KEY))
+                            .setDatabase(redisAzureConfiguration.getDatabase())
+                            .setKeepAlive(true)
+                            .setClientName(applicationName);
+                    redissonClient = Redisson.create(config);
+                }
+            }
+        }
+        return redissonClient;
     }
 
     /**

@@ -2,6 +2,7 @@ package org.opengroup.osdu.azure.cache;
 
 import org.opengroup.osdu.azure.di.RedisAzureConfiguration;
 import org.opengroup.osdu.core.common.cache.IRedisCache;
+import org.redisson.api.RedissonClient;
 
 /**
  * Redis client creator.
@@ -18,4 +19,12 @@ public interface IRedisClientFactory<K, V> {
      * @return redis cache client instance.
      */
     IRedisCache<K, V> getClient(Class<K> keyClass, Class<V> valueClass, RedisAzureConfiguration redisConfiguration);
+
+    /**
+     * Create RedissonClient instance assuming redis-host and redis-password already exists.
+     * @param applicationName application name.
+     * @param redisAzureConfiguration configuration for redis client.
+     * @return Redisson client instance
+     */
+    RedissonClient getRedissonClient(String applicationName, RedisAzureConfiguration redisAzureConfiguration);
 }

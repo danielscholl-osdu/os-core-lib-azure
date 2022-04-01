@@ -1,5 +1,6 @@
 package org.opengroup.osdu.azure.cache;
 
+import com.azure.core.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.*;
 import org.opengroup.osdu.azure.logging.CoreLogger;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
@@ -11,13 +12,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.di.RedisAzureConfiguration;
 import org.opengroup.osdu.core.common.cache.IRedisCache;
+import org.redisson.api.RedissonClient;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -111,6 +112,16 @@ public class RedisClientFactoryTest {
         resetSingleton();
 
         assert(redisClient instanceof RedisCache);
+    }
 
+    @Test
+    public void getRedissonClient_should_return_null_if_redis_secret_not_present() {
+        when(secretClient.getSecret(any())).thenThrow(new ResourceNotFoundException("SecretDoesNotExists", null));
+        mockSingleton(coreLoggerFactory);
+        when(coreLoggerFactory.getLogger(anyString())).thenReturn(coreLogger);
+
+        RedissonClient redissonClient = this.redisClientFactory.getRedissonClient("dummy", redisConfiguration);
+
+        assertNull(redissonClient);
     }
 }
