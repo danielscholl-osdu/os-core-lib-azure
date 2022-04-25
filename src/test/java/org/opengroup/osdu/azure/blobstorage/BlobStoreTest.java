@@ -23,6 +23,7 @@ import com.azure.storage.blob.models.*;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.azure.storage.blob.specialized.BlobInputStream;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.apache.catalina.User;
 import org.junit.jupiter.api.AfterEach;
@@ -42,10 +43,10 @@ import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -80,6 +81,12 @@ public class BlobStoreTest {
 
     @Mock
     private BlockBlobClient blockBlobClient;
+
+    @Mock
+    private BlobProperties blobProperties;
+
+    @Mock
+    private BlobInputStream blobInputStream;
 
     @Mock
     private BlockBlobItem blockBlobItem;
@@ -144,6 +151,8 @@ public class BlobStoreTest {
         lenient().when(blobServiceClientFactory.getBlobServiceClient(PARTITION_ID)).thenReturn(blobServiceClient);
         lenient().when(blobServiceClientFactory.getSystemBlobServiceClient()).thenReturn(blobServiceClient);
         lenient().doNothing().when(logger).warning(eq("azure-core-lib"), any(), anyMap());
+        lenient().when(blockBlobClient.getProperties()).thenReturn(blobProperties);
+        lenient().when(blockBlobClient.openInputStream()).thenReturn(blobInputStream);
     }
 
     @AfterEach
@@ -773,7 +782,17 @@ public class BlobStoreTest {
         assertEquals("null?null", obtainedPreSignedUrl);
     }
 
-    
+    @Test
+    public void getBlobProperties_Success() {
+        BlobProperties blobProperties = blobStore.readBlobProperties(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        assertNotNull(blobProperties);
+    }
+    @Test
+    public void getBlobInputStream_Success() {
+        BlobInputStream blobInputStream = blobStore.getBlobInputStream(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        assertNotNull(blobInputStream);
+    }
+
     private BlobStorageException mockStorageException(BlobErrorCode errorCode) {
         BlobStorageException mockException = mock(BlobStorageException.class);
         lenient().when(mockException.getErrorCode()).thenReturn(errorCode);
