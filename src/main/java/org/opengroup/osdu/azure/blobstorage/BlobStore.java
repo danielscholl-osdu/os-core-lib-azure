@@ -19,12 +19,14 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
+import com.azure.storage.blob.models.BlobProperties;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
 import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.azure.storage.blob.specialized.BlobInputStream;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
@@ -373,7 +375,6 @@ public class BlobStore {
                                  final String sourceUrl) {
         BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
         BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
-
         final long start = System.currentTimeMillis();
         SyncPoller<BlobCopyInfo, Void> result = blockBlobClient.beginCopy(sourceUrl, Duration.ofSeconds(1));
         BlobCopyInfo blobCopyInfo = result.waitForCompletion().getValue();
@@ -633,4 +634,45 @@ public class BlobStore {
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
     }
+
+    /**
+     * Method is used to read the properties of a file specified at file path.
+     *
+     * @param dataPartitionId Data partition id
+     * @param filePath        Path of file (blob) to get the properties
+     * @param containerName   Name of the storage container
+     * @return File (blob) properties Final Result.
+     */
+    public BlobProperties readBlobProperties(final String dataPartitionId, final String filePath, final String containerName) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+
+        final long start = System.currentTimeMillis();
+        BlobProperties blobProperties = blockBlobClient.getProperties();
+        final long timeTaken = System.currentTimeMillis() - start;
+        final String target = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
+        logDependency("READ_FILE_PROPERTIES", filePath, target, timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+
+        return blobProperties;
+    }
+
+    /**
+     *
+     * @param dataPartitionId Data partition id
+     * @param filePath        Path of file (blob) to get the input stream
+     * @param containerName   Name of the storage container
+     * @return  BlobInputStream Final Result.
+     */
+    public BlobInputStream getBlobInputStream(final String dataPartitionId, final String filePath, final String containerName) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        final long start = System.currentTimeMillis();
+        BlobInputStream blobInputStream = blockBlobClient.openInputStream();
+        final long timeTaken = System.currentTimeMillis() - start;
+        final String target = MessageFormatter.arrayFormat("{}:{}/{}", new String[]{dataPartitionId, containerName, filePath}).getMessage();
+        logDependency("READ_BLOB", filePath, target, timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+
+        return blobInputStream;
+    }
+
 }
