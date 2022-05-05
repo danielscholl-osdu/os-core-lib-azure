@@ -15,4 +15,15 @@ public class AzureActiveDirectoryConfiguration {
 
     @Value("${azure.activedirectory.app-resource-id}")
     private String aadClientId;
+
+    // Client Id for the Service principal
+    @Value("${azure.activedirectory.client-id:}")
+    private String clientId;
+
+    // Client Secret for the Service principal
+    @Value("${azure.activedirectory.client-secret:}")
+    private String clientSecret;
+
+    @Value("${azure.activedirectory.tenant-id:}")
+    private String tenantId;
 }
