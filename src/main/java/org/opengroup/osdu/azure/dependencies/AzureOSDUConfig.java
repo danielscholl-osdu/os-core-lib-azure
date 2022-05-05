@@ -98,6 +98,9 @@ public class AzureOSDUConfig {
     @Bean
     @Named("APP_DEV_SP_USERNAME")
     public String appDevSpUsername(final SecretClient sc) {
+        if (aadConfiguration.getClientId() != null && !aadConfiguration.getClientId().isEmpty()) {
+            return aadConfiguration.getClientId();
+        }
         return KeyVaultFacade.getSecretWithValidation(sc, "app-dev-sp-username");
     }
 
@@ -110,6 +113,9 @@ public class AzureOSDUConfig {
     @Bean
     @Named("APP_DEV_SP_PASSWORD")
     public String appDevSpPassword(final SecretClient sc) {
+        if (aadConfiguration.getClientSecret() != null && !aadConfiguration.getClientSecret().isEmpty()) {
+            return aadConfiguration.getClientSecret();
+        }
         return KeyVaultFacade.getSecretWithValidation(sc, "app-dev-sp-password");
     }
 
@@ -123,6 +129,9 @@ public class AzureOSDUConfig {
     @Bean
     @Named("APP_DEV_SP_TENANT_ID")
     public String appDevSpTenantId(final SecretClient sc) {
+        if (aadConfiguration.getTenantId() != null && !aadConfiguration.getTenantId().isEmpty()) {
+            return aadConfiguration.getTenantId();
+        }
         return KeyVaultFacade.getSecretWithValidation(sc, "app-dev-sp-tenant-id");
     }
 }
