@@ -100,9 +100,8 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
      * @return BlobServiceClient
      */
     private BlobServiceClient createBlobServiceClient(final String dataPartitionId) {
-
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
-        String endpoint = String.format("https://%s.blob.core.windows.net", pi.getStorageAccountName());
+        String endpoint = pi.getStorageBlobEndpoint();
         BlobServiceClientBuilder blobServiceClientBuilder = getBlobServiceClientBuilder(endpoint);
 
         if (msiConfiguration.getIsEnabled()) {

@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.opengroup.osdu.azure.KeyVaultFacade;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.core.common.partition.Property;
 
 /**
@@ -57,6 +58,9 @@ public class PartitionInfoAzure {
 
     @SerializedName("storage-account-name")
     private Property storageAccountNameConfig;
+
+    @SerializedName("storage-account-blob-endpoint")
+    private Property storageAccountBlobEndpointConfig;
 
     @SerializedName("ingest-storage-account-key")
     private Property ingestStorageAccountKeyConfig;
@@ -294,6 +298,30 @@ public class PartitionInfoAzure {
     }
 
     /**
+     * @return Storage blob endpoint.
+     */
+    public String getStorageBlobEndpoint() {
+        // if partition info does not have blob endpoint config, return existing logic OR
+        if (this.getStorageAccountBlobEndpointConfig() == null) {
+            CoreLoggerFactory.getInstance().getLogger(PartitionInfoAzure.class).info("No Blob Endpoint Config. Returning legacy storage endpoint");
+            return createStorageEndpointFromStorageAccountName();
+        }
+
+        if (this.getStorageAccountBlobEndpointConfig().isSensitive()) {
+            // Service is upgraded without infra upgrades.
+            // if partition info has blob endpoint but secret does not exist return existing logic.
+            if (!checkIfSecretExists(this.getStorageAccountBlobEndpointConfig())) {
+                return createStorageEndpointFromStorageAccountName();
+            }
+
+            // Blob endpoint is available in KeyVault. Return it.
+            return getSecret(this.getStorageAccountBlobEndpointConfig());
+        }
+
+        return String.valueOf(this.getStorageAccountBlobEndpointConfig().getValue());
+    }
+
+    /**
      * @return ingestion storage account key
      */
     public String getIngestStorageAccountKey() {
@@ -396,5 +424,22 @@ public class PartitionInfoAzure {
      */
     private String getSecret(final Property p) {
         return KeyVaultFacade.getSecretWithValidation(this.secretClient, String.valueOf(p.getValue()));
+    }
+
+    /**
+     * Check if secret exists in KeyVault.
+     * @param p partition property
+     * @return return true if secret exists in KeyVault
+     */
+    private boolean checkIfSecretExists(final Property p) {
+        return KeyVaultFacade.checkIfSecretExists(this.secretClient, String.valueOf(p.getValue()));
+    }
+
+    /**
+     * Generate the Storage Endpoint from the StorageAccount Name.
+     * @return the storage endpoint.
+     */
+    private String createStorageEndpointFromStorageAccountName() {
+        return String.format("https://%s.blob.core.windows.net", getStorageAccountName());
     }
 }
