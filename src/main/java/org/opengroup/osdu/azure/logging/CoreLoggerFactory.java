@@ -1,10 +1,10 @@
 package org.opengroup.osdu.azure.logging;
 
-import com.microsoft.applicationinsights.TelemetryClient;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implementation for Core Logger Factory instances.
@@ -15,14 +15,24 @@ public final class CoreLoggerFactory implements ICoreLoggerFactory {
 
     private Map<String, ICoreLogger> loggers = new HashMap<>();
 
-    private TelemetryClient telemetryClient = new TelemetryClient();
+    private LoggerType enabledLoggerType;
+
+    private static final String APPLICATION_INSIGHTS_ENABLE = "APPINSIGHTS_LOGGING_ENABLED";
 
     /**
-     * CoreLoggerFactory singleton.
+     * CoreLoggerFactory singleton constructor resolves enabled loggerType for logging data to desired destination.
      */
     private CoreLoggerFactory() {
+        this.enabledLoggerType = resolveEnabledLoggerType();
     }
 
+    /**
+     * EnabledLoggerType getter.
+     * @return enabledLoggerType
+     */
+    public LoggerType getEnabledLoggerType() {
+        return enabledLoggerType;
+    }
     /**
      * Return this instance.
      *
@@ -38,7 +48,7 @@ public final class CoreLoggerFactory implements ICoreLoggerFactory {
      */
     public ICoreLogger getLogger(final String name) {
         if (!loggers.containsKey(name)) {
-            CoreLogger logger = new CoreLogger(LoggerFactory.getLogger(name), this.telemetryClient);
+            ICoreLogger logger = createLogger(enabledLoggerType, name);
             loggers.put(name, logger);
         }
 
@@ -51,5 +61,39 @@ public final class CoreLoggerFactory implements ICoreLoggerFactory {
      */
     public ICoreLogger getLogger(final Class<?> clazz) {
         return this.getLogger(clazz.getName());
+    }
+
+    /**
+     * Reset factory to get latest data.
+     */
+    public static void resetFactory() {
+        instance = new CoreLoggerFactory();
+    }
+
+    /**
+     *  function to resolve enabled logger type.
+     * @return eligible loggerType using environment variable.
+     */
+    private LoggerType resolveEnabledLoggerType() {
+        Object applicationInsightsEnabled = System.getProperty(APPLICATION_INSIGHTS_ENABLE);
+        if (Objects.nonNull(applicationInsightsEnabled) && applicationInsightsEnabled.equals(String.valueOf(Boolean.FALSE))) {
+            return LoggerType.CoreLogger;
+        }
+        return LoggerType.ApplicationInsightsLogger;
+    }
+
+    /**
+     * Creating logger using loggerType and loggerName.
+     * @param loggerType loggerType
+     * @param loggerName loggerName
+     * @return logger according to desired params
+     */
+    private ICoreLogger createLogger(final LoggerType loggerType, final String loggerName) {
+        switch (loggerType) {
+            case ApplicationInsightsLogger:
+                return new ApplicationInsightsLogger(LoggerFactory.getLogger(loggerName));
+            default:
+                return new CoreLogger(LoggerFactory.getLogger(loggerName));
+        }
     }
 }

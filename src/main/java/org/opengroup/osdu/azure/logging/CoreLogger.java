@@ -14,13 +14,8 @@
 
 package org.opengroup.osdu.azure.logging;
 
-import com.microsoft.applicationinsights.TelemetryClient;
-import com.microsoft.applicationinsights.internal.util.MapUtil;
-import com.microsoft.applicationinsights.telemetry.Duration;
-import com.microsoft.applicationinsights.telemetry.RemoteDependencyTelemetry;
 import org.opengroup.osdu.core.common.logging.audit.AuditPayload;
 import org.slf4j.Logger;
-import org.slf4j.MDC;
 
 /**
  * Logger wrapper around SLF4J APIs.
@@ -28,15 +23,12 @@ import org.slf4j.MDC;
 public class CoreLogger implements ICoreLogger {
 
     private final Logger logger;
-    private final TelemetryClient telemetryClient;
 
     /**
      * @param traceLogger       the logger instance
-     * @param appInsightsClient the Application Insights telemetry client
      */
-    public CoreLogger(final Logger traceLogger, final TelemetryClient appInsightsClient) {
+    public CoreLogger(final Logger traceLogger) {
         this.logger = traceLogger;
-        this.telemetryClient = appInsightsClient;
     }
 
     /**
@@ -162,7 +154,7 @@ public class CoreLogger implements ICoreLogger {
      */
     @Override
     public void logDependency(final DependencyPayload payload) {
-        this.telemetryClient.trackDependency(getRemoteDependencyTelemetry(payload));
+        this.logger.info("{}", payload);
     }
 
     /***
@@ -174,19 +166,4 @@ public class CoreLogger implements ICoreLogger {
         this.logger.info("{}", payload);
     }
 
-    /**
-     * Returns a RemoteDependencyTelemetry object from DependencyPayload object.
-     *
-     * @param payload a DependencyPayload object
-     * @return a RemoteDependencyTelemetry object
-     */
-    private RemoteDependencyTelemetry getRemoteDependencyTelemetry(final DependencyPayload payload) {
-        RemoteDependencyTelemetry telemetry = new RemoteDependencyTelemetry(payload.getName(), payload.getData(), new Duration(payload.getDuration().toMillis()), payload.isSuccess());
-        telemetry.setResultCode(payload.getResultCode());
-        telemetry.setType(payload.getType());
-        telemetry.setTarget(payload.getTarget());
-        MapUtil.copy(MDC.getCopyOfContextMap(), telemetry.getContext().getProperties());
-
-        return telemetry;
-    }
 }
