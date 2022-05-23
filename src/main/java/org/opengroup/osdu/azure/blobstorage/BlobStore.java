@@ -154,6 +154,20 @@ public class BlobStore {
     }
 
     /**
+     * @param filePath        Path of file to be deleted.
+     * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
+     * @return boolean indicating whether the undeletion of given file was successful or not.
+     */
+    public boolean undeleteFromStorageContainer(
+            final String dataPartitionId,
+            final String filePath,
+            final String containerName) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        return this.undeleteFromStorageContainerInternal(filePath, containerName, blobContainerClient);
+    }
+
+    /**
      * @param filePath        Path of file to be written at.
      * @param content         Content to be written in the file.
      * @param dataPartitionId Data partition id
@@ -405,7 +419,7 @@ public class BlobStore {
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
-            throw handleBlobStorageException(500, "Failed to read specified blob", ex);
+            throw handleBlobStorageException(statusCode, "Failed to read specified blob", ex);
         } catch (UnsupportedEncodingException ex) {
             statusCode = HttpStatus.SC_BAD_REQUEST;
             throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
@@ -443,6 +457,33 @@ public class BlobStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
             logDependency("DELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
+        }
+    }
+
+    /**
+     * @param filePath        Path of file to be deleted.
+     * @param containerName   Name of the storage container
+     * @param blobContainerClient   Blob container client
+     * @return boolean indicating whether the deletion of given file was successful or not.
+     */
+    private boolean undeleteFromStorageContainerInternal(
+            final String filePath,
+            final String containerName,
+            final BlobContainerClient blobContainerClient) {
+        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
+        try {
+            blockBlobClient.undelete();
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done undeleting blob at {}", filePath).getMessage());
+            return true;
+        } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
+            throw handleBlobStorageException(500, "Failed to undelete blob", ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
+            logDependency("UNDELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
 

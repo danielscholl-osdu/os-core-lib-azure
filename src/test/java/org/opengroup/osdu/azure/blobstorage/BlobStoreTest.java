@@ -259,7 +259,7 @@ public class BlobStoreTest {
         try {
             String content = blobStore.readFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(exception.getStatusCode(), ex.getError().getCode());
         } catch (Exception ex) {
             fail("should not get different error code");
         }
@@ -272,7 +272,7 @@ public class BlobStoreTest {
         try {
             String content = blobStore.readFromStorageContainer(FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(exception.getStatusCode(), ex.getError().getCode());
         } catch (Exception ex) {
             fail("should not get different error code");
         }
