@@ -2,6 +2,8 @@ package org.opengroup.osdu.azure.privateLinks;
 
 import com.azure.cosmos.models.SqlQuerySpec;
 import org.opengroup.osdu.azure.cosmosdb.CosmosStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.opengroup.osdu.azure.cosmosdb.system.config.SystemCosmosConfig;
 import org.opengroup.osdu.core.common.http.HttpResponse;
@@ -24,6 +26,7 @@ import java.util.List;
 @EnableScheduling
 public class ValidateDataLinks {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValidateDataLinks.class);
     private final String COSMOS_DB="";
     private final String DATA_PARTITION_ID="";
     private final String COLLECTION="PrivateLinkCollection";
@@ -36,12 +39,12 @@ public class ValidateDataLinks {
 
     List<Long> cache = new ArrayList<>();
 
-    boolean validateRequest(String ipv6) throws UnknownHostException {
+   public  boolean validateRequest(String ipv6) throws UnknownHostException {
         byte[] bytes = InetAddress.getByName(ipv6).getAddress();
         String bits = new BigInteger(1,bytes).toString(2);
-        HttpResponse httpResponse = new HttpResponse();
 
         if(bits.length() != 128){
+            LOGGER.warn("Ipv6 address is less than 128 bit");
             return false;
         }
          if(bits.charAt(9) == '1'){
@@ -73,8 +76,10 @@ public class ValidateDataLinks {
 
                 if(privateLink !=null)
                     cache.add(privateLink);
-                else
-                   return false;
+                else {
+                    LOGGER.error("Private link not found in DB");
+                    return false;
+                }
              }
             }
          return false;
@@ -92,6 +97,7 @@ public class ValidateDataLinks {
         SqlQuerySpec query = new SqlQuerySpec(queryText);
 
         cache = cosmosStore.queryItems(COSMOS_DB,COLLECTION,query,null, Long.class);
+        LOGGER.info("Syncing up cache with DB");
 
     }
 }
