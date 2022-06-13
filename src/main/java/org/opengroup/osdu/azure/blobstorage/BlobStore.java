@@ -14,14 +14,21 @@
 
 package org.opengroup.osdu.azure.blobstorage;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
 import com.azure.core.util.polling.SyncPoller;
+import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.BlobProperties;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
+import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
@@ -470,11 +477,26 @@ public class BlobStore {
             final String filePath,
             final String containerName,
             final BlobContainerClient blobContainerClient) {
-        BlockBlobClient blockBlobClient = blobContainerClient.getBlobClient(filePath).getBlockBlobClient();
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
         try {
-            blockBlobClient.undelete();
+            ListBlobsOptions listBlobsOptions = new ListBlobsOptions().setPrefix(filePath).setDetails(new BlobListDetails().setRetrieveSnapshots(true).setRetrieveVersions(true).setRetrieveDeletedBlobs(true));
+            PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(30));
+            for (BlobItem blobItem : blobItems) {
+                if (blobItem.getVersionId() != null && filePath.equals(blobItem.getName())) {
+                    BlobClient sourceBlobClient = blobContainerClient.getBlobVersionClient(blobItem.getName(), blobItem.getVersionId());
+                    BlobClient destBlobClient = blobContainerClient.getBlobClient(filePath);
+                    SyncPoller<BlobCopyInfo, Void> poller = destBlobClient.beginCopy(sourceBlobClient.getBlobUrl(), null);
+                    PollResponse<BlobCopyInfo> poll = poller.waitForCompletion();
+                    if (destBlobClient.exists() && poll.getStatus().equals(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED)) {
+                        break;
+                    } else {
+                        throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unknown error happened while restoring the blob", "Copy job couldn't finish");
+                    }
+                } else {
+                    throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unknown error happened while restoring the blob", "Corrupt data");
+                }
+            }
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("{}", MessageFormatter.format("Done undeleting blob at {}", filePath).getMessage());
             return true;
         } catch (BlobStorageException ex) {
