@@ -1,5 +1,12 @@
 package org.opengroup.osdu.azure.cosmosdb;
 
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.models.CosmosBulkExecutionOptions;
+import com.azure.cosmos.models.CosmosItemOperation;
+import com.azure.cosmos.models.CosmosBulkItemResponse;
+import com.azure.cosmos.models.CosmosBulkOperations;
+import com.azure.cosmos.models.PartitionKey;
 import com.google.gson.Gson;
 import com.microsoft.azure.documentdb.DocumentClientException;
 import com.microsoft.azure.documentdb.bulkexecutor.BulkImportResponse;
@@ -13,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Class to perform bulk Cosmos operations using DocumentBulkExecutor.
@@ -25,6 +33,9 @@ public class CosmosStoreBulkOperations {
 
     @Autowired
     private ICosmosBulkExecutorFactory bulkExecutorFactory;
+
+    @Autowired
+    private ICosmosClientFactory cosmosClientFactory;
 
     /**
      *
@@ -66,6 +77,65 @@ public class CosmosStoreBulkOperations {
         } catch (DocumentClientException e) {
             String errorMessage = "Unexpectedly failed to bulk insert documents";
             LOGGER.warn(errorMessage, e);
+            throw new AppException(500, errorMessage, e.getMessage(), e);
+        }
+    }
+
+    /***
+     * Partition Keys must be provides in the same order as records.
+     * ith Record's partition Key will be at ith position in the List.
+     * @param dataPartitionId name of data partition.
+     * @param cosmosDBName name of Comsos db.
+     * @param collectionName name of collection in Cosmos.
+     * @param docs collection of JSON serializable documents.
+     * @param partitionKeys List of partition keys corresponding to "docs" provided
+     * @param maxConcurrencyPerPartitionRange concurrency per partition (1-5)
+     * @param <T> Type of object being bulk inserted.
+     */
+    public final <T> void bulkInsertWithCosmosClient(final String dataPartitionId,
+                                                   final String cosmosDBName,
+                                                   final String collectionName,
+                                                   final List<T> docs,
+                                                   final List<String> partitionKeys,
+                                                   final int maxConcurrencyPerPartitionRange) {
+        try {
+            List<String> exceptions = new ArrayList<>();
+
+            CosmosClient cosmosClient = cosmosClientFactory.getClient(dataPartitionId);
+            CosmosContainer container = cosmosClient.getDatabase(cosmosDBName).getContainer(collectionName);
+
+            List<CosmosItemOperation> cosmosItemOperations = new ArrayList<>();
+            for (int i = 0; i < docs.size(); i++) {
+                cosmosItemOperations.add(CosmosBulkOperations.getCreateItemOperation(docs.get(i), new PartitionKey(partitionKeys.get(i))));
+            }
+
+            CosmosBulkExecutionOptions cosmosBulkExecutionOptions = new CosmosBulkExecutionOptions();
+            cosmosBulkExecutionOptions.setMaxMicroBatchConcurrency(maxConcurrencyPerPartitionRange);
+
+            container.executeBulkOperations(cosmosItemOperations, cosmosBulkExecutionOptions).forEach(cosmosBulkOperationResponse -> {
+                CosmosBulkItemResponse cosmosBulkItemResponse = cosmosBulkOperationResponse.getResponse();
+                CosmosItemOperation cosmosItemOperation = cosmosBulkOperationResponse.getOperation();
+
+                if (cosmosBulkOperationResponse.getException() != null) {
+                    LOGGER.error("Bulk operation failed", cosmosBulkOperationResponse.getException());
+                    exceptions.add(cosmosBulkOperationResponse.getException().toString());
+                } else if (cosmosBulkItemResponse == null || !cosmosBulkOperationResponse.getResponse().isSuccessStatusCode()) {
+                    LOGGER.error(
+                            "The operation for Item : [{}] did not complete successfully with a {} response code.",
+                            cosmosItemOperation.getItem().toString(),
+                            cosmosBulkItemResponse != null ? cosmosBulkItemResponse.getStatusCode() : "n/a");
+                } else {
+                    LOGGER.info("Item : [{}], Status Code: {}, Request Charge: {}", cosmosItemOperation.getItem().toString(), cosmosBulkItemResponse.getStatusCode(), cosmosBulkItemResponse.getRequestCharge());
+                }
+            });
+
+            if (!exceptions.isEmpty()) {
+                LOGGER.error("Failed to create documents in CosmosDB: {}", String.join(",", exceptions));
+                throw new AppException(500, "Record creation has failed!", "Failed to create documents in CosmosDB", exceptions.toArray(new String[exceptions.size()]));
+            }
+        } catch (Exception e) {
+            String errorMessage = "Unexpectedly failed to bulk insert documents";
+            LOGGER.error(errorMessage, e);
             throw new AppException(500, errorMessage, e.getMessage(), e);
         }
     }
