@@ -35,32 +35,15 @@ public class ValidateDataLinks {
 
     public boolean validateRequest(String ipv6) throws UnknownHostException {
         byte[] bytes = InetAddress.getByName(ipv6).getAddress();
-        String bits = new BigInteger(1, bytes).toString(2);
+        String ipAddressInBits = new BigInteger(1, bytes).toString(2);
 
-        if (bits.length() != 128) {
-            LOGGER.warn("Ipv6 address is less than 128 bit");
-            return false;
-        }
-        if (bits.charAt(9) == '1') {
+        if (ipAddressInBits.charAt(9) == '1') {
             // fetch private link from ipv6 address. It starts from 17th bit and is 32 bit length
-            String privateLinkString = ipv6.substring(16, 48);
+
+            String privateLinkString = ipAddressInBits.substring(16, 48);
             Long privateLinkID = Long.parseLong(privateLinkString, 2);
 
-            //check if present in cosmosDB?
-
-             /*
-                we don't need to validate the storage pvt link
-
-                which CosmosDB?  SystemCosmosDB -> ComputeRG -> storing pvt link identifier
-                CosmosDB Schema? pvt link identifier
-                cache -> List
-                Approach? ->
-                Accessing CosmosDB?
-                if (cacheCheck()){
-                }
-                else{
-                }
-              */
+            //check if present in cache?
 
             if (isPresentInCache(privateLinkID))
                 return true;
@@ -75,7 +58,7 @@ public class ValidateDataLinks {
                     return true;
                 }
                 else {
-                    LOGGER.error("Private link not found in DB");
+                    LOGGER.error("Private link Id not found in DB");
                     return false;
                 }
             }
@@ -84,8 +67,8 @@ public class ValidateDataLinks {
 
     }
 
-    private boolean isPresentInCache(Long privateLinkDecimal) {
-        return cache.contains(privateLinkDecimal);
+    private boolean isPresentInCache(Long privateLinkId) {
+        return cache.contains(privateLinkId);
     }
 
 
