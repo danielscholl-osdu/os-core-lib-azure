@@ -7,20 +7,36 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.*;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.FilterChain;
+import javax.servlet.Filter;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.ValidationException;
 import java.io.IOException;
 
 
+/**
+    This filter is for validation of private links.
+    Order of calling the filters becomes: OrderedRequestContextFilter --> MDC filter -->PrivateLinkFilter --> ... --> TransactionLogFilter
+ */
 @Component
 @ConditionalOnProperty(value = "validate.privateLink.enabled", havingValue = "true", matchIfMissing = true)
 @Order(-103)
 public class PrivateLinkFilter implements Filter {
 
     @Autowired
-    ValidateDataLinks validateDataLinks;
+    private ValidateDataLinks validateDataLinks;
 
+    /**
+     * Filter logic.
+     * @param servletRequest Request object.
+     * @param servletResponse Response object.
+     * @param filterChain Filter Chain object.
+     * @throws IOException
+     * @throws ServletException
+     */
     @Override
     public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain filterChain) throws IOException, ServletException {
 
@@ -31,25 +47,30 @@ public class PrivateLinkFilter implements Filter {
         String ipAddress = getIpaddress(servletRequest);
         InetAddressValidator inetAddressValidator =  InetAddressValidator.getInstance();
 
-        if(inetAddressValidator.isValidInet6Address(ipAddress)) {
+        if (inetAddressValidator.isValidInet6Address(ipAddress)) {
 
             //ipv4 vs ipv6 -> only for ipv6
-            if (validateDataLinks.validateRequest(ipAddress))
+            if (validateDataLinks.validateRequest(ipAddress)) {
                 filterChain.doFilter(servletRequest, servletResponse);
-            else {
+            } else {
                 throw new ValidationException("Validation of data link failed.");
             }
-        }
-        else
+        } else {
             filterChain.doFilter(servletRequest, servletResponse);
+        }
 
     }
 
-    public String getIpaddress(ServletRequest servletRequest){
+    /**
+        To get the ipAddress from Servlet request.
+        * @param servletRequest ServletRequest Object
+        * @return ipAddress String
+     */
+    public String getIpaddress(final ServletRequest servletRequest) {
 
-        HttpServletRequest request = (HttpServletRequest)servletRequest;
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
 
-        String ipAddress ="";
+        String ipAddress = "";
         if (request != null) {
             ipAddress = request.getHeader("X-FORWARDED-FOR");
             if (ipAddress == null || "".equals(ipAddress)) {

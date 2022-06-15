@@ -2,7 +2,6 @@ package org.opengroup.osdu.azure.privateLinks;
 
 import com.azure.cosmos.models.SqlQuerySpec;
 import org.opengroup.osdu.azure.cosmosdb.CosmosStore;
-import org.opengroup.osdu.azure.cosmosdb.system.config.SystemCosmosConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,25 +15,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
+/**
+ * This class is for validating private link id coming from client ipaddress.
+ */
 @EnableScheduling
 public class ValidateDataLinks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateDataLinks.class);
-    private final String COSMOS_DB = "PrivateLinkDB";
-    private final String DATA_PARTITION_ID = "PrivateLinkID";
-    private final String COLLECTION = "PrivateLinkCollection";
+    private static final String COSMOS_DB = "PrivateLinkDB";
+    private static final String DATA_PARTITION_ID = "PrivateLinkID";
+    private static final String COLLECTION = "PrivateLinkCollection";
+
 
     @Autowired
-    SystemCosmosConfig systemCosmosConfig;
+    private CosmosStore cosmosStore;
 
-    @Autowired
-    CosmosStore cosmosStore;
+    private List<Long> cache = new ArrayList<>();
 
-    List<Long> cache = new ArrayList<>();
-
-    public boolean validateRequest(String ipv6) throws UnknownHostException {
-        byte[] bytes = InetAddress.getByName(ipv6).getAddress();
+    /**
+     *
+     * @param ipv6 String
+     * @return boolean
+     * @throws UnknownHostException
+     */
+    public boolean validateRequest(final String ipv6)  {
+        boolean result = true;
+        boolean finished = false;
+        byte[] bytes = new byte[0];
+        try {
+            bytes = InetAddress.getByName(ipv6).getAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
         String ipAddressInBits = new BigInteger(1, bytes).toString(2);
 
         if (ipAddressInBits.charAt(9) == '1') {
@@ -45,33 +57,43 @@ public class ValidateDataLinks {
 
             //check if present in cache?
 
-            if (isPresentInCache(privateLinkID))
-                return true;
-            else {
+            if (isPresentInCache(privateLinkID)) {
+                finished = true;
+            } else {
 
                 /* call to db */
 
-                Optional<Long> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID),String.valueOf(privateLinkID),Long.class);
-
-                if ( optionalPrivateLink.isPresent()) {
+                Optional<Long> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID), String.valueOf(privateLinkID), Long.class);
+                if (optionalPrivateLink.isPresent()) {
                     cache.add(optionalPrivateLink.get());
-                    return true;
-                }
-                else {
+                    finished = true;
+                } else {
                     LOGGER.error("Private link Id not found in DB");
-                    return false;
+                    result = false;
+                    finished = true;
                 }
             }
         }
-        return false;
+        if (!finished) {
+            result = false;
 
+        }
+        return result;
     }
 
-    private boolean isPresentInCache(Long privateLinkId) {
+    /**
+     *
+     * @param privateLinkId long
+     * @return boolean
+     */
+    private boolean isPresentInCache(final Long privateLinkId) {
         return cache.contains(privateLinkId);
     }
 
 
+    /**
+     * This function is for refreshing the cache after every 60 min.
+     */
     @Scheduled(fixedRate = 6000)
     void cacheSyncUp() {
         String queryText = "SELECT * FROM c WHERE 1=1 ";
