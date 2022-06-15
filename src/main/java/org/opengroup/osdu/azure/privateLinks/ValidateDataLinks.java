@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -18,6 +19,7 @@ import java.util.Optional;
 /**
  * This class is for validating private link id coming from client ipaddress.
  */
+@Component
 @EnableScheduling
 public class ValidateDataLinks {
 
