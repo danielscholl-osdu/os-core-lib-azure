@@ -40,51 +40,48 @@ public class ValidateDataLinks {
      * @return boolean
      * @throws UnknownHostException
      */
-    public boolean validateRequest(final String ipv6)  {
-        boolean result = true;
-        boolean finished = false;
-        byte[] bytes = new byte[0];
-        try {
-            bytes = InetAddress.getByName(ipv6).getAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+    public boolean validateRequest(final String ipv6) throws UnknownHostException {
+
+        LOGGER.info("Validating the request");
+
+        byte[] bytes = InetAddress.getByName(ipv6).getAddress();
+
         String ipAddressInBits = new BigInteger(1, bytes).toString(2);
 
+        /*
+        The 10th bit of the IPv6 address contains a flag which denotes the traffic is from private link. A 32-bit link identifier is encoded starting from 17th bit.
+         */
         if (ipAddressInBits.charAt(9) == '1') {
-            LOGGER.info("Ipaddress 10th bit is 1");
+            LOGGER.info("Traffic is from private link");
+
             // fetch private link from ipv6 address. It starts from 17th bit and is 32 bit length
 
-            String privateLinkString = ipAddressInBits.substring(16, 48);
-            Long privateLinkID = Long.parseLong(privateLinkString, 2);
+            String privateLinkStringInBits = ipAddressInBits.substring(16, 47);
+            Long privateLinkID = Long.parseLong(privateLinkStringInBits, 2);
 
             //check if present in cache?
 
             if (isPresentInCache(privateLinkID)) {
-                LOGGER.info("Present in cache");
-                finished = true;
+                LOGGER.info("PrivateLinkID Present in cache");
+                return true;
             } else {
 
                 /* call to db */
 
-                LOGGER.info("Calling to db");
+                LOGGER.info("Checking for private link in DB");
                 Optional<Long> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID), String.valueOf(privateLinkID), Long.class);
                 if (optionalPrivateLink.isPresent()) {
-                    LOGGER.info("Found in DB");
+                    LOGGER.info("Found private link id in DB");
                     cache.add(optionalPrivateLink.get());
-                    finished = true;
+                    return true;
                 } else {
                     LOGGER.error("Private link Id not found in DB");
-                    result = false;
-                    finished = true;
+                    return false;
                 }
             }
         }
-        if (!finished) {
-            result = false;
 
-        }
-        return result;
+        return false;
     }
 
     /**
@@ -98,9 +95,9 @@ public class ValidateDataLinks {
 
 
     /**
-     * This function is for refreshing the cache after every 60 min.
+     * This function is for refreshing the cache after every 60 min. 1hr -> 3600 sec -> 3600 * 1000 ms
      */
-    @Scheduled(fixedRate = 6000)
+    @Scheduled(fixedRate = 3600000)
     void cacheSyncUp() {
         String queryText = "SELECT * FROM c WHERE 1=1 ";
         SqlQuerySpec query = new SqlQuerySpec(queryText);

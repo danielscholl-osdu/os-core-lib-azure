@@ -56,7 +56,7 @@ public class PrivateLinkFilter implements Filter {
         if (inetAddressValidator.isValidInet6Address(ipAddress)) {
 
             LOGGER.info("Ip address is ipv6");
-            //ipv4 vs ipv6 -> only for ipv6
+
             if (validateDataLinks.validateRequest(ipAddress)) {
                 LOGGER.info("Validation is successful");
                 filterChain.doFilter(servletRequest, servletResponse);
@@ -65,7 +65,7 @@ public class PrivateLinkFilter implements Filter {
                 throw new ValidationException("Validation of data link failed.");
             }
         } else {
-            LOGGER.info("Ip address is ipv6");
+            LOGGER.info("Ip address is ipv4");
             filterChain.doFilter(servletRequest, servletResponse);
         }
 
