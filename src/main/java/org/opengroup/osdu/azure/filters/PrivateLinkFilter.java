@@ -4,6 +4,7 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.opengroup.osdu.azure.privateLinks.ValidateDataLinks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
@@ -14,6 +15,7 @@ import java.io.IOException;
 
 @Component
 @ConditionalOnProperty(value = "validate.privateLink.enabled", havingValue = "true", matchIfMissing = true)
+@Order(-103)
 public class PrivateLinkFilter implements Filter {
 
     @Autowired
@@ -32,7 +34,7 @@ public class PrivateLinkFilter implements Filter {
         if(inetAddressValidator.isValidInet6Address(ipAddress)) {
 
             //ipv4 vs ipv6 -> only for ipv6
-            if (validateDataLinks.validateRequest(""))
+            if (validateDataLinks.validateRequest(ipAddress))
                 filterChain.doFilter(servletRequest, servletResponse);
             else {
                 throw new ValidationException("Validation of data link failed.");

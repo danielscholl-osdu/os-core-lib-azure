@@ -14,14 +14,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 @EnableScheduling
 public class ValidateDataLinks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateDataLinks.class);
-    private final String COSMOS_DB = "";
-    private final String DATA_PARTITION_ID = "";
+    private final String COSMOS_DB = "PrivateLinkDB";
+    private final String DATA_PARTITION_ID = "PrivateLinkID";
     private final String COLLECTION = "PrivateLinkCollection";
 
     @Autowired
@@ -43,7 +44,7 @@ public class ValidateDataLinks {
         if (bits.charAt(9) == '1') {
             // fetch private link from ipv6 address. It starts from 17th bit and is 32 bit length
             String privateLinkString = ipv6.substring(16, 48);
-            Long privateLinkDecimal = Long.parseLong(privateLinkString, 2);
+            Long privateLinkID = Long.parseLong(privateLinkString, 2);
 
             //check if present in cosmosDB?
 
@@ -61,14 +62,16 @@ public class ValidateDataLinks {
                 }
               */
 
-            if (isPresentInCache(privateLinkDecimal))
+            if (isPresentInCache(privateLinkID))
                 return true;
             else {
-                Long privateLink = null;
+
                 /* call to db */
 
-                if (privateLink != null) {
-                    cache.add(privateLink);
+                Optional<Long> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID),String.valueOf(privateLinkID),Long.class);
+
+                if ( optionalPrivateLink.isPresent()) {
+                    cache.add(optionalPrivateLink.get());
                     return true;
                 }
                 else {
