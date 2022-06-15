@@ -52,6 +52,7 @@ public class ValidateDataLinks {
         String ipAddressInBits = new BigInteger(1, bytes).toString(2);
 
         if (ipAddressInBits.charAt(9) == '1') {
+            LOGGER.info("Ipaddress 10th bit is 1");
             // fetch private link from ipv6 address. It starts from 17th bit and is 32 bit length
 
             String privateLinkString = ipAddressInBits.substring(16, 48);
@@ -60,13 +61,16 @@ public class ValidateDataLinks {
             //check if present in cache?
 
             if (isPresentInCache(privateLinkID)) {
+                LOGGER.info("Present in cache");
                 finished = true;
             } else {
 
                 /* call to db */
 
+                LOGGER.info("Calling to db");
                 Optional<Long> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID), String.valueOf(privateLinkID), Long.class);
                 if (optionalPrivateLink.isPresent()) {
+                    LOGGER.info("Found in DB");
                     cache.add(optionalPrivateLink.get());
                     finished = true;
                 } else {

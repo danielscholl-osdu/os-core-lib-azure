@@ -2,6 +2,8 @@ package org.opengroup.osdu.azure.filters;
 
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.opengroup.osdu.azure.privateLinks.ValidateDataLinks;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
@@ -26,6 +28,8 @@ import java.io.IOException;
 @Order(-103)
 public class PrivateLinkFilter implements Filter {
 
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrivateLinkFilter.class);
     @Autowired
     private ValidateDataLinks validateDataLinks;
 
@@ -44,18 +48,24 @@ public class PrivateLinkFilter implements Filter {
 
         // https://mkyong.com/java/how-to-get-client-ip-address-in-java/ ?
 
+        LOGGER.info("Getting the ipaddress");
         String ipAddress = getIpaddress(servletRequest);
         InetAddressValidator inetAddressValidator =  InetAddressValidator.getInstance();
 
+        LOGGER.info("Validating the ipaddress");
         if (inetAddressValidator.isValidInet6Address(ipAddress)) {
 
+            LOGGER.info("Ip address is ipv6");
             //ipv4 vs ipv6 -> only for ipv6
             if (validateDataLinks.validateRequest(ipAddress)) {
+                LOGGER.info("Validation is successful");
                 filterChain.doFilter(servletRequest, servletResponse);
             } else {
+                LOGGER.error("Validation error");
                 throw new ValidationException("Validation of data link failed.");
             }
         } else {
+            LOGGER.info("Ip address is ipv6");
             filterChain.doFilter(servletRequest, servletResponse);
         }
 
