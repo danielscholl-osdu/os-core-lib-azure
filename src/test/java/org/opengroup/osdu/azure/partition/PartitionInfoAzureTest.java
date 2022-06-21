@@ -26,8 +26,6 @@ public class PartitionInfoAzureTest {
     private static final String PARTITION_DNS_BLOB_ENDPOINT = "https://opendes.blob.core.windows.net";
     private static final String STORAGE_V1_BLOB_ENDPOINT = "https://opendes.blob.core.windows.net";
 
-
-
     @BeforeEach
     public void setup() {
         partitionInfoAzure = new PartitionInfoAzure();
