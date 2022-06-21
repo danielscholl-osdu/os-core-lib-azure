@@ -1,11 +1,13 @@
 package org.opengroup.osdu.azure.privateLinks;
 
+//import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.models.SqlQuerySpec;
 import org.opengroup.osdu.azure.cosmosdb.CosmosStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
+//import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -32,20 +34,24 @@ public class ValidateDataLinks {
     @Autowired
     private CosmosStore cosmosStore;
 
-    private List<Long> cache = new ArrayList<>();
+    private List<PrivateLinkResponse> cache = new ArrayList<>();
 
     /**
-     *
      * @param ipv6 String
      * @return boolean
-     * @throws UnknownHostException
      */
-    public boolean validateRequest(final String ipv6) throws UnknownHostException {
+    public boolean validateRequest(final String ipv6) {
 
-        LOGGER.info("Validating the request");
 
-        byte[] bytes = InetAddress.getByName(ipv6).getAddress();
+        byte[] bytes = new byte[0];
 
+        try {
+            bytes = InetAddress.getByName(ipv6).getAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        LOGGER.info("Converting ip address into bits");
         String ipAddressInBits = new BigInteger(1, bytes).toString(2);
 
         /*
@@ -56,7 +62,7 @@ public class ValidateDataLinks {
 
             // fetch private link from ipv6 address. It starts from 17th bit and is 32 bit length
 
-            String privateLinkStringInBits = ipAddressInBits.substring(16, 47);
+            String privateLinkStringInBits = ipAddressInBits.substring(16, 48);
             Long privateLinkID = Long.parseLong(privateLinkStringInBits, 2);
 
             //check if present in cache?
@@ -68,14 +74,16 @@ public class ValidateDataLinks {
 
                 /* call to db */
 
-                LOGGER.info("Checking for private link in DB");
-                Optional<Long> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID), String.valueOf(privateLinkID), Long.class);
+                LOGGER.info("Searching for private link in DB ");
+
+                Optional<PrivateLinkResponse> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID), String.valueOf(privateLinkID), PrivateLinkResponse.class);
+
                 if (optionalPrivateLink.isPresent()) {
                     LOGGER.info("Found private link id in DB");
                     cache.add(optionalPrivateLink.get());
                     return true;
                 } else {
-                    LOGGER.error("Private link Id not found in DB");
+                    LOGGER.error("Private link id not found in DB");
                     return false;
                 }
             }
@@ -85,25 +93,34 @@ public class ValidateDataLinks {
     }
 
     /**
-     *
      * @param privateLinkId long
      * @return boolean
      */
-    private boolean isPresentInCache(final Long privateLinkId) {
-        return cache.contains(privateLinkId);
+    public boolean isPresentInCache(final Long privateLinkId) {
+        if (!cache.isEmpty()) {
+            for (PrivateLinkResponse privateLinkResponse: cache) {
+                if (privateLinkResponse.getId().equals(privateLinkId.toString())) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return false;
+        }
     }
-
 
     /**
      * This function is for refreshing the cache after every 60 min. 1hr -> 3600 sec -> 3600 * 1000 ms
      */
-    @Scheduled(fixedRate = 3600000)
+    @Scheduled(fixedRate = 1000)
     void cacheSyncUp() {
         String queryText = "SELECT * FROM c WHERE 1=1 ";
         SqlQuerySpec query = new SqlQuerySpec(queryText);
 
-        cache = cosmosStore.queryItems(COSMOS_DB, COLLECTION, query, null, Long.class);
-        LOGGER.info("Syncing up cache with DB");
-
+        cache = cosmosStore.queryItems(COSMOS_DB, COLLECTION, query, null, PrivateLinkResponse.class);
+        for (PrivateLinkResponse privateLinkResponseCache : cache) {
+            LOGGER.info("Syncing up cache with DB " + privateLinkResponseCache.getId());
+        }
     }
 }
+

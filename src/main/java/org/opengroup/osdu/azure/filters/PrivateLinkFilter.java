@@ -33,6 +33,7 @@ public class PrivateLinkFilter implements Filter {
     @Autowired
     private ValidateDataLinks validateDataLinks;
 
+
     /**
      * Filter logic.
      * @param servletRequest Request object.
@@ -46,7 +47,6 @@ public class PrivateLinkFilter implements Filter {
 
         // get the ip address
 
-        // https://mkyong.com/java/how-to-get-client-ip-address-in-java/ ?
 
         LOGGER.info("Getting the ipaddress");
         String ipAddress = getIpaddress(servletRequest);
