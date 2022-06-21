@@ -47,7 +47,6 @@ public class PrivateLinkFilter implements Filter {
 
         // get the ip address
 
-
         LOGGER.info("Getting the ipaddress");
         String ipAddress = getIpaddress(servletRequest);
         InetAddressValidator inetAddressValidator =  InetAddressValidator.getInstance();
@@ -76,6 +75,7 @@ public class PrivateLinkFilter implements Filter {
         * @param servletRequest ServletRequest Object
         * @return ipAddress String
      */
+
     public String getIpaddress(final ServletRequest servletRequest) {
 
         HttpServletRequest request = (HttpServletRequest) servletRequest;
@@ -84,10 +84,13 @@ public class PrivateLinkFilter implements Filter {
         if (request != null) {
             ipAddress = request.getHeader("X-FORWARDED-FOR");
             if (ipAddress == null || "".equals(ipAddress)) {
-                ipAddress = request.getRemoteAddr();
+
+                if(request.getRemoteAddr().contains(","))
+                    ipAddress = request.getRemoteAddr().split(",")[0];
+                else
+                    ipAddress =request.getRemoteAddr();
             }
         }
-
         return ipAddress;
     }
 }

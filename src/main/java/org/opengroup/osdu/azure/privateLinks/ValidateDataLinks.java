@@ -112,15 +112,13 @@ public class ValidateDataLinks {
     /**
      * This function is for refreshing the cache after every 60 min. 1hr -> 3600 sec -> 3600 * 1000 ms
      */
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 3600000)
     void cacheSyncUp() {
         String queryText = "SELECT * FROM c WHERE 1=1 ";
         SqlQuerySpec query = new SqlQuerySpec(queryText);
 
         cache = cosmosStore.queryItems(COSMOS_DB, COLLECTION, query, null, PrivateLinkResponse.class);
-        for (PrivateLinkResponse privateLinkResponseCache : cache) {
-            LOGGER.info("Syncing up cache with DB " + privateLinkResponseCache.getId());
-        }
+        LOGGER.info("Syncing up cache with DB ");
     }
 }
 
