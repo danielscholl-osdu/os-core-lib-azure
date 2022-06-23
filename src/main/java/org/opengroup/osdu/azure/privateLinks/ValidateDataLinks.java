@@ -27,7 +27,6 @@ public class ValidateDataLinks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateDataLinks.class);
     private static final String COSMOS_DB = "private-link-db";
-    private static final String DATA_PARTITION_ID = "PrivateLinkID";
     private static final String COLLECTION = "PrivateLinkCollection";
 
 
@@ -42,7 +41,7 @@ public class ValidateDataLinks {
      */
     public boolean validateRequest(final String ipv6) {
 
-
+        LOGGER.info("Validating the request");
         byte[] bytes = new byte[0];
 
         try {
@@ -51,14 +50,13 @@ public class ValidateDataLinks {
             e.printStackTrace();
         }
 
-        LOGGER.info("Converting ip address into bits");
         String ipAddressInBits = new BigInteger(1, bytes).toString(2);
 
         /*
         The 10th bit of the IPv6 address contains a flag which denotes the traffic is from private link. A 32-bit link identifier is encoded starting from 17th bit.
          */
         if (ipAddressInBits.charAt(9) == '1') {
-            LOGGER.info("Traffic is from private link");
+            LOGGER.debug("Traffic is from private link");
 
             // fetch private link from ipv6 address. It starts from 17th bit and is 32 bit length
 
@@ -68,18 +66,18 @@ public class ValidateDataLinks {
             //check if present in cache?
 
             if (isPresentInCache(privateLinkID)) {
-                LOGGER.info("PrivateLinkID Present in cache");
+                LOGGER.debug("PrivateLinkID Present in cache");
                 return true;
             } else {
 
                 /* call to db */
 
-                LOGGER.info("Searching for private link in DB ");
+                LOGGER.debug("Searching for private link in DB ");
 
                 Optional<PrivateLinkResponse> optionalPrivateLink = cosmosStore.findItem(COSMOS_DB, COLLECTION, String.valueOf(privateLinkID), String.valueOf(privateLinkID), PrivateLinkResponse.class);
 
                 if (optionalPrivateLink.isPresent()) {
-                    LOGGER.info("Found private link id in DB");
+                    LOGGER.debug("Found private link id in DB");
                     cache.add(optionalPrivateLink.get());
                     return true;
                 } else {

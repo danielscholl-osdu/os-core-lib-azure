@@ -24,7 +24,7 @@ import java.io.IOException;
     Order of calling the filters becomes: OrderedRequestContextFilter --> MDC filter -->PrivateLinkFilter --> ... --> TransactionLogFilter
  */
 @Component
-@ConditionalOnProperty(value = "validate.privateLink.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "validate.privateLink.enabled", havingValue = "true", matchIfMissing = false)
 @Order(-103)
 public class PrivateLinkFilter implements Filter {
 
@@ -54,7 +54,7 @@ public class PrivateLinkFilter implements Filter {
         LOGGER.info("Validating the ipaddress");
         if (inetAddressValidator.isValidInet6Address(ipAddress)) {
 
-            LOGGER.info("Ip address is ipv6");
+            LOGGER.debug("Ip address is ipv6");
 
             if (validateDataLinks.validateRequest(ipAddress)) {
                 LOGGER.info("Validation is successful");
@@ -64,7 +64,7 @@ public class PrivateLinkFilter implements Filter {
                 throw new ValidationException("Validation of data link failed.");
             }
         } else {
-            LOGGER.info("Ip address is ipv4");
+            LOGGER.debug("Ip address is ipv4");
             filterChain.doFilter(servletRequest, servletResponse);
         }
 
