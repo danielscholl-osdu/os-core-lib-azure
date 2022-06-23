@@ -26,7 +26,7 @@ import java.util.Optional;
 public class ValidateDataLinks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateDataLinks.class);
-    private static final String COSMOS_DB = "PrivateLinkDB";
+    private static final String COSMOS_DB = "private-link-db";
     private static final String DATA_PARTITION_ID = "PrivateLinkID";
     private static final String COLLECTION = "PrivateLinkCollection";
 
