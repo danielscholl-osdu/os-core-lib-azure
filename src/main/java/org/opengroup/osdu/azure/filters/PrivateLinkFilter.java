@@ -85,10 +85,11 @@ public class PrivateLinkFilter implements Filter {
             ipAddress = request.getHeader("X-FORWARDED-FOR");
             if (ipAddress == null || "".equals(ipAddress)) {
 
-                if(request.getRemoteAddr().contains(","))
+                if (request.getRemoteAddr().contains(",")) {
                     ipAddress = request.getRemoteAddr().split(",")[0];
-                else
-                    ipAddress =request.getRemoteAddr();
+                } else {
+                    ipAddress = request.getRemoteAddr();
+                }
             }
         }
         return ipAddress;
