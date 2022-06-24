@@ -482,6 +482,9 @@ public class BlobStore {
         try {
             ListBlobsOptions listBlobsOptions = new ListBlobsOptions().setPrefix(filePath).setDetails(new BlobListDetails().setRetrieveSnapshots(true).setRetrieveVersions(true).setRetrieveDeletedBlobs(true));
             PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(30));
+            if(blobItems == null || !blobItems.iterator().hasNext()) {
+                throw new AppException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unknown error happened while restoring the blob", "No items found");
+            }
             for (BlobItem blobItem : blobItems) {
                 if (blobItem.getVersionId() != null && filePath.equals(blobItem.getName())) {
                     BlobClient sourceBlobClient = blobContainerClient.getBlobVersionClient(blobItem.getName(), blobItem.getVersionId());
