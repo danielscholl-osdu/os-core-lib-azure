@@ -410,7 +410,7 @@ public class BlobStoreTest {
         try {
             blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(exception.getStatusCode(), ex.getError().getCode());
         } catch (Exception ex) {
             fail("should not get different error code");
         }
@@ -485,7 +485,7 @@ public class BlobStoreTest {
         SyncPoller<BlobCopyInfo, Void> poller = mock(SyncPoller.class);
         PollResponse<BlobCopyInfo> poll = new PollResponse<>(LongRunningOperationStatus.FAILED, null, null);
         when(blobClient.beginCopy(any(), any())).thenReturn(poller);
-        when(poller.waitForCompletion()).thenReturn(poll);
+        when(poller.waitForCompletion(any(Duration.class))).thenReturn(poll);
         when(blobClient.exists()).thenReturn(true);
 
         try {
@@ -517,7 +517,7 @@ public class BlobStoreTest {
         SyncPoller<BlobCopyInfo, Void> poller = mock(SyncPoller.class);
         PollResponse<BlobCopyInfo> poll = new PollResponse<>(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED, null, null);
         when(blobClient.beginCopy(any(), any())).thenReturn(poller);
-        when(poller.waitForCompletion()).thenReturn(poll);
+        when(poller.waitForCompletion(any(Duration.class))).thenReturn(poll);
         when(blobClient.exists()).thenReturn(true);
 
         try {

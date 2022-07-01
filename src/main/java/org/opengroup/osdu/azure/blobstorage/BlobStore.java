@@ -94,6 +94,8 @@ import java.time.OffsetDateTime;
 public class BlobStore {
     private static final String LOGGER_NAME = BlobStore.class.getName();
 
+    private static final int BLOB_COPY_TIMEOUT_IN_SECONDS = 5;
+    private static final int BLOB_LIST_TIMEOUT_IN_SECONDS = 30;
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
 
@@ -161,7 +163,7 @@ public class BlobStore {
     }
 
     /**
-     * @param filePath        Path of file to be deleted.
+     * @param filePath        Path of file to be undeleted.
      * @param dataPartitionId Data partition id
      * @param containerName   Name of the storage container
      * @return boolean indicating whether the undeletion of given file was successful or not.
@@ -481,7 +483,7 @@ public class BlobStore {
         int statusCode = HttpStatus.SC_OK;
         try {
             ListBlobsOptions listBlobsOptions = new ListBlobsOptions().setPrefix(filePath).setDetails(new BlobListDetails().setRetrieveSnapshots(true).setRetrieveVersions(true).setRetrieveDeletedBlobs(true));
-            PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(30));
+            PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(BLOB_LIST_TIMEOUT_IN_SECONDS));
             if (blobItems == null || !blobItems.iterator().hasNext()) {
                 statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
                 throw new AppException(statusCode, "Unknown error happened while restoring the blob", "No items found");
@@ -491,7 +493,7 @@ public class BlobStore {
                     BlobClient sourceBlobClient = blobContainerClient.getBlobVersionClient(blobItem.getName(), blobItem.getVersionId());
                     BlobClient destBlobClient = blobContainerClient.getBlobClient(filePath);
                     SyncPoller<BlobCopyInfo, Void> poller = destBlobClient.beginCopy(sourceBlobClient.getBlobUrl(), null);
-                    PollResponse<BlobCopyInfo> poll = poller.waitForCompletion();
+                    PollResponse<BlobCopyInfo> poll = poller.waitForCompletion(Duration.ofSeconds(BLOB_COPY_TIMEOUT_IN_SECONDS));
                     if (destBlobClient.exists() && poll.getStatus().equals(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED)) {
                         break;
                     } else {
@@ -507,7 +509,7 @@ public class BlobStore {
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
-            throw handleBlobStorageException(500, "Failed to undelete blob", ex);
+            throw handleBlobStorageException(statusCode, "Failed to undelete blob", ex);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
