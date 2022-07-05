@@ -94,8 +94,8 @@ import java.time.OffsetDateTime;
 public class BlobStore {
     private static final String LOGGER_NAME = BlobStore.class.getName();
 
-    private static final int BLOB_COPY_TIMEOUT_IN_SECONDS = 5;
-    private static final int BLOB_LIST_TIMEOUT_IN_SECONDS = 30;
+    private static final int POLL_COMPLETION_TIMEOUT_IN_SECONDS = 10;
+    private static final int BLOB_LIST_TIMEOUT_IN_SECONDS = 60;
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
 
@@ -493,7 +493,7 @@ public class BlobStore {
                     BlobClient sourceBlobClient = blobContainerClient.getBlobVersionClient(blobItem.getName(), blobItem.getVersionId());
                     BlobClient destBlobClient = blobContainerClient.getBlobClient(filePath);
                     SyncPoller<BlobCopyInfo, Void> poller = destBlobClient.beginCopy(sourceBlobClient.getBlobUrl(), null);
-                    PollResponse<BlobCopyInfo> poll = poller.waitForCompletion(Duration.ofSeconds(BLOB_COPY_TIMEOUT_IN_SECONDS));
+                    PollResponse<BlobCopyInfo> poll = poller.waitForCompletion(Duration.ofSeconds(POLL_COMPLETION_TIMEOUT_IN_SECONDS));
                     if (destBlobClient.exists() && poll.getStatus().equals(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED)) {
                         break;
                     } else {
