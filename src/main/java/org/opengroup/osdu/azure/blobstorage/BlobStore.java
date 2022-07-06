@@ -486,7 +486,7 @@ public class BlobStore {
             PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(BLOB_LIST_TIMEOUT_IN_SECONDS));
             if (blobItems == null || !blobItems.iterator().hasNext()) {
                 statusCode = HttpStatus.SC_NOT_FOUND;
-                throw new AppException(statusCode, "Could not find any item at location "+filePath, "No items found");
+                throw new AppException(statusCode, "Could not find any item at location " + filePath, "No items found");
             }
             for (BlobItem blobItem : blobItems) {
                 if (blobItem.getVersionId() != null && filePath.equals(blobItem.getName())) {

@@ -422,7 +422,7 @@ public class BlobStoreTest {
         try {
             blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(404, ex.getError().getCode());
             assertEquals(ex.getError().getMessage(),"No items found");
         } catch (Exception ex) {
             fail("should not get different error code");
@@ -439,7 +439,7 @@ public class BlobStoreTest {
         try {
             blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(404, ex.getError().getCode());
             assertEquals(ex.getError().getMessage(),"No items found");
         } catch (Exception ex) {
             fail("should not get different error code");
