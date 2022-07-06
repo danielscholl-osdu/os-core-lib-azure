@@ -485,8 +485,8 @@ public class BlobStore {
             ListBlobsOptions listBlobsOptions = new ListBlobsOptions().setPrefix(filePath).setDetails(new BlobListDetails().setRetrieveSnapshots(true).setRetrieveVersions(true).setRetrieveDeletedBlobs(true));
             PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(BLOB_LIST_TIMEOUT_IN_SECONDS));
             if (blobItems == null || !blobItems.iterator().hasNext()) {
-                statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-                throw new AppException(statusCode, "Unknown error happened while restoring the blob", "No items found");
+                statusCode = HttpStatus.SC_NOT_FOUND;
+                throw new AppException(statusCode, "Could not find any item at location "+filePath, "No items found");
             }
             for (BlobItem blobItem : blobItems) {
                 if (blobItem.getVersionId() != null && filePath.equals(blobItem.getName())) {
@@ -505,7 +505,7 @@ public class BlobStore {
                     throw new AppException(statusCode, "Unknown error happened while restoring the blob", "Corrupt data");
                 }
             }
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("{}", MessageFormatter.format("Done undeleting blob at {}", filePath).getMessage());
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Done undeleting blob at {}", filePath);
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
