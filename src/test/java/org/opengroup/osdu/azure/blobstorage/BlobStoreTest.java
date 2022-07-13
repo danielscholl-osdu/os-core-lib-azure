@@ -14,6 +14,8 @@
 
 package org.opengroup.osdu.azure.blobstorage;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.util.polling.LongRunningOperationStatus;
 import com.azure.core.util.polling.PollResponse;
 import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobClient;
@@ -25,7 +27,6 @@ import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.azure.storage.blob.specialized.BlobInputStream;
 import com.azure.storage.blob.specialized.BlockBlobClient;
-import org.apache.catalina.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,10 +42,10 @@ import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
+import java.sql.Blob;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -90,6 +91,9 @@ public class BlobStoreTest {
 
     @Mock
     private BlockBlobItem blockBlobItem;
+
+    @Mock
+    private BlobItem blobItem;
 
     @Mock
     private ILogger logger;
@@ -259,7 +263,7 @@ public class BlobStoreTest {
         try {
             String content = blobStore.readFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(exception.getStatusCode(), ex.getError().getCode());
         } catch (Exception ex) {
             fail("should not get different error code");
         }
@@ -272,7 +276,7 @@ public class BlobStoreTest {
         try {
             String content = blobStore.readFromStorageContainer(FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (AppException ex) {
-            assertEquals(500, ex.getError().getCode());
+            assertEquals(exception.getStatusCode(), ex.getError().getCode());
         } catch (Exception ex) {
             fail("should not get different error code");
         }
@@ -371,6 +375,155 @@ public class BlobStoreTest {
             blobStore.deleteFromStorageContainer(FILE_PATH, STORAGE_CONTAINER_NAME);
         } catch (Exception ex) {
             fail("should not get any exception.");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_ErrorCreatingBlobContainerClient() {
+        doThrow(BlobStorageException.class).when(blobServiceClientFactory).getBlobServiceClient(eq(PARTITION_ID));
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(500, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_BlobNotFound() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.BLOB_NOT_FOUND);
+        doThrow(exception).when(blobContainerClient).listBlobs(any(ListBlobsOptions.class), any(Duration.class));
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(404, ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_InternalError() {
+        BlobStorageException exception = mockStorageException(BlobErrorCode.INTERNAL_ERROR);
+        doThrow(exception).when(blobContainerClient).listBlobs(any(ListBlobsOptions.class), any(Duration.class));
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(exception.getStatusCode(), ex.getError().getCode());
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_InternalError_NullResult() {
+        when(blobContainerClient.listBlobs(any(ListBlobsOptions.class), any(Duration.class))).thenReturn(null);
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(404, ex.getError().getCode());
+            assertEquals(ex.getError().getMessage(),"No items found");
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_InternalError_EmptyResult() {
+        Iterator mockIterator = mock(Iterator.class);
+        PagedIterable mockPagedTableEntities = mock(PagedIterable.class);
+        when(mockPagedTableEntities.iterator()).thenReturn(mockIterator);
+        when(blobContainerClient.listBlobs(any(ListBlobsOptions.class), any(Duration.class))).thenReturn(mockPagedTableEntities);
+
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(404, ex.getError().getCode());
+            assertEquals(ex.getError().getMessage(),"No items found");
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_InternalError_CorruptData() {
+        Iterator mockIterator = mock(Iterator.class);
+        when(mockIterator.hasNext()).thenReturn(true);
+        when(mockIterator.next()).thenReturn(mock(BlobItem.class));
+
+        PagedIterable mockPagedTableEntities = mock(PagedIterable.class);
+        when(mockPagedTableEntities.iterator()).thenReturn(mockIterator);
+        when(blobContainerClient.listBlobs(any(ListBlobsOptions.class), any(Duration.class))).thenReturn(mockPagedTableEntities);
+
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(500, ex.getError().getCode());
+            assertEquals(ex.getError().getMessage(),"Corrupt data");
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_InternalError_CopyJobFailed() {
+        Iterator<BlobItem> mockIterator = mock(Iterator.class);
+        when(mockIterator.hasNext()).thenReturn(true);
+        BlobItem blobItem = new BlobItem();
+        blobItem.setVersionId("version1");
+        blobItem.setName("filePath");
+        when(mockIterator.next()).thenReturn(blobItem);
+
+        PagedIterable<BlobItem> blobItems = mock(PagedIterable.class);
+        when(blobItems.iterator()).thenReturn(mockIterator);
+
+        when(blobContainerClient.listBlobs(any(ListBlobsOptions.class), any(Duration.class))).thenReturn(blobItems);
+        when(blobContainerClient.getBlobVersionClient("filePath", "version1")).thenReturn(blobClient);
+        when(blobContainerClient.getBlobClient("filePath")).thenReturn(blobClient);
+
+        SyncPoller<BlobCopyInfo, Void> poller = mock(SyncPoller.class);
+        PollResponse<BlobCopyInfo> poll = new PollResponse<>(LongRunningOperationStatus.FAILED, null, null);
+        when(blobClient.beginCopy(any(), any())).thenReturn(poller);
+        when(poller.waitForCompletion(any(Duration.class))).thenReturn(poll);
+        when(blobClient.exists()).thenReturn(true);
+
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (AppException ex) {
+            assertEquals(500, ex.getError().getCode());
+            assertEquals(ex.getError().getMessage(),"Copy job couldn't finish");
+        } catch (Exception ex) {
+            fail("should not get different error code");
+        }
+    }
+
+    @Test
+    public void undeleteFromStorageContainer_Success() {
+        Iterator<BlobItem> mockIterator = mock(Iterator.class);
+        when(mockIterator.hasNext()).thenReturn(true);
+        BlobItem blobItem = new BlobItem();
+        blobItem.setVersionId("version1");
+        blobItem.setName("filePath");
+        when(mockIterator.next()).thenReturn(blobItem);
+
+        PagedIterable<BlobItem> blobItems = mock(PagedIterable.class);
+        when(blobItems.iterator()).thenReturn(mockIterator);
+
+        when(blobContainerClient.listBlobs(any(ListBlobsOptions.class), any(Duration.class))).thenReturn(blobItems);
+        when(blobContainerClient.getBlobVersionClient("filePath", "version1")).thenReturn(blobClient);
+        when(blobContainerClient.getBlobClient("filePath")).thenReturn(blobClient);
+
+        SyncPoller<BlobCopyInfo, Void> poller = mock(SyncPoller.class);
+        PollResponse<BlobCopyInfo> poll = new PollResponse<>(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED, null, null);
+        when(blobClient.beginCopy(any(), any())).thenReturn(poller);
+        when(poller.waitForCompletion(any(Duration.class))).thenReturn(poll);
+        when(blobClient.exists()).thenReturn(true);
+
+        try {
+            blobStore.undeleteFromStorageContainer(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME);
+        } catch (Exception ex) {
+            fail("should not get different error code");
         }
     }
 

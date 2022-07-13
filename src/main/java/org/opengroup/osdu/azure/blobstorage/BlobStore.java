@@ -14,14 +14,21 @@
 
 package org.opengroup.osdu.azure.blobstorage;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
 import com.azure.core.util.polling.SyncPoller;
+import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobCopyInfo;
 import com.azure.storage.blob.models.BlobErrorCode;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.BlobProperties;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
+import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.models.UserDelegationKey;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobSasPermission;
@@ -87,6 +94,8 @@ import java.time.OffsetDateTime;
 public class BlobStore {
     private static final String LOGGER_NAME = BlobStore.class.getName();
 
+    private static final int POLL_COMPLETION_TIMEOUT_IN_SECONDS = 10;
+    private static final int BLOB_LIST_TIMEOUT_IN_SECONDS = 60;
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
 
@@ -151,6 +160,20 @@ public class BlobStore {
             final String containerName) {
         BlobContainerClient blobContainerClient = getSystemBlobContainerClient(containerName);
         return this.deleteFromStorageContainerInternal(filePath, containerName, blobContainerClient);
+    }
+
+    /**
+     * @param filePath        Path of file to be undeleted.
+     * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
+     * @return boolean indicating whether the undeletion of given file was successful or not.
+     */
+    public boolean undeleteFromStorageContainer(
+            final String dataPartitionId,
+            final String filePath,
+            final String containerName) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        return this.undeleteFromStorageContainerInternal(filePath, containerName, blobContainerClient);
     }
 
     /**
@@ -405,7 +428,7 @@ public class BlobStore {
             return downloadStream.toString(StandardCharsets.UTF_8.name());
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
-            throw handleBlobStorageException(500, "Failed to read specified blob", ex);
+            throw handleBlobStorageException(statusCode, "Failed to read specified blob", ex);
         } catch (UnsupportedEncodingException ex) {
             statusCode = HttpStatus.SC_BAD_REQUEST;
             throw handleBlobStoreException(400, MessageFormatter.format("Encoding was not correct for item with name={}", filePath).getMessage(), ex);
@@ -443,6 +466,54 @@ public class BlobStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
             logDependency("DELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
+        }
+    }
+
+    /**
+     * @param filePath        Path of file to be deleted.
+     * @param containerName   Name of the storage container
+     * @param blobContainerClient   Blob container client
+     * @return boolean indicating whether the deletion of given file was successful or not.
+     */
+    private boolean undeleteFromStorageContainerInternal(
+            final String filePath,
+            final String containerName,
+            final BlobContainerClient blobContainerClient) {
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
+        try {
+            ListBlobsOptions listBlobsOptions = new ListBlobsOptions().setPrefix(filePath).setDetails(new BlobListDetails().setRetrieveSnapshots(true).setRetrieveVersions(true).setRetrieveDeletedBlobs(true));
+            PagedIterable<BlobItem> blobItems = blobContainerClient.listBlobs(listBlobsOptions, Duration.ofSeconds(BLOB_LIST_TIMEOUT_IN_SECONDS));
+            if (blobItems == null || !blobItems.iterator().hasNext()) {
+                statusCode = HttpStatus.SC_NOT_FOUND;
+                throw new AppException(statusCode, "Could not find any item at location " + filePath, "No items found");
+            }
+            for (BlobItem blobItem : blobItems) {
+                if (blobItem.getVersionId() != null && filePath.equals(blobItem.getName())) {
+                    BlobClient sourceBlobClient = blobContainerClient.getBlobVersionClient(blobItem.getName(), blobItem.getVersionId());
+                    BlobClient destBlobClient = blobContainerClient.getBlobClient(filePath);
+                    SyncPoller<BlobCopyInfo, Void> poller = destBlobClient.beginCopy(sourceBlobClient.getBlobUrl(), null);
+                    PollResponse<BlobCopyInfo> poll = poller.waitForCompletion(Duration.ofSeconds(POLL_COMPLETION_TIMEOUT_IN_SECONDS));
+                    if (destBlobClient.exists() && poll.getStatus().equals(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED)) {
+                        break;
+                    } else {
+                        statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                        throw new AppException(statusCode, "Unknown error happened while restoring the blob", "Copy job couldn't finish");
+                    }
+                } else {
+                    statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                    throw new AppException(statusCode, "Unknown error happened while restoring the blob", "Corrupt data");
+                }
+            }
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Done undeleting blob at {}", filePath);
+            return true;
+        } catch (BlobStorageException ex) {
+            statusCode = ex.getStatusCode();
+            throw handleBlobStorageException(statusCode, "Failed to undelete blob", ex);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyData = MessageFormatter.arrayFormat("{}/{}", new String[]{containerName, filePath}).getMessage();
+            logDependency("UNDELETE_FROM_STORAGE_CONTAINER", dependencyData, dependencyData, timeTaken, String.valueOf(statusCode), statusCode == HttpStatus.SC_OK);
         }
     }
 
