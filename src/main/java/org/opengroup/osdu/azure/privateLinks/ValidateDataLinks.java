@@ -6,6 +6,7 @@ import org.opengroup.osdu.azure.cosmosdb.CosmosStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 //import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +24,7 @@ import java.util.Optional;
  */
 @Component
 @EnableScheduling
+@ConditionalOnProperty(value = "validate.privateLink.enabled", havingValue = "true", matchIfMissing = false)
 public class ValidateDataLinks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateDataLinks.class);
