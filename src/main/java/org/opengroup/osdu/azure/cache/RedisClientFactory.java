@@ -78,17 +78,18 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
      * @return redis client
      */
     private IRedisCache<K, V> createRedisClient(final Class<K> keyClass, final Class<V> valueClass, final RedisAzureConfiguration redisConfiguration) {
-        if (!secretExists(HOST_KEY) || !secretExists(PASSWORD_KEY)) {
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Required secrets does not exist. Redis is not available yet.");
-            return null;
-        }
-
         final String host = getSecret(HOST_KEY);
         final String password = getSecret(PASSWORD_KEY);
-        ClientOptions clientOptions = ClientOptions.builder()
-                .socketOptions(SocketOptions.builder().connectTimeout(redisConfiguration.getTimeout(), TimeUnit.SECONDS).build())
-                .build();
-        return new RedisCache<K, V>(host, redisConfiguration.getPort(), password, redisConfiguration.getExpiration(), redisConfiguration.getDatabase(), keyClass, valueClass);
+        if (host == null || password == null) {
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Required secrets does not exist. Redis is not available yet.");
+            return null;
+        } else {
+            ClientOptions.builder()
+                    .socketOptions(SocketOptions.builder()
+                    .connectTimeout(redisConfiguration.getTimeout(), TimeUnit.SECONDS).build())
+                    .build();
+            return new RedisCache<K, V>(host, redisConfiguration.getPort(), password, redisConfiguration.getExpiration(), redisConfiguration.getDatabase(), keyClass, valueClass);
+        }
     }
 
     /**
@@ -101,10 +102,12 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
     public RedissonClient getRedissonClient(final String applicationName, final RedisAzureConfiguration redisAzureConfiguration) {
         if (redissonClient == null) {
             synchronized (RedissonClient.class) {
-                if (redissonClient == null && secretExists(HOST_KEY) && secretExists(PASSWORD_KEY)) {
+                String redisHost = getSecret(HOST_KEY);
+                String redisPassword = getSecret(PASSWORD_KEY);
+                if (redissonClient == null && redisHost != null && redisPassword != null) {
                     Config config = new Config();
-                    config.useSingleServer().setAddress(String.format("rediss://%s:%d", getSecret(HOST_KEY), redisAzureConfiguration.getPort()))
-                            .setPassword(getSecret(PASSWORD_KEY))
+                    config.useSingleServer().setAddress(String.format("rediss://%s:%d", redisHost, redisAzureConfiguration.getPort()))
+                            .setPassword(redisPassword)
                             .setDatabase(redisAzureConfiguration.getDatabase())
                             .setKeepAlive(true)
                             .setClientName(applicationName);
@@ -121,14 +124,6 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
      * @return Secret value
      */
     private String getSecret(final String keyName) {
-        return KeyVaultFacade.getSecretWithValidation(secretClient, keyName);
-    }
-
-    /**
-     * @param keyName name of the secret
-     * @return status if secret exists
-     */
-    private boolean secretExists(final String keyName) {
-        return KeyVaultFacade.checkIfSecretExists(secretClient, keyName);
+        return KeyVaultFacade.getSecretWithDefault(secretClient, keyName, null);
     }
 }

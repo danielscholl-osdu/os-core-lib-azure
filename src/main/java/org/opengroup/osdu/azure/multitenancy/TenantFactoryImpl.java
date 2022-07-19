@@ -48,6 +48,9 @@ public class TenantFactoryImpl implements ITenantFactory {
     @Autowired
     private ILogger logger;
 
+    @Autowired
+    private String appDevSpUsername;
+
     private static final String LOG_PREFIX = "azure-core-lib";
 
     private Map<String, TenantInfo> tenants = new HashMap<>();
@@ -135,7 +138,7 @@ public class TenantFactoryImpl implements ITenantFactory {
         String tenantName = partitionInfo.getId();
         ti.setName(tenantName);
         ti.setComplianceRuleSet(partitionInfo.getComplianceRuleset());
-        ti.setServiceAccount(partitionInfo.getServicePrincipalAppId()); //set serviceprincipalAppId in Azure side instead of ServiceAccount in GCP
+        ti.setServiceAccount(appDevSpUsername); //set serviceprincipalAppId in Azure side instead of ServiceAccount in GCP
         ti.setDataPartitionId(tenantName);
         this.tenants.put(tenantName, ti);
     }
