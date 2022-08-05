@@ -15,7 +15,9 @@ import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.tenant.TenantInfo;
 import org.opengroup.osdu.core.common.partition.Property;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +52,8 @@ public class TenantFactoryImplTest {
 
         AppException notFoundException = new AppException(HttpStatus.SC_NOT_FOUND, "Not found", String.format("Error getting tenant: %s via partition service.", tenantName + notFound));
         lenient().when(partitionServiceClient.getPartition(tenantName + notFound)).thenThrow(notFoundException);
+
+        initAppDevSpServicePrincipal();
     }
 
     @Test
@@ -102,5 +106,11 @@ public class TenantFactoryImplTest {
         List<TenantInfo> result = new ArrayList<>(tenantFactory.listTenantInfo());
         assertNotNull(result);
         assertEquals(partitions.size(), result.size());
+    }
+
+    private void initAppDevSpServicePrincipal() {
+        Field appDevSpUsernameField = ReflectionUtils.findField(TenantFactoryImpl.class, "appDevSpUsername");
+        appDevSpUsernameField.setAccessible(true);
+        ReflectionUtils.setField(appDevSpUsernameField, tenantFactory, serviceprincipalAppId);
     }
 }
