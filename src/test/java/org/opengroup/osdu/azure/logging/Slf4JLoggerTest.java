@@ -28,6 +28,7 @@ import org.opengroup.osdu.core.common.model.http.Request;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,6 +42,10 @@ public class Slf4JLoggerTest {
     private static final String LOG_PREFIX = "services.app";
     private static final String DEFAULT_LOGGER_NAME = Slf4JLogger.class.getName();
     private static final String LOGGER_NAME = Slf4JLoggerTest.class.getName();
+    private static final String AZURE_AUDIT_LOGGER_NAME = "AzureAuditLogger";
+    private static final String AZURE_AUDIT_ENABLED = "AZURE_AUDIT_ENABLED";
+
+
     private static final String LOG_MESSAGE = "Hello world !";
 
     @Mock
@@ -111,7 +116,11 @@ public class Slf4JLoggerTest {
         doNothing().when(coreLogger).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(auditPayload), eq(headers));
         slf4JLogger.audit(LOG_PREFIX, auditPayload, headers);
         verify(coreLogger, times(1)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(auditPayload), eq(headers));
-        verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
+        Object azureAuditEnabled = System.getProperty(AZURE_AUDIT_ENABLED);
+        if (Objects.nonNull(azureAuditEnabled) && azureAuditEnabled.equals(String.valueOf(Boolean.TRUE)))
+            verify(coreLoggerFactory, times(1)).getLogger(eq(AZURE_AUDIT_LOGGER_NAME));
+        else
+            verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
         verify(headersToLog, times(1)).createStandardLabelsFromMap(eq(headers));
     }
 
@@ -120,7 +129,11 @@ public class Slf4JLoggerTest {
         doNothing().when(coreLogger).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(auditPayload), eq(headers));
         slf4JLogger.audit(LOGGER_NAME, LOG_PREFIX, auditPayload, headers);
         verify(coreLogger, times(1)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(auditPayload), eq(headers));
-        verify(coreLoggerFactory, times(1)).getLogger(eq(LOGGER_NAME));
+        Object azureAuditEnabled = System.getProperty(AZURE_AUDIT_ENABLED);
+        if (Objects.nonNull(azureAuditEnabled) && azureAuditEnabled.equals(String.valueOf(Boolean.TRUE)))
+            verify(coreLoggerFactory, times(1)).getLogger(eq(AZURE_AUDIT_LOGGER_NAME));
+        else
+            verify(coreLoggerFactory, times(1)).getLogger(eq(LOGGER_NAME));
         verify(headersToLog, times(1)).createStandardLabelsFromMap(eq(headers));
     }
 

@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * {@link ILogger} implementation with Slf4J Logger.
@@ -33,13 +34,21 @@ import java.util.Map;
 @ConditionalOnProperty(value = "logging.slf4jlogger.enabled", havingValue = "true", matchIfMissing = true)
 public final class Slf4JLogger implements ILogger {
     private static final String DEFAULT_LOGGER_NAME = Slf4JLogger.class.getName();
+    private static final String AZURE_AUDIT_LOGGER_NAME = "AzureAuditLogger";
+    private static final String AZURE_AUDIT_ENABLED = "AZURE_AUDIT_ENABLED";
+
 
     @Autowired
     private HeadersToLog headersToLog;
 
     @Override
     public void audit(final String logPrefix, final AuditPayload auditPayload, final Map<String, String> headers) {
-        this.audit(DEFAULT_LOGGER_NAME, logPrefix, auditPayload, headers);
+        Object azureAuditEnabled = System.getProperty(AZURE_AUDIT_ENABLED);
+        if (Objects.nonNull(azureAuditEnabled) && azureAuditEnabled.equals(String.valueOf(Boolean.TRUE))) {
+            this.audit(AZURE_AUDIT_LOGGER_NAME, logPrefix, auditPayload, headers);
+        } else {
+            this.audit(DEFAULT_LOGGER_NAME, logPrefix, auditPayload, headers);
+        }
     }
 
     @Override

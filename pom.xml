@@ -51,6 +51,8 @@
     <azure-storage-file-datalake.version>12.6.0</azure-storage-file-datalake.version>
     <azure-storage-blob.version>12.14.2</azure-storage-blob.version>
     <azure-core.version>1.25.0</azure-core.version>
+
+
   </properties>
 
   <licenses>
