@@ -20,6 +20,7 @@ import org.opengroup.osdu.azure.publisherFacade.models.MessageProperties;
 import org.opengroup.osdu.azure.publisherFacade.models.PubSubAttributesBuilder;
 import org.opengroup.osdu.azure.publisherFacade.models.ServiceBusMessageBody;
 import org.opengroup.osdu.azure.servicebus.ITopicClientFactory;
+import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,8 @@ public class ServiceBusPublisher {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceBusPublisher.class);
     @Autowired
     private ITopicClientFactory topicClientFactory;
+    @Autowired
+    private PubsubConfiguration pubsubConfiguration;
 
     /**
      * @param publisherInfo Contains Service bus batch and publishing details
@@ -47,6 +50,7 @@ public class ServiceBusPublisher {
     public void publishToServiceBus(final DpsHeaders headers, final PublisherInfo publisherInfo) {
         Gson gson = new Gson();
         Message message = new Message();
+        Integer retryCount = Integer.parseInt(pubsubConfiguration.getRetryLimit());
         // properties
         headers.addCorrelationIdIfMissing();
         PubSubAttributesBuilder pubSubBuilder = PubSubAttributesBuilder.builder().dpsHeaders(headers).build();
@@ -67,13 +71,21 @@ public class ServiceBusPublisher {
                 .build();
         message.setBody(gson.toJson(serviceBusMessageBody).toString().getBytes(StandardCharsets.UTF_8));
         message.setContentType("application/json");
-
-        try {
-            LOGGER.debug(String.format("Storage publishes message to Service Bus %s", headers.getCorrelationId()));
-            topicClientFactory.getClient(headers.getPartitionId(), publisherInfo.getServiceBusTopicName()).send(message);
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+        while (retryCount >= 0) {
+            try {
+                topicClientFactory.getClient(headers.getPartitionId(), publisherInfo.getServiceBusTopicName()).send(message);
+                LOGGER.debug("Storage published message to Service Bus {} with message id {}", headers.getCorrelationId(), message.getMessageId());
+                break;
+            } catch (Exception e) {
+                LOGGER.error("Failed to publish message with message id {} due to exception : {}. Retry count {}. {}.", message.getMessageId(), e.getMessage(), retryCount, e);
+                retryCount--;
+                if (retryCount < 0) {
+                    LOGGER.error("Retry limit Exceeded.Unable to publish message with message id {}", message.getMessageId());
+                    throw new AppException(501,"Internal Server Error" , "Failed to publish message in service bus", e);
+                }
+            }
         }
+
     }
 }
 

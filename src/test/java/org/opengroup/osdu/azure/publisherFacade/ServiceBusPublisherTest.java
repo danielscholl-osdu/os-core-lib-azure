@@ -52,6 +52,8 @@ public class ServiceBusPublisherTest {
     private TopicClientFactoryImpl topicClientFactory;
     @Mock
     private PublisherInfo publisherInfo;
+    @Mock
+    private PubsubConfiguration pubsubConfiguration;
     @InjectMocks
     private ServiceBusPublisher sut;
 
@@ -73,6 +75,7 @@ public class ServiceBusPublisherTest {
         try {
             doReturn(topicClient).when(topicClientFactory).getClient(PARTITION_ID, SERVICE_BUS_TOPIC_NAME);
             doNothing().when(topicClient).send(message);
+            doReturn("3").when(pubsubConfiguration).getRetryLimit();
             sut.publishToServiceBus(dpsHeaders, publisherInfo);
             verify(topicClientFactory, times(1)).getClient(PARTITION_ID, SERVICE_BUS_TOPIC_NAME);
         } catch (Exception e) {
