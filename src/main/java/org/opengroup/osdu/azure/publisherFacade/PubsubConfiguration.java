@@ -32,4 +32,6 @@ public class PubsubConfiguration {
     @Value("${azure.eventGrid.enabled:false}")
     private String isEventGridEnabled;
 
+    @Value("${azure.serviceBus.retrylimit:1}")
+    private String retryLimit;
 }

@@ -7,7 +7,6 @@ import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 import org.opengroup.osdu.azure.dependencies.DefaultAzureServiceBusCredential;
 import org.opengroup.osdu.azure.di.MSIConfiguration;
-import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.partition.PartitionInfoAzure;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.common.Validators;
@@ -63,14 +62,11 @@ public class TopicClientFactoryImpl implements ITopicClientFactory {
         if (this.topicClientMap.containsKey(cacheKey)) {
             return this.topicClientMap.get(cacheKey);
         }
-        return this.topicClientMap.computeIfAbsent(cacheKey, topicClient -> {
-            try {
-                return createTopicClient(dataPartitionId, topicName);
-            } catch (Exception e) {
-                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(e.getMessage(), e);
-                return null;
-            }
-        });
+        TopicClient topicClient = createTopicClient(dataPartitionId, topicName);
+        if (topicClient != null) {
+            topicClientMap.put(cacheKey, topicClient);
+        }
+        return topicClient;
     }
 
     /**
