@@ -10,9 +10,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opengroup.osdu.core.common.model.http.AppException;
 import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,6 +52,7 @@ public class AzureServicePrincipalTest {
         when(httpClient.send(any(HttpRequest.class))).thenReturn(responseMono);
         when(responseMono.block()).thenReturn(httpResponse);
         when(httpResponse.getBodyAsString()).thenReturn(contentMono);
+        when(httpResponse.getStatusCode()).thenReturn(200);
 
         String result = azureServicePrincipal.getIdToken(spId, spSecret, tenantId, appResourceId);
 
@@ -58,6 +61,22 @@ public class AzureServicePrincipalTest {
         verify(responseMono, times(1)).block();
         verify(httpResponse, times(1)).getBodyAsString();
 
+    }
+
+    @Test
+    public void ShouldThrowException() {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("access_token", accessToken);
+
+        Mono<String> contentMono = Mono.just(jsonObject.toString());
+
+        when(azureServicePrincipal.createHttpClient()).thenReturn(httpClient);
+        when(httpClient.send(any(HttpRequest.class))).thenReturn(responseMono);
+        when(responseMono.block()).thenReturn(httpResponse);
+        when(httpResponse.getBodyAsString()).thenReturn(contentMono);
+        when(httpResponse.getStatusCode()).thenReturn(400);
+
+        assertThrows(AppException.class, () -> azureServicePrincipal.getIdToken(spId, spSecret, tenantId, appResourceId));
     }
 
     @Test
