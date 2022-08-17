@@ -15,7 +15,7 @@ import java.util.Base64;
 @Component
 public final class AuthUtils {
 
-    private static final String SECRET_NAME= "app-dev-sp-password" ;
+    private static final String SECRET_NAME = "app-dev-sp-password";
 
     /**
      * Get claims set from JWT token.
@@ -51,7 +51,7 @@ public final class AuthUtils {
 
 
     /**
-     * Get client secret
+     * Get client secret.
      *
      * @param aadConfiguration Azure Active Directory configuration bean.
      * @param sc KeyVault client
