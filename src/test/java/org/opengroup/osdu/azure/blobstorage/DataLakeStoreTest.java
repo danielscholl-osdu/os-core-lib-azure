@@ -14,8 +14,10 @@
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.storage.file.datalake.DataLakeDirectoryClient;
+import com.azure.storage.file.datalake.DataLakeServiceClient;
 import com.azure.storage.file.datalake.models.DataLakeStorageException;
 import com.azure.storage.file.datalake.models.PathInfo;
+import com.azure.storage.file.datalake.models.UserDelegationKey;
 import com.azure.storage.file.datalake.sas.DataLakeServiceSasSignatureValues;
 import com.azure.storage.file.datalake.sas.FileSystemSasPermission;
 import org.junit.jupiter.api.AfterEach;
@@ -77,6 +79,12 @@ public class DataLakeStoreTest {
 
     @Mock
     private CoreLogger coreLogger;
+
+    @Mock
+    private DataLakeServiceClient dataLakeServiceClient;
+
+    @Mock
+    private UserDelegationKey userDelegationKey;
 
     @Captor
     private ArgumentCaptor<DataLakeServiceSasSignatureValues> dataLakeServiceSasSignatureValuesCaptor;
@@ -170,6 +178,34 @@ public class DataLakeStoreTest {
 
         assertEquals(fileSystemSasPermission.toString(), dataLakeServiceSasSignatureValuesCaptor.getValue().getPermissions());
         assertEquals(expiryTime, dataLakeServiceSasSignatureValuesCaptor.getValue().getExpiryTime());
+        assertEquals(containerPreSignedUrl, obtainedPreSignedUrl);
+    }
+
+    @Test
+    public void generatePreSignedURLWithUserDelegationSas_ReturnsValidSasToken() {
+        String containerSasToken = "containerSasToken";
+        String containerUrl = "containerUrl";
+        String containerPreSignedUrl = String.format("%s?%s",containerUrl, containerSasToken);
+        int expiryDays = 1;
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
+
+        ArgumentCaptor<UserDelegationKey> userDelegationKeyArgumentCaptor = ArgumentCaptor.forClass(UserDelegationKey.class);
+
+        doReturn(containerUrl).when(dataLakeDirectoryClient).getDirectoryUrl();
+        doReturn(DIRECTORY_NAME).when(dataLakeDirectoryClient).getDirectoryName();
+        doReturn(containerSasToken).when(dataLakeDirectoryClient).generateUserDelegationSas(any(DataLakeServiceSasSignatureValues.class), any(UserDelegationKey.class));
+        doReturn(dataLakeServiceClient).when(dataLakeClientFactory).getDataLakeServiceClient(PARTITION_ID, FILE_SYSTEM_NAME);
+        doReturn(userDelegationKey).when(dataLakeServiceClient).getUserDelegationKey(any(OffsetDateTime.class), any(OffsetDateTime.class));
+
+        FileSystemSasPermission fileSystemSasPermission =
+                (new FileSystemSasPermission()).setReadPermission(true).setCreatePermission(true);
+
+        String obtainedPreSignedUrl = dataLakeStore.generatePreSignedURLWithUserDelegationSas(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME,
+                expiryTime, fileSystemSasPermission);
+
+        verify(dataLakeDirectoryClient).generateUserDelegationSas(dataLakeServiceSasSignatureValuesCaptor.capture(), userDelegationKeyArgumentCaptor.capture());
+
+        assertEquals(fileSystemSasPermission.toString(), dataLakeServiceSasSignatureValuesCaptor.getValue().getPermissions());
         assertEquals(containerPreSignedUrl, obtainedPreSignedUrl);
     }
 

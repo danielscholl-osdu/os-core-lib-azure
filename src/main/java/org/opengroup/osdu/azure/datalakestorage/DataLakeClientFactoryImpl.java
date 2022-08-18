@@ -131,6 +131,27 @@ public final class DataLakeClientFactoryImpl implements IDataLakeClientFactory {
 
     /**
      *
+     * @param dataPartitionId dataPartitionId
+     * @param fileSystemName fileSystemName
+     * @return DataLakeServiceClient
+     */
+    @Override
+    public DataLakeServiceClient getDataLakeServiceClient(
+            final String dataPartitionId,
+            final String fileSystemName) {
+        String cacheKey = String.format("%s-%s", dataPartitionId, fileSystemName);
+        DataLakeServiceClient dataLakeServiceClient;
+        if (this.dataLakeContainerClientMap.containsKey(cacheKey)) {
+            dataLakeServiceClient = this.dataLakeContainerClientMap.get(cacheKey);
+        } else {
+            dataLakeServiceClient = getDataLakeServiceClient(dataPartitionId);
+            this.dataLakeContainerClientMap.put(cacheKey, dataLakeServiceClient);
+        }
+        return dataLakeServiceClient;
+    }
+
+    /**
+     *
      * @param endpoint Azure DataLake endpoint
      * @return DataLakeServiceClientBuilder
      */
