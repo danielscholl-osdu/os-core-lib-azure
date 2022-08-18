@@ -111,7 +111,7 @@ public final class DataLakeClientFactoryImpl implements IDataLakeClientFactory {
             final String dataPartitionId) {
         PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
 
-        String endpoint = String.format("https://%s.dfs.core.windows.net", pi.getHierarchicalStorageAccountName());
+        String endpoint = pi.getHierarchicalStorageAccountBlobEndpoint();
 
         DataLakeServiceClientBuilder dataLakeServiceClientBuilder = getDataLakeServiceClientBuilder(endpoint);
         if (msiConfiguration.getIsEnabled()) {

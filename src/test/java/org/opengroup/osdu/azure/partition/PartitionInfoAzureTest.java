@@ -22,9 +22,10 @@ public class PartitionInfoAzureTest {
     private PartitionInfoAzure partitionInfoAzure;
 
     private static final String BLOB_ENDPOINT_SECRET = "opendes-storage-blob-endpoint";
-
+    private static final String HIERARCHY_BLOB_ENDPOINT_SECRET = "opendes-hierarchical-storage-blob-endpoint";
     private static final String PARTITION_DNS_BLOB_ENDPOINT = "https://opendes.blob.core.windows.net";
     private static final String STORAGE_V1_BLOB_ENDPOINT = "https://opendes.blob.core.windows.net";
+    private static final String HIERARCHICAL_STORAGE_V1_BLOB_ENDPOINT = "https://opendes.dfs.core.windows.net";
 
     @BeforeEach
     public void setup() {
@@ -80,5 +81,38 @@ public class PartitionInfoAzureTest {
 
         // Test and Result
         assertEquals(PARTITION_DNS_BLOB_ENDPOINT, partitionInfoAzure.getStorageBlobEndpoint());
+    }
+
+    @Test
+    public void testGetHierarchicalStorageBlobEndpoint_WithKeyVaultNotHavingRequiredSecret() {
+        // Setup
+        Property storageBlobEndpoint = new Property(true, HIERARCHY_BLOB_ENDPOINT_SECRET);
+        Property storageAccountName = new Property(false, "opendes");
+
+        partitionInfoAzure.setHierarchicalStorageAccountBlobEndpointConfig(storageBlobEndpoint);
+        partitionInfoAzure.setHierarchicalStorageAccountNameConfig(storageAccountName);
+
+        when(secretClient.getSecret(HIERARCHY_BLOB_ENDPOINT_SECRET)).thenThrow(ResourceNotFoundException.class);
+
+        // Test and Result
+        assertEquals(HIERARCHICAL_STORAGE_V1_BLOB_ENDPOINT, partitionInfoAzure.getHierarchicalStorageAccountBlobEndpoint());
+    }
+
+    /**
+     * The test will verify scenario where Partition Service is seeded to have new Property and the required secret
+     * exists in Key Vault.
+     */
+    @Test
+    public void testGetHierarchicalStorageBlobEndpoint_WhenInfraAndPartitionInfoAreUpdated() {
+        // Setup
+        Property storageBlobEndpoint = new Property(true, HIERARCHY_BLOB_ENDPOINT_SECRET);
+
+        partitionInfoAzure.setHierarchicalStorageAccountBlobEndpointConfig(storageBlobEndpoint);
+
+        when(secretClient.getSecret(HIERARCHY_BLOB_ENDPOINT_SECRET))
+                .thenReturn(new KeyVaultSecret(HIERARCHY_BLOB_ENDPOINT_SECRET, HIERARCHICAL_STORAGE_V1_BLOB_ENDPOINT));
+
+        // Test and Result
+        assertEquals(HIERARCHICAL_STORAGE_V1_BLOB_ENDPOINT, partitionInfoAzure.getHierarchicalStorageAccountBlobEndpoint());
     }
 }

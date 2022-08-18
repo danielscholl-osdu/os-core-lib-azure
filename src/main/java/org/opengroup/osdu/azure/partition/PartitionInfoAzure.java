@@ -62,17 +62,14 @@ public class PartitionInfoAzure {
     @SerializedName("storage-account-blob-endpoint")
     private Property storageAccountBlobEndpointConfig;
 
-    @SerializedName("ingest-storage-account-key")
-    private Property ingestStorageAccountKeyConfig;
-
-    @SerializedName("ingest-storage-account-name")
-    private Property ingestStorageAccountNameConfig;
-
     @SerializedName("hierarchical-storage-account-key")
     private Property hierarchicalStorageAccountKeyConfig;
 
     @SerializedName("hierarchical-storage-account-name")
     private Property hierarchicalStorageAccountNameConfig;
+
+    @SerializedName("hierarchical-storage-blob-endpoint")
+    private Property hierarchicalStorageAccountBlobEndpointConfig;
 
     @SerializedName("sb-namespace")
     private Property sbNamespaceConfig;
@@ -308,9 +305,10 @@ public class PartitionInfoAzure {
         }
 
         if (this.getStorageAccountBlobEndpointConfig().isSensitive()) {
+            String storageEndpoint = getSecretWithDefault(this.getStorageAccountBlobEndpointConfig(), null);
             // Service is upgraded without infra upgrades.
             // if partition info has blob endpoint but secret does not exist return existing logic.
-            if (!checkIfSecretExists(this.getStorageAccountBlobEndpointConfig())) {
+            if (storageEndpoint == null) {
                 return createStorageEndpointFromStorageAccountName();
             }
 
@@ -322,23 +320,28 @@ public class PartitionInfoAzure {
     }
 
     /**
-     * @return ingestion storage account key
+     *
+     * @return Hierarchical blob endpoint.
      */
-    public String getIngestStorageAccountKey() {
-        if (this.getIngestStorageAccountKeyConfig().isSensitive()) {
-            return getSecret(this.getIngestStorageAccountKeyConfig());
+    public String getHierarchicalStorageAccountBlobEndpoint() {
+        // if partition info does not have hierarchical endpoint config, return existing logic OR
+        if (this.getHierarchicalStorageAccountBlobEndpointConfig() == null) {
+            CoreLoggerFactory.getInstance().getLogger(PartitionInfoAzure.class).info("No Hierarchical Endpoint Config. Returning legacy datalake endpoint");
+            return createStorageEndpointFromHierarchicalStorageAccountName();
         }
-        return String.valueOf(this.getIngestStorageAccountKeyConfig().getValue());
-    }
 
-    /**
-     * @return ingestion storage account name
-     */
-    public String getIngestStorageAccountName() {
-        if (this.getIngestStorageAccountNameConfig().isSensitive()) {
-            return getSecret(this.getIngestStorageAccountNameConfig());
+        if (this.getHierarchicalStorageAccountBlobEndpointConfig().isSensitive()) {
+            String hierarchicalBlobEndpoint = getSecretWithDefault(this.getHierarchicalStorageAccountBlobEndpointConfig(), null);
+            // Service is upgraded without infra upgrades.
+            // if partition info has blob endpoint but secret does not exist return existing logic.
+            if (hierarchicalBlobEndpoint == null) {
+                return createStorageEndpointFromHierarchicalStorageAccountName();
+            }
+            // Blob endpoint is available in KeyVault. Return it.
+            return getSecret(this.getHierarchicalStorageAccountBlobEndpointConfig());
         }
-        return String.valueOf(this.getIngestStorageAccountNameConfig().getValue());
+
+        return String.valueOf(this.getHierarchicalStorageAccountBlobEndpointConfig().getValue());
     }
 
     /**
@@ -427,12 +430,14 @@ public class PartitionInfoAzure {
     }
 
     /**
-     * Check if secret exists in KeyVault.
-     * @param p partition property
-     * @return return true if secret exists in KeyVault
+     *
+     * Fetch Secret from KeyVault. If does not exist, return defaultValue
+     * @param p Property
+     * @param defaultValue Default value to return
+     * @return Secret Value
      */
-    private boolean checkIfSecretExists(final Property p) {
-        return KeyVaultFacade.checkIfSecretExists(this.secretClient, String.valueOf(p.getValue()));
+    private String getSecretWithDefault(final Property p, final String defaultValue) {
+        return KeyVaultFacade.getSecretWithDefault(this.secretClient, String.valueOf(p.getValue()), defaultValue);
     }
 
     /**
@@ -441,5 +446,13 @@ public class PartitionInfoAzure {
      */
     private String createStorageEndpointFromStorageAccountName() {
         return String.format("https://%s.blob.core.windows.net", getStorageAccountName());
+    }
+
+    /**
+     * Generate Hierarchical Storage endpoint from Storage Account name.
+     * @return the storage endpoint.
+     */
+    private String createStorageEndpointFromHierarchicalStorageAccountName() {
+        return String.format("https://%s.dfs.core.windows.net", getHierarchicalStorageAccountName());
     }
 }
