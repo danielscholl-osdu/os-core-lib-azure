@@ -50,6 +50,7 @@ public class DataLakeClientFactoryImplTest {
     private static final String FILE_SYSTEM_NAME = "fileSystemName";
     private static final String ACCOUNT_NAME = "accountName";
     private static final String ACCOUNT_KEY = "accountKey";
+    private static final String ACCOUNT_ENDPOINT = "https://opendes.dfs.core.windows.net";
 
     @Mock
     private DataLakeServiceClient mockDataLakeServiceClient;
@@ -99,6 +100,8 @@ public class DataLakeClientFactoryImplTest {
                 .thenReturn(ACCOUNT_NAME);
         lenient().when(mockPartitionInfoAzure.getHierarchicalStorageAccountKey())
                 .thenReturn(ACCOUNT_KEY);
+        lenient().when(mockPartitionInfoAzure.getHierarchicalStorageAccountBlobEndpoint())
+                .thenReturn(ACCOUNT_ENDPOINT);
     }
 
     @Test

@@ -40,6 +40,7 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
     private PartitionServiceClient partitionService;
     private Map<String, BlobServiceClient> blobServiceClientMap;
     private static final String SYSTEM_STORAGE_CACHE_KEY = "system_storage";
+    private static final String SYSTEM_STORAGE_BLOB_ENDPOINT = "system-storage-blob-endpoint";
 
     @Autowired
     private BlobStoreRetryConfiguration blobStoreRetryConfiguration;
@@ -122,7 +123,12 @@ public class BlobServiceClientFactoryImpl implements IBlobServiceClientFactory {
      */
     private BlobServiceClient createSystemBlobServiceClient() {
 
-        String endpoint = String.format("https://%s.blob.core.windows.net", getSecret(systemBlobStoreConfig.getStorageAccountNameKeyName()));
+        String endpoint = KeyVaultFacade.getSecretWithDefault(secretClient, SYSTEM_STORAGE_BLOB_ENDPOINT, null);
+
+        if (endpoint == null) {
+            endpoint = String.format("https://%s.blob.core.windows.net", getSecret(systemBlobStoreConfig.getStorageAccountNameKeyName()));
+        }
+
         BlobServiceClientBuilder blobServiceClientBuilder = getBlobServiceClientBuilder(endpoint);
 
         if (msiConfiguration.getIsEnabled()) {
