@@ -40,4 +40,14 @@ public interface IDataLakeClientFactory {
      */
     DataLakeServiceClient getDataLakeServiceClient(
              String dataPartitionId);
+
+    /**
+     *
+     * @param dataPartitionId dataPartitionId
+     * @param fileSystemName fileSystemName
+     * @return Get DataLakeServiceClient.
+     */
+    DataLakeServiceClient getDataLakeServiceClient(
+            String dataPartitionId,
+            String fileSystemName);
 }

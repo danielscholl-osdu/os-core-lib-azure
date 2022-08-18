@@ -164,4 +164,46 @@ public class DataLakeClientFactoryImplTest {
        verify(this.dataLakeContainerClientMap).containsKey(cacheKey);
        verify(this.dataLakeContainerClientMap).get(cacheKey);
     }
+
+    @Test
+    public void getDataLakeServiceClient_should_return_cachedContainer_when_cachedEarlier() {
+        String cacheKey = String.format("%s-%s", PARTITION_ID, FILE_SYSTEM_NAME);
+
+        when(this.dataLakeContainerClientMap.containsKey(cacheKey)).thenReturn(true);
+        when(this.dataLakeContainerClientMap.get(cacheKey)).thenReturn(mockDataLakeServiceClient);
+
+        DataLakeServiceClient dataLakeServiceClient = dataLakeClientFactoryImpl.getDataLakeServiceClient(
+                PARTITION_ID, FILE_SYSTEM_NAME);
+
+        assertNotNull(dataLakeServiceClient);
+        verify(this.dataLakeContainerClientMap).containsKey(cacheKey);
+        verify(this.dataLakeContainerClientMap).get(cacheKey);
+    }
+
+    @Test
+    public void getDataLakeServiceClient_MsiEnabled() {
+        when(mockBlobStoreRetryConfiguration.getRequestRetryOptions())
+                .thenReturn(mockRequestRetryOptions);
+        when(mockMsiConfiguration.getIsEnabled()).thenReturn(true);
+
+        DataLakeServiceClient dataLakeServiceClient = dataLakeClientFactoryImpl.getDataLakeServiceClient(
+                PARTITION_ID, FILE_SYSTEM_NAME);
+
+        assertNotNull(dataLakeServiceClient);
+        String cacheKey = String.format("%s-%s", PARTITION_ID, FILE_SYSTEM_NAME);
+        verify(dataLakeContainerClientMap, times(0)).get(cacheKey);
+    }
+
+    @Test
+    public void getDataLakeServiceClient_Success() {
+        when(mockBlobStoreRetryConfiguration.getRequestRetryOptions())
+                .thenReturn(mockRequestRetryOptions);
+
+        DataLakeServiceClient dataLakeServiceClient = dataLakeClientFactoryImpl.getDataLakeServiceClient(
+                PARTITION_ID, FILE_SYSTEM_NAME);
+
+        assertNotNull(dataLakeServiceClient);
+        String cacheKey = String.format("%s-%s", PARTITION_ID, FILE_SYSTEM_NAME);
+        verify(dataLakeContainerClientMap, times(0)).get(cacheKey);
+    }
 }

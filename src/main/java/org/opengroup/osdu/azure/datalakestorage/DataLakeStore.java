@@ -16,6 +16,8 @@ package org.opengroup.osdu.azure.datalakestorage;
 
 import com.azure.storage.common.sas.SasProtocol;
 import com.azure.storage.file.datalake.DataLakeDirectoryClient;
+import com.azure.storage.file.datalake.DataLakeServiceClient;
+import com.azure.storage.file.datalake.models.UserDelegationKey;
 import com.azure.storage.file.datalake.sas.DataLakeServiceSasSignatureValues;
 import com.azure.storage.file.datalake.sas.FileSystemSasPermission;
 import org.apache.http.HttpStatus;
@@ -77,6 +79,22 @@ public class DataLakeStore {
     }
 
     /**
+     *  Generates pre-signed url to a DataLake Directory using the user delegation key.
+     *
+     * @param dataPartitionId dataPartitionId
+     * @param containerName containerName
+     * @param directoryName fileName
+     * @param expiryTime expiryTime
+     * @param permissions permissions
+     * @return string
+     */
+    public String generatePreSignedURLWithUserDelegationSas(final String dataPartitionId, final String containerName, final String directoryName,
+                                       final OffsetDateTime expiryTime, final FileSystemSasPermission permissions) {
+        DataLakeDirectoryClient dataLakeClient = createDataLakeDirectoryClient(dataPartitionId, directoryName, containerName);
+        return String.format("%s?%s", dataLakeClient.getDirectoryUrl(), generateSASTokenWithUserDelegationSas(dataPartitionId, containerName, dataLakeClient, expiryTime, permissions));
+    }
+
+    /**
      * Generate SaS token to interact with Azure DataLake Gen 2.
      *
      * @param client client
@@ -93,7 +111,35 @@ public class DataLakeStore {
         final long start = System.currentTimeMillis();
         String sasToken = client.generateSas(sign);
         final long timeTaken = System.currentTimeMillis() - start;
-        logDependency("GENERATE_SAS_TOKEN", client.getDirectoryName(), client.getDirectoryUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        logDependency("GENERATE_SAS_TOKEN_DATALAKE", client.getDirectoryName(), client.getDirectoryUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
+        return sasToken;
+    }
+
+    /**
+     * Generate SaS token to interact with Azure DataLake Gen 2.
+     *
+     * @param dataPartitionId dataPartitionId
+     * @param fileSystemName fileSystemName
+     * @param client client
+     * @param expiryTime expiryTime
+     * @param permissions permissions
+     * @return string
+     */
+    private String generateSASTokenWithUserDelegationSas(final String dataPartitionId, final String fileSystemName, final DataLakeDirectoryClient client, final OffsetDateTime expiryTime,
+                                    final FileSystemSasPermission permissions) {
+        DataLakeServiceSasSignatureValues sign = new DataLakeServiceSasSignatureValues(expiryTime, permissions)
+                .setStartTime(OffsetDateTime.now())
+                .setProtocol(SasProtocol.HTTPS_ONLY);
+
+        OffsetDateTime startTime = OffsetDateTime.now();
+        DataLakeServiceClient dataLakeServiceClient = dataLakeClientFactory.getDataLakeServiceClient(dataPartitionId, fileSystemName);
+
+        UserDelegationKey userDelegationKey = dataLakeServiceClient.getUserDelegationKey(startTime, expiryTime);
+        final long start = System.currentTimeMillis();
+        String sasToken = client.generateUserDelegationSas(sign, userDelegationKey);
+
+        final long timeTaken = System.currentTimeMillis() - start;
+        logDependency("GENERATE_SAS_TOKEN_DATALAKE", client.getDirectoryName(), client.getDirectoryUrl(), timeTaken, String.valueOf(HttpStatus.SC_OK), true);
         return sasToken;
     }
 
