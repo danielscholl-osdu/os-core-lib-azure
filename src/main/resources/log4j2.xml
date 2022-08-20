@@ -25,7 +25,7 @@
         <Script name="isAuditAppenderEnabled" language="nashorn"><![CDATA[
             var System = Java.type('java.lang.System'),
                 Boolean = Java.type('java.lang.Boolean');
-            Boolean.parseBoolean(System.getProperty('AZURE_AUDIT_ENABLED', 'true'));
+            Boolean.parseBoolean(System.getProperty('AZURE_AUDIT_ENABLED', 'false'));
             ]]>
         </Script>
     </Scripts>
