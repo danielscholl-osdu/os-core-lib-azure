@@ -21,6 +21,7 @@ import com.azure.core.http.HttpResponse;
 import com.azure.core.http.netty.NettyAsyncHttpClientBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import org.opengroup.osdu.core.common.model.http.AppException;
 import reactor.core.publisher.Mono;
 
 import java.io.UnsupportedEncodingException;
@@ -28,11 +29,15 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  *  Class to generate the AAD authentication tokens.
  */
 public final class AzureServicePrincipal {
+
+    private static final String ERROR_REASON = "invalid_request";
+    private static final String ERROR_MESSAGE = "Passing invalid parameters or endpoints to a method getIdToken";
 
     /**
      * @param sp_id             AZURE CLIENT ID
@@ -56,11 +61,19 @@ public final class AzureServicePrincipal {
         HttpClient client = createHttpClient();
 
         Mono<HttpResponse> response = client.send(httpRequest);
-        String content = Objects.requireNonNull(response.block()).getBodyAsString().block();
+        HttpResponse httpResponse = Objects.requireNonNull(response.block());
+        String content = httpResponse.getBodyAsString().block();
 
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(content, JsonObject.class);
-        return jsonObject.get("access_token").getAsString();
+
+        if (httpResponse.getStatusCode() == 200) {
+            return jsonObject.get("access_token").getAsString();
+        } else {
+            String error = Optional.ofNullable(jsonObject).isPresent() && Optional.ofNullable(jsonObject.get("error")).isPresent() ? jsonObject.get("error").getAsString() : ERROR_REASON;
+            String errorDescription = Optional.ofNullable(jsonObject).isPresent() && Optional.ofNullable(jsonObject.get("error_description")).isPresent() ? jsonObject.get("error_description").getAsString() : ERROR_MESSAGE;
+            throw new AppException(httpResponse.getStatusCode(), error, errorDescription);
+        }
     }
 
     /**
