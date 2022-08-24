@@ -36,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.logging.CoreLogger;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.azure.multitenancy.TenantInfoDoc;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
@@ -92,6 +93,9 @@ class CosmosStoreTest {
 
     @Mock
     private CosmosDatabase cosmosDatabase;
+
+    @Mock
+    private DependencyLogger dependencyLogger;
 
     @InjectMocks
     private CosmosStore cosmosStore;
@@ -154,6 +158,7 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(404, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(404), eq(false));
     }
 
     @Test
@@ -163,6 +168,7 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(404, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(404), eq(false));
     }
 
 
@@ -173,6 +179,7 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(500, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -182,12 +189,14 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(500, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
     void findItem_returnsEmpty_ifNotFound() throws CosmosException {
         doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
         assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class)).isPresent());
+        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(404), eq(false));
     }
 
     @Test
@@ -195,6 +204,7 @@ class CosmosStoreTest {
         doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
         assertFalse(cosmosStore.findItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY, Object.class).isPresent());
         verify(this.cosmosClientFactory, times(1)).getSystemClient();
+        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(404), eq(false));
     }
 
     @Test
@@ -204,6 +214,7 @@ class CosmosStoreTest {
             cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class));
         });
         assertEquals(500, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -222,6 +233,7 @@ class CosmosStoreTest {
             cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(500, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("UPSERT_ITEM"), eq("partition_key=some-data"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -234,6 +246,7 @@ class CosmosStoreTest {
         assertEquals(500, exception.getError().getCode());
         verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
         Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+        verify(dependencyLogger, times(1)).logDependency(eq("REPLACE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -246,6 +259,7 @@ class CosmosStoreTest {
         assertEquals(404, exception.getError().getCode());
         verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
         Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+        verify(dependencyLogger, times(1)).logDependency(eq("REPLACE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -256,6 +270,7 @@ class CosmosStoreTest {
         cosmosStore.replaceItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, ITEM);
         verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
         Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+        verify(dependencyLogger, times(1)).logDependency(eq("REPLACE_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(200), eq(true));
     }
 
     @Test
@@ -265,6 +280,7 @@ class CosmosStoreTest {
             cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(409, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("CREATE_ITEM"), eq("partition_key=some-data"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -274,6 +290,7 @@ class CosmosStoreTest {
             cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
         });
         assertEquals(409, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("CREATE_ITEM"), eq("partition_key=some-data"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -283,6 +300,7 @@ class CosmosStoreTest {
             cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(500, exception.getError().getCode());
+        verify(dependencyLogger, times(1)).logDependency(eq("CREATE_ITEM"), eq("partition_key=some-data"), eq(null), anyLong(), eq(0), eq(false));
     }
 
     @Test
@@ -292,6 +310,7 @@ class CosmosStoreTest {
         } catch (Exception ex) {
             fail("Should not fail.");
         }
+        verify(dependencyLogger, times(1)).logDependency(eq("CREATE_ITEM"), eq("partition_key=some-data"), eq(null), anyLong(), eq(200), eq(true));
     }
 
     @Test
@@ -301,6 +320,7 @@ class CosmosStoreTest {
         } catch (Exception ex) {
             fail("Should not fail.");
         }
+        verify(dependencyLogger, times(1)).logDependency(eq("CREATE_ITEM"), eq("partition_key=some-data"), eq(null), anyLong(), eq(200), eq(true));
     }
 
     /*
