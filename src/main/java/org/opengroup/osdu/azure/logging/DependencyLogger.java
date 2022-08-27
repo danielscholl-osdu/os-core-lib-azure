@@ -31,6 +31,25 @@ public class DependencyLogger {
     }
 
     /**
+     * Log dependency.
+     *
+     * @param name          the name of the command initiated with this dependency call
+     * @param data          the command initiated by this dependency call
+     * @param target        the target of this dependency call
+     * @param timeTakenInMs the request duration in milliseconds
+     * @param requestCharge the request charge
+     * @param resultCode    the result code of the call
+     * @param success       indication of successful or unsuccessful call
+     */
+    public void logDependency(final String name, final String data, final String target, final long timeTakenInMs, final double requestCharge, final int resultCode, final boolean success) {
+        DependencyPayload payload = new DependencyPayload(name, data, Duration.ofMillis(timeTakenInMs), requestCharge, String.valueOf(resultCode), success);
+        payload.setType("CosmosStore");
+        payload.setTarget(target);
+
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+    }
+
+    /**
      * Return a string composed of partition ID, database name and collection.
      *
      * @param partitionId  the data partition ID

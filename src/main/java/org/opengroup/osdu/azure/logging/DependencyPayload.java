@@ -15,6 +15,7 @@ public final class DependencyPayload {
     private String type = "HTTP";
     private String data;
     private Duration duration;
+    private double requestCharge;
     private String resultCode;
     private String target;
     private boolean success;
@@ -39,6 +40,26 @@ public final class DependencyPayload {
         this.data = dependencyData;
         this.duration = dependencyDuration;
         this.resultCode = dependencyResultCode;
+        this.success = dependencySuccess;
+        this.target = dependencyData;
+    }
+
+    /**
+     * Instantiate payload with specified values.
+     *
+     * @param dependencyName          the name of the command initiated with this dependency call
+     * @param dependencyData          the command initiated by this dependency call
+     * @param dependencyDuration      the request duration
+     * @param dependencyRequestCharge the request charge
+     * @param dependencyResultCode    the result code of the call
+     * @param dependencySuccess       indication of successful or unsuccessful call
+     */
+    public DependencyPayload(final String dependencyName, final String dependencyData, final Duration dependencyDuration, final double dependencyRequestCharge, final String dependencyResultCode, final boolean dependencySuccess) {
+        this.name = dependencyName;
+        this.data = dependencyData;
+        this.duration = dependencyDuration;
+        this.resultCode = dependencyResultCode;
+        this.requestCharge = dependencyRequestCharge;
         this.success = dependencySuccess;
         this.target = dependencyData;
     }

@@ -19,6 +19,7 @@ import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.ConflictException;
 import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
@@ -437,11 +438,14 @@ public class CosmosStore {
             final String partitionKey,
             final Class<T> clazz) {
         final long start = System.currentTimeMillis();
+        double requestCharge = 0.0;
         int statusCode = HttpStatus.SC_OK;
         try {
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
             PartitionKey key = new PartitionKey(partitionKey);
-            T item = container.readItem(id, key, options, clazz).getItem();
+            CosmosItemResponse<T> cosmosItemResponse = container.readItem(id, key, options, clazz);
+            requestCharge = cosmosItemResponse.getRequestCharge();
+            T item = cosmosItemResponse.getItem();
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("READ_ITEM with id=%s and partition_key=%s", id, partitionKey));
             return Optional.ofNullable((T) item);
         } catch (NotFoundException e) {
@@ -457,7 +461,7 @@ public class CosmosStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("id=%s partition_key=%s", id, partitionKey);
-            dependencyLogger.logDependency("READ_ITEM", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency("READ_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 

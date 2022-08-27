@@ -196,7 +196,7 @@ class CosmosStoreTest {
     void findItem_returnsEmpty_ifNotFound() throws CosmosException {
         doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
         assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class)).isPresent());
-        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(404), eq(false));
+        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq( 0.0d), eq(404), eq(false));
     }
 
     @Test
@@ -204,7 +204,7 @@ class CosmosStoreTest {
         doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
         assertFalse(cosmosStore.findItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY, Object.class).isPresent());
         verify(this.cosmosClientFactory, times(1)).getSystemClient();
-        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(404), eq(false));
+        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq( 0.0d), eq(404), eq(false));
     }
 
     @Test
@@ -214,7 +214,7 @@ class CosmosStoreTest {
             cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class));
         });
         assertEquals(500, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq(0), eq(false));
+        verify(dependencyLogger, times(1)).logDependency(eq("READ_ITEM"), eq("id=id partition_key=pk"), eq(null), anyLong(), eq( 0.0d), eq(0), eq(false));
     }
 
     @Test
