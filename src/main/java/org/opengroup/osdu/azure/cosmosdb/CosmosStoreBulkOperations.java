@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.opengroup.osdu.azure.logging.DependencyType.COSMOS_STORE;
+
 /**
  * Class to perform bulk Cosmos operations using DocumentBulkExecutor.
  */
@@ -91,7 +93,7 @@ public class CosmosStoreBulkOperations {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("collectionName=%s", collectionName);
-            dependencyLogger.logDependency("UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -159,7 +161,7 @@ public class CosmosStoreBulkOperations {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("partition_key=%s", new HashSet<>(partitionKeys));
-            dependencyLogger.logDependency("UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 }

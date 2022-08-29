@@ -25,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
+import static org.opengroup.osdu.azure.logging.DependencyType.COSMOS_STORE;
 
 @ExtendWith(MockitoExtension.class)
 public class CosmosBulkExecutorImplTest {
@@ -66,6 +67,6 @@ public class CosmosBulkExecutorImplTest {
         this.sut.bulkInsert(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, documents, false, false, 1);
 
         verify(this.bulkExecutorFactory, times(1)).getClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION);
-        verify(dependencyLogger, times(1)).logDependency(eq("UPSERT_ITEMS"), eq("collectionName=collection"), eq(null), anyLong(), eq(200), eq(true));
+        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("UPSERT_ITEMS"), eq("collectionName=collection"), eq(null), anyLong(), eq(200), eq(true));
     }
 }
