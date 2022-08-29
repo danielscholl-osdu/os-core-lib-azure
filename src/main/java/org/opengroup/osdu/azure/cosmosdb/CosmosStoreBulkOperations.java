@@ -67,6 +67,7 @@ public class CosmosStoreBulkOperations {
         Gson gson = new Gson();
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        double requestCharge = 0.0;
 
         // Serialize documents to json strings
         for (T item : documents) {
@@ -77,6 +78,7 @@ public class CosmosStoreBulkOperations {
         try {
             DocumentBulkExecutor executor = bulkExecutorFactory.getClient(dataPartitionId, cosmosDBName, collectionName);
             BulkImportResponse response = executor.importAll(serializedDocuments, isUpsert, disableAutomaticIdGeneration, maxConcurrencyPerPartitionRange);
+            requestCharge = response.getTotalRequestUnitsConsumed();
 
             if (response.getNumberOfDocumentsImported() != documents.size()) {
                 LOGGER.warn("Failed to import all documents using DocumentBulkExecutor! Attempted to import " + documents.size() + " documents but only imported " + response.getNumberOfDocumentsImported());
@@ -91,7 +93,7 @@ public class CosmosStoreBulkOperations {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("collectionName=%s", collectionName);
-            dependencyLogger.logDependency("UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency("UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 

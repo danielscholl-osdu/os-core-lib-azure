@@ -375,6 +375,7 @@ public class CosmosStore {
         int currentPageNumber = 1;
         int iterationNumber = 1;
         int documentNumber = 0;
+        double requestCharge = 0.0;
 
         String internalcontinuationToken = continuationToken;
         List<T> results = new ArrayList<>();
@@ -392,6 +393,7 @@ public class CosmosStore {
         Iterator<FeedResponse<T>> iterator = feedResponseIterator.iterator();
         if (iterator.hasNext()) {
             FeedResponse<T> page = feedResponseIterator.iterator().next();
+            requestCharge = page.getRequestCharge();
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("Current page number: %d", currentPageNumber));
             // Access all of the documents in this result page
             for (T item : page.getResults()) {
@@ -414,7 +416,7 @@ public class CosmosStore {
         final String dependencyTarget = dependencyLogger.getDependencyTarget(dataPartitionId, cosmosDBName, collection);
         final String dependencyData = String.format("query=%s", query.getQueryText());
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
-        dependencyLogger.logDependency("QUERY_ITEMS_PAGE", dependencyData, dependencyTarget, timeTaken, HttpStatus.SC_OK, true);
+        dependencyLogger.logDependency("QUERY_ITEMS_PAGE", dependencyData, dependencyTarget, timeTaken, requestCharge, HttpStatus.SC_OK, true);
 
         CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
         return new PageImpl(results, pageRequest, documentNumber);
