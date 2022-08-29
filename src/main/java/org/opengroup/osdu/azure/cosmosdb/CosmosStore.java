@@ -215,11 +215,13 @@ public class CosmosStore {
             final T item) {
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        double requestCharge = 0.0;
         try {
             CosmosContainer cosmosContainer = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
-            cosmosContainer.replaceItem(item, id, key, options);
+            CosmosItemResponse<T> response = cosmosContainer.replaceItem(item, id, key, options);
+            requestCharge = response.getRequestCharge();
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("REPLACE_ITEM with id=%s and partition_key=%s", id, partitionKey));
         } catch (NotFoundException e) {
             statusCode = e.getStatusCode();
@@ -235,7 +237,7 @@ public class CosmosStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(dataPartitionId, cosmosDBName, collection);
             final String dependencyData = String.format("id=%s partition_key=%s", id, partitionKey);
-            dependencyLogger.logDependency("REPLACE_ITEM", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency("REPLACE_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -483,10 +485,12 @@ public class CosmosStore {
             final String partitionKey) {
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        double requestCharge = 0.0;
         try {
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
-            container.deleteItem(id, key, options);
+            CosmosItemResponse<Object> response = container.deleteItem(id, key, options);
+            requestCharge = response.getRequestCharge();
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("DELETE_ITEM with id=%s and partition_key=%s", id, partitionKey));
         } catch (NotFoundException e) {
             statusCode = HttpStatus.SC_NOT_FOUND;
@@ -502,7 +506,7 @@ public class CosmosStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("id=%s partition_key=%s", id, partitionKey);
-            dependencyLogger.logDependency("DELETE_ITEM", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency("DELETE_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -522,10 +526,12 @@ public class CosmosStore {
             final T item) {
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        double requestCharge = 0.0;
         try {
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
-            container.upsertItem(item, key, options);
+            CosmosItemResponse<T> response = container.upsertItem(item, key, options);
+            requestCharge = response.getRequestCharge();
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("UPSERT_ITEM with partition_key=%s", partitionKey));
         } catch (CosmosException e) {
             statusCode = e.getStatusCode();
@@ -536,7 +542,7 @@ public class CosmosStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("partition_key=%s", partitionKey);
-            dependencyLogger.logDependency("UPSERT_ITEM", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency("UPSERT_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -556,10 +562,12 @@ public class CosmosStore {
             final T item) {
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        double requestCharge = 0.0;
         try {
             PartitionKey key = new PartitionKey(partitionKey);
             CosmosItemRequestOptions options = new CosmosItemRequestOptions();
-            container.createItem(item, key, options);
+            CosmosItemResponse<T> response = container.createItem(item, key, options);
+            requestCharge = response.getRequestCharge();
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("CREATE_ITEM with partition_key=%s", partitionKey));
         } catch (ConflictException e) {
             statusCode = e.getStatusCode();
@@ -575,7 +583,7 @@ public class CosmosStore {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("partition_key=%s", partitionKey);
-            dependencyLogger.logDependency("CREATE_ITEM", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            dependencyLogger.logDependency("CREATE_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 
