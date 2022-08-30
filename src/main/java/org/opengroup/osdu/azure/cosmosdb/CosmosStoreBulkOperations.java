@@ -11,6 +11,8 @@ import com.google.gson.Gson;
 import com.microsoft.azure.documentdb.DocumentClientException;
 import com.microsoft.azure.documentdb.bulkexecutor.BulkImportResponse;
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
+import org.apache.http.HttpStatus;
+import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +22,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+
+import static org.opengroup.osdu.azure.logging.DependencyType.COSMOS_STORE;
 
 /**
  * Class to perform bulk Cosmos operations using DocumentBulkExecutor or CosmosClient.
@@ -30,6 +35,9 @@ import java.util.List;
 public class CosmosStoreBulkOperations {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CosmosStoreBulkOperations.class.getName());
+
+    @Autowired
+    private DependencyLogger dependencyLogger;
 
     @Autowired
     private ICosmosBulkExecutorFactory bulkExecutorFactory;
@@ -59,6 +67,8 @@ public class CosmosStoreBulkOperations {
                                                    final int maxConcurrencyPerPartitionRange) {
         Collection<String> serializedDocuments = new ArrayList<>();
         Gson gson = new Gson();
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
 
         // Serialize documents to json strings
         for (T item : documents) {
@@ -75,9 +85,15 @@ public class CosmosStoreBulkOperations {
             }
             return response;
         } catch (DocumentClientException e) {
+            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             String errorMessage = "Unexpectedly failed to bulk insert documents";
             LOGGER.warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw new AppException(statusCode, errorMessage, e.getMessage(), e);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
+            final String dependencyData = String.format("collectionName=%s", collectionName);
+            dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 
@@ -99,6 +115,8 @@ public class CosmosStoreBulkOperations {
                                                    final List<T> docs,
                                                    final List<String> partitionKeys,
                                                    final int maxConcurrencyPerPartitionRange) {
+        final long start = System.currentTimeMillis();
+        int statusCode = HttpStatus.SC_OK;
         try {
             List<String> exceptions = new ArrayList<>();
 
@@ -131,13 +149,20 @@ public class CosmosStoreBulkOperations {
             });
 
             if (!exceptions.isEmpty()) {
+                statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
                 LOGGER.error("Failed to create documents in CosmosDB: {}", String.join(",", exceptions));
-                throw new AppException(500, "Record creation has failed!", "Failed to create documents in CosmosDB", exceptions.toArray(new String[exceptions.size()]));
+                throw new AppException(statusCode, "Record creation has failed!", "Failed to create documents in CosmosDB", exceptions.toArray(new String[exceptions.size()]));
             }
         } catch (Exception e) {
+            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             String errorMessage = "Unexpectedly failed to bulk insert documents";
             LOGGER.error(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            throw new AppException(statusCode, errorMessage, e.getMessage(), e);
+        } finally {
+            final long timeTaken = System.currentTimeMillis() - start;
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
+            final String dependencyData = String.format("partition_key=%s", new HashSet<>(partitionKeys));
+            dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
         }
     }
 }
