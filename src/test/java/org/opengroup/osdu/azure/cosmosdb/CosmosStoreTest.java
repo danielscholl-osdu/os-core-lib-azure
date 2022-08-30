@@ -25,7 +25,6 @@ import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.logging.CoreLogger;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
+import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
 import org.opengroup.osdu.azure.multitenancy.TenantInfoDoc;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
@@ -44,11 +44,11 @@ import java.lang.reflect.Field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -165,7 +165,11 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(404, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(404), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "DELETE_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 404, false);
     }
 
     @Test
@@ -175,9 +179,12 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(404, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(404), eq(false));
-    }
 
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "DELETE_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 404, false);
+    }
 
     @Test
     void delete_throws500_ifUnknownError() throws CosmosException {
@@ -186,7 +193,11 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(500, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "DELETE_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 0, false);
     }
 
     @Test
@@ -196,14 +207,22 @@ class CosmosStoreTest {
             cosmosStore.deleteItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY);
         });
         assertEquals(500, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("DELETE_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "DELETE_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 0, false);
     }
 
     @Test
     void findItem_returnsEmpty_ifNotFound() throws CosmosException {
         doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
         assertFalse(cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class)).isPresent());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("READ_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(404), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "READ_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 404, false);
     }
 
     @Test
@@ -211,7 +230,11 @@ class CosmosStoreTest {
         doThrow(NotFoundException.class).when(container).readItem(any(), any(), any(), any());
         assertFalse(cosmosStore.findItem(COSMOS_DB, COLLECTION, ID, PARTITION_KEY, Object.class).isPresent());
         verify(this.cosmosClientFactory, times(1)).getSystemClient();
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("READ_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(404), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "READ_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 404, false);
     }
 
     @Test
@@ -221,7 +244,11 @@ class CosmosStoreTest {
             cosmosStore.findItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, any(Class.class));
         });
         assertEquals(500, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("READ_ITEM"), eq("id=id partition_key=pk"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "READ_ITEM", "id=id partition_key=pk", "cosmosdb/collection", 0, false);
     }
 
     @Test
@@ -240,7 +267,11 @@ class CosmosStoreTest {
             cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(500, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("UPSERT_ITEM"), eq("partition_key=some-data"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "UPSERT_ITEM", "partition_key=some-data", "cosmosdb/collection", 0, false);
     }
 
     @Test
@@ -252,8 +283,12 @@ class CosmosStoreTest {
         });
         assertEquals(500, exception.getError().getCode());
         verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
-        Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("REPLACE_ITEM"), eq("id=id partition_key=pk"), eq("data-partition-id:cosmosdb/collection"), anyLong(), eq(0), eq(false));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "REPLACE_ITEM", "id=id partition_key=pk", "data-partition-id:cosmosdb/collection", 0, false);
     }
 
     @Test
@@ -265,19 +300,28 @@ class CosmosStoreTest {
         });
         assertEquals(404, exception.getError().getCode());
         verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
-        Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("REPLACE_ITEM"), eq("id=id partition_key=pk"), eq("data-partition-id:cosmosdb/collection"), anyLong(), eq(0), eq(false));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "REPLACE_ITEM", "id=id partition_key=pk", "data-partition-id:cosmosdb/collection", 0, false);
     }
 
     @Test
     void replaceItem_Success() {
         CosmosItemResponse<String> cosmosItemResponse = mock(CosmosItemResponse.class);
         ArgumentCaptor<PartitionKey> partitionKeyArgumentCaptor = ArgumentCaptor.forClass(PartitionKey.class);
+        when(cosmosItemResponse.getRequestCharge()).thenReturn(1.0);
         doReturn(cosmosItemResponse).when(container).replaceItem(eq(ITEM), eq(ID), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
         cosmosStore.replaceItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ID, PARTITION_KEY, ITEM);
         verify(container).replaceItem(eq(ITEM), eq(ID), any(PartitionKey.class), any(CosmosItemRequestOptions.class));
-        Assertions.assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("REPLACE_ITEM"), eq("id=id partition_key=pk"), eq("data-partition-id:cosmosdb/collection"), anyLong(), eq(200), eq(true));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "REPLACE_ITEM", "id=id partition_key=pk", "data-partition-id:cosmosdb/collection", 200, true);
     }
 
     @Test
@@ -287,7 +331,11 @@ class CosmosStoreTest {
             cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(409, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("CREATE_ITEM"), eq("partition_key=some-data"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "CREATE_ITEM", "partition_key=some-data", "cosmosdb/collection", 0, false);
     }
 
     @Test
@@ -297,7 +345,11 @@ class CosmosStoreTest {
             cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
         });
         assertEquals(409, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("CREATE_ITEM"), eq("partition_key=some-data"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "CREATE_ITEM", "partition_key=some-data", "cosmosdb/collection", 0, false);
     }
 
     @Test
@@ -307,27 +359,58 @@ class CosmosStoreTest {
             cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         });
         assertEquals(500, exception.getError().getCode());
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("CREATE_ITEM"), eq("partition_key=some-data"), eq("cosmosdb/collection"), anyLong(), eq(0), eq(false));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "CREATE_ITEM", "partition_key=some-data", "cosmosdb/collection", 0, false);
     }
 
     @Test
     void createItem_Success() throws CosmosException {
+        CosmosItemResponse cosmosItemResponse = mock(CosmosItemResponse.class);
+        ArgumentCaptor<PartitionKey> partitionKeyArgumentCaptor = ArgumentCaptor.forClass(PartitionKey.class);
+        when(cosmosItemResponse.getRequestCharge()).thenReturn(1.0);
+        doReturn(cosmosItemResponse).when(container).createItem(any(), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
         try {
             cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
         } catch (Exception ex) {
             fail("Should not fail.");
         }
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("CREATE_ITEM"), eq("partition_key=some-data"), eq("cosmosdb/collection"), anyLong(), eq(200), eq(true));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains("some-data"));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "CREATE_ITEM", "partition_key=some-data", "cosmosdb/collection", 200, true);
     }
 
     @Test
     void createItem_Success_System() throws CosmosException {
+        CosmosItemResponse cosmosItemResponse = mock(CosmosItemResponse.class);
+        ArgumentCaptor<PartitionKey> partitionKeyArgumentCaptor = ArgumentCaptor.forClass(PartitionKey.class);
+        when(cosmosItemResponse.getRequestCharge()).thenReturn(1.0);
+        doReturn(cosmosItemResponse).when(container).createItem(any(), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
         try {
             cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
         } catch (Exception ex) {
             fail("Should not fail.");
         }
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("CREATE_ITEM"), eq("partition_key=some-data"), eq("cosmosdb/collection"), anyLong(), eq(200), eq(true));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains("some-data"));
+
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "CREATE_ITEM", "partition_key=some-data", "cosmosdb/collection", 200, true);
+    }
+
+    private void verifyDependencyLogging(DependencyLoggingOptions capturedLoggingOptions, String name, String data, String target, int resultCode, boolean success) {
+        assertEquals(COSMOS_STORE, capturedLoggingOptions.getType());
+        assertEquals(name, capturedLoggingOptions.getName());
+        assertEquals(data, capturedLoggingOptions.getData());
+        assertEquals(target, capturedLoggingOptions.getTarget());
+        assertEquals(resultCode, capturedLoggingOptions.getResultCode());
+        assertEquals(success, capturedLoggingOptions.isSuccess());
     }
 
     /*

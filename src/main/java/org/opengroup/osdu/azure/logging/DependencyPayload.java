@@ -15,6 +15,7 @@ public final class DependencyPayload {
     private String type = "HTTP";
     private String data;
     private Duration duration;
+    private double requestCharge;
     private String resultCode;
     private String target;
     private boolean success;

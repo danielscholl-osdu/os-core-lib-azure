@@ -3,9 +3,9 @@ package org.opengroup.osdu.azure.cosmosdb;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.models.CosmosBulkExecutionOptions;
-import com.azure.cosmos.models.CosmosItemOperation;
 import com.azure.cosmos.models.CosmosBulkItemResponse;
 import com.azure.cosmos.models.CosmosBulkOperations;
+import com.azure.cosmos.models.CosmosItemOperation;
 import com.azure.cosmos.models.PartitionKey;
 import com.google.gson.Gson;
 import com.microsoft.azure.documentdb.DocumentClientException;
@@ -13,6 +13,7 @@ import com.microsoft.azure.documentdb.bulkexecutor.BulkImportResponse;
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
+import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,14 +49,14 @@ public class CosmosStoreBulkOperations {
     /**
      * Bulk upserts item into cosmos collection using DocumentBulkExecutor.
      *
-     * @param dataPartitionId name of data partition.
-     * @param cosmosDBName name of Cosmos db.
-     * @param collectionName name of collection in Cosmos.
-     * @param documents collection of JSON serializable documents.
-     * @param isUpsert flag denoting if the isUpsert flag should be set to true.
-     * @param disableAutomaticIdGeneration flag denoting if automatic id generation should be disabled in Cosmos.
+     * @param dataPartitionId                 name of data partition.
+     * @param cosmosDBName                    name of Cosmos db.
+     * @param collectionName                  name of collection in Cosmos.
+     * @param documents                       collection of JSON serializable documents.
+     * @param isUpsert                        flag denoting if the isUpsert flag should be set to true.
+     * @param disableAutomaticIdGeneration    flag denoting if automatic id generation should be disabled in Cosmos.
      * @param maxConcurrencyPerPartitionRange The maximum degree of concurrency per partition key range. The default value is 20.
-     * @param <T> Type of object being bulk inserted.
+     * @param <T>                             Type of object being bulk inserted.
      * @return BulkImportResponse object with the results of the operation.
      */
     public final <T> BulkImportResponse bulkInsert(final String dataPartitionId,
@@ -69,6 +70,7 @@ public class CosmosStoreBulkOperations {
         Gson gson = new Gson();
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        double requestCharge = 0.0;
 
         // Serialize documents to json strings
         for (T item : documents) {
@@ -79,6 +81,7 @@ public class CosmosStoreBulkOperations {
         try {
             DocumentBulkExecutor executor = bulkExecutorFactory.getClient(dataPartitionId, cosmosDBName, collectionName);
             BulkImportResponse response = executor.importAll(serializedDocuments, isUpsert, disableAutomaticIdGeneration, maxConcurrencyPerPartitionRange);
+            requestCharge = response.getTotalRequestUnitsConsumed();
 
             if (response.getNumberOfDocumentsImported() != documents.size()) {
                 LOGGER.warn("Failed to import all documents using DocumentBulkExecutor! Attempted to import " + documents.size() + " documents but only imported " + response.getNumberOfDocumentsImported());
@@ -93,7 +96,17 @@ public class CosmosStoreBulkOperations {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("collectionName=%s", collectionName);
-            dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions loggingOptions = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("UPSERT_ITEMS")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge)
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(loggingOptions);
         }
     }
 
@@ -101,22 +114,24 @@ public class CosmosStoreBulkOperations {
      * Bulk upserts item into cosmos collection using CosmosClient.
      * Partition Keys must be provided in the same order as records.
      * ith Record's partition Key will be at ith position in the List.
-     * @param dataPartitionId name of data partition.
-     * @param cosmosDBName name of Cosmos db.
-     * @param collectionName name of collection in Cosmos.
-     * @param docs collection of JSON serializable documents.
-     * @param partitionKeys List of partition keys corresponding to "docs" provided
+     *
+     * @param dataPartitionId                 name of data partition.
+     * @param cosmosDBName                    name of Cosmos db.
+     * @param collectionName                  name of collection in Cosmos.
+     * @param docs                            collection of JSON serializable documents.
+     * @param partitionKeys                   List of partition keys corresponding to "docs" provided
      * @param maxConcurrencyPerPartitionRange concurrency per partition (1-5)
-     * @param <T> Type of object being bulk inserted.
+     * @param <T>                             Type of object being bulk inserted.
      */
     public final <T> void bulkInsertWithCosmosClient(final String dataPartitionId,
-                                                   final String cosmosDBName,
-                                                   final String collectionName,
-                                                   final List<T> docs,
-                                                   final List<String> partitionKeys,
-                                                   final int maxConcurrencyPerPartitionRange) {
+                                                     final String cosmosDBName,
+                                                     final String collectionName,
+                                                     final List<T> docs,
+                                                     final List<String> partitionKeys,
+                                                     final int maxConcurrencyPerPartitionRange) {
         final long start = System.currentTimeMillis();
         int statusCode = HttpStatus.SC_OK;
+        final double[] requestCharge = {0.0};
         try {
             List<String> exceptions = new ArrayList<>();
 
@@ -134,6 +149,7 @@ public class CosmosStoreBulkOperations {
             container.executeBulkOperations(cosmosItemOperations, cosmosBulkExecutionOptions).forEach(cosmosBulkOperationResponse -> {
                 CosmosBulkItemResponse cosmosBulkItemResponse = cosmosBulkOperationResponse.getResponse();
                 CosmosItemOperation cosmosItemOperation = cosmosBulkOperationResponse.getOperation();
+                requestCharge[0] += cosmosBulkItemResponse.getRequestCharge();
 
                 if (cosmosBulkOperationResponse.getException() != null) {
                     LOGGER.error("Bulk operation failed", cosmosBulkOperationResponse.getException());
@@ -162,7 +178,17 @@ public class CosmosStoreBulkOperations {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("partition_key=%s", new HashSet<>(partitionKeys));
-            dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions loggingOptions = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("UPSERT_ITEMS")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge[0])
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(loggingOptions);
         }
     }
 }

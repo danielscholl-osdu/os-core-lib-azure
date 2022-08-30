@@ -44,6 +44,9 @@ public class ApplicationInsightsLogger extends CoreLogger {
         telemetry.setResultCode(payload.getResultCode());
         telemetry.setType(payload.getType());
         telemetry.setTarget(payload.getTarget());
+        if (payload.getRequestCharge() != 0.0) {
+            telemetry.getProperties().put("requestCharge", Double.toString(payload.getRequestCharge()));
+        }
         MapUtil.copy(MDC.getCopyOfContextMap(), telemetry.getContext().getProperties());
         return telemetry;
     }

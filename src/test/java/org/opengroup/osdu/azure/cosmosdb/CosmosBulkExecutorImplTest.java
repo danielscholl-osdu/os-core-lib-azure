@@ -7,18 +7,19 @@ import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
+import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -61,12 +62,26 @@ public class CosmosBulkExecutorImplTest {
             String serializedDocument = gson.toJson(item);
             serializedDocuments.add(serializedDocument);
         }
+        lenient().doReturn(1.0).when(bulkImportResponse).getTotalRequestUnitsConsumed();
         lenient().doReturn(bulkImportResponse).when(documentBulkExecutor).importAll(serializedDocuments, false, false, 1);
         when(this.bulkExecutorFactory.getClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION)).thenReturn(documentBulkExecutor);
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
 
         this.sut.bulkInsert(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, documents, false, false, 1);
 
         verify(this.bulkExecutorFactory, times(1)).getClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION);
-        verify(dependencyLogger, times(1)).logDependency(eq(COSMOS_STORE), eq("UPSERT_ITEMS"), eq("collectionName=collection"), eq("cosmosdb/collection"), anyLong(), eq(200), eq(true));
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "UPSERT_ITEMS", "collectionName=collection", "cosmosdb/collection", 1.0, 200, true);
+    }
+
+    private void verifyDependencyLogging(DependencyLoggingOptions capturedLoggingOptions, String name, String data, String target, double requestCharge, int resultCode, boolean success) {
+        assertEquals(COSMOS_STORE, capturedLoggingOptions.getType());
+        assertEquals(name, capturedLoggingOptions.getName());
+        assertEquals(data, capturedLoggingOptions.getData());
+        assertEquals(target, capturedLoggingOptions.getTarget());
+        assertEquals(requestCharge, capturedLoggingOptions.getRequestCharge());
+        assertEquals(resultCode, capturedLoggingOptions.getResultCode());
+        assertEquals(success, capturedLoggingOptions.isSuccess());
     }
 }
