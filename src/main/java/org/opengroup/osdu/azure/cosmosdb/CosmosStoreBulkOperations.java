@@ -91,7 +91,7 @@ public class CosmosStoreBulkOperations {
             throw new AppException(statusCode, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collectionName);
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("collectionName=%s", collectionName);
             dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
         }
@@ -159,7 +159,7 @@ public class CosmosStoreBulkOperations {
             throw new AppException(statusCode, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collectionName);
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
             final String dependencyData = String.format("partition_key=%s", new HashSet<>(partitionKeys));
             dependencyLogger.logDependency(COSMOS_STORE, "UPSERT_ITEMS", dependencyData, dependencyTarget, timeTaken, statusCode, statusCode == HttpStatus.SC_OK);
         }

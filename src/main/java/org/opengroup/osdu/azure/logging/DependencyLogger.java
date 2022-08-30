@@ -32,25 +32,13 @@ public class DependencyLogger {
     }
 
     /**
-     * Return a string composed of partition ID, database name and collection.
-     *
-     * @param partitionId  the data partition ID
-     * @param databaseName the Cosmos database name
-     * @param collection   the Cosmos collection name
-     * @return the dependency target string
-     */
-    public String getDependencyTarget(final String partitionId, final String databaseName, final String collection) {
-        return String.format("%s:%s/%s", partitionId, databaseName, collection);
-    }
-
-    /**
      * Return a string composed of database name and collection.
      *
      * @param databaseName the Cosmos database name
      * @param collection   the Cosmos collection name
      * @return the dependency target string
      */
-    public String getDependencyTarget(final String databaseName, final String collection) {
+    public static String getCosmosDependencyTarget(final String databaseName, final String collection) {
         return String.format("%s/%s", databaseName, collection);
     }
 }
