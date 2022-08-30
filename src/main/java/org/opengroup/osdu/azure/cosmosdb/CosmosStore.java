@@ -28,6 +28,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
+import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
 import org.opengroup.osdu.azure.query.CosmosStorePageRequest;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+
+import static org.opengroup.osdu.azure.logging.DependencyType.COSMOS_STORE;
 
 /**
  * A simpler interface for interacting with CosmosDB.
@@ -111,12 +114,12 @@ public class CosmosStore {
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param id              ID of item
-     * @param partitionKey    Partition key of item
-     * @param clazz           Class to serialize results into
-     * @param <T>             Type to return
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param id           ID of item
+     * @param partitionKey Partition key of item
+     * @param clazz        Class to serialize results into
+     * @param <T>          Type to return
      * @return The item
      */
     public <T> Optional<T> findItem(
@@ -148,11 +151,11 @@ public class CosmosStore {
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param id              ID of item
-     * @param partitionKey    Partition key of item
-     * @param <T>             Type of item
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param id           ID of item
+     * @param partitionKey Partition key of item
+     * @param <T>          Type of item
      */
     public <T> void deleteItem(
             final String cosmosDBName,
@@ -182,11 +185,11 @@ public class CosmosStore {
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param partitionKey    Partition key of item
-     * @param item            Data object to store
-     * @param <T>             Type of item
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param partitionKey Partition key of item
+     * @param item         Data object to store
+     * @param <T>          Type of item
      */
     public <T> void upsertItem(
             final String cosmosDBName,
@@ -235,9 +238,19 @@ public class CosmosStore {
             throw new AppException(500, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(dataPartitionId, cosmosDBName, collection);
+            final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
             final String dependencyData = String.format("id=%s partition_key=%s", id, partitionKey);
-            dependencyLogger.logDependency("REPLACE_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("REPLACE_ITEM")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge)
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(options);
         }
     }
 
@@ -260,11 +273,11 @@ public class CosmosStore {
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param partitionKey    Partition key of item
-     * @param item            Data object to store
-     * @param <T>             Type of item
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param partitionKey Partition key of item
+     * @param item         Data object to store
+     * @param <T>          Type of item
      */
     public <T> void createItem(
             final String cosmosDBName,
@@ -316,12 +329,12 @@ public class CosmosStore {
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param query           {@link SqlQuerySpec} to execute
-     * @param options         Options
-     * @param clazz           Class type of response
-     * @param <T>             Type
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param query        {@link SqlQuerySpec} to execute
+     * @param options      Options
+     * @param clazz        Class type of response
+     * @param <T>          Type
      * @return List<T> List of items found on specific page in container
      */
     public <T> List<T> queryItems(
@@ -415,23 +428,33 @@ public class CosmosStore {
         }
 
         final long timeTaken = System.currentTimeMillis() - start;
-        final String dependencyTarget = dependencyLogger.getDependencyTarget(dataPartitionId, cosmosDBName, collection);
+        final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
         final String dependencyData = String.format("query=%s", query.getQueryText());
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
-        dependencyLogger.logDependency("QUERY_ITEMS_PAGE", dependencyData, dependencyTarget, timeTaken, requestCharge, HttpStatus.SC_OK, true);
+        final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                .type(COSMOS_STORE)
+                .name("QUERY_ITEMS_PAGE")
+                .data(dependencyData)
+                .target(dependencyTarget)
+                .timeTakenInMs(timeTaken)
+                .requestCharge(requestCharge)
+                .resultCode(HttpStatus.SC_OK)
+                .success(true)
+                .build();
+        dependencyLogger.logDependency(options);
 
         CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
         return new PageImpl(results, pageRequest, documentNumber);
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param container       Cosmos container
-     * @param id              ID of item
-     * @param partitionKey    Partition key of item
-     * @param clazz           Class to serialize results into
-     * @param <T>             Type to return
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param container    Cosmos container
+     * @param id           ID of item
+     * @param partitionKey Partition key of item
+     * @param clazz        Class to serialize results into
+     * @param <T>          Type to return
      * @return The item
      */
     private <T> Optional<T> findItemInternal(
@@ -463,19 +486,29 @@ public class CosmosStore {
             throw new AppException(500, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("id=%s partition_key=%s", id, partitionKey);
-            dependencyLogger.logDependency("READ_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("READ_ITEM")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge)
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(options);
         }
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param container       Cosmos container
-     * @param id              ID of item
-     * @param partitionKey    Partition key of item
-     * @param <T>             Type of item
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param container    Cosmos container
+     * @param id           ID of item
+     * @param partitionKey Partition key of item
+     * @param <T>          Type of item
      */
     private <T> void deleteItemInternal(
             final String cosmosDBName,
@@ -504,19 +537,29 @@ public class CosmosStore {
             throw new AppException(500, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("id=%s partition_key=%s", id, partitionKey);
-            dependencyLogger.logDependency("DELETE_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("DELETE_ITEM")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge)
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(options);
         }
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param container       Cosmos container.
-     * @param partitionKey    Partition key of item
-     * @param item            Data object to store
-     * @param <T>             Type of item
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param container    Cosmos container.
+     * @param partitionKey Partition key of item
+     * @param item         Data object to store
+     * @param <T>          Type of item
      */
     private <T> void upsertItemInternal(
             final String cosmosDBName,
@@ -540,19 +583,29 @@ public class CosmosStore {
             throw new AppException(500, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("partition_key=%s", partitionKey);
-            dependencyLogger.logDependency("UPSERT_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("UPSERT_ITEM")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge)
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(options);
         }
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param container       Cosmos container
-     * @param partitionKey    Partition key of item
-     * @param item            Data object to store
-     * @param <T>             Type of item
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param container    Cosmos container
+     * @param partitionKey Partition key of item
+     * @param item         Data object to store
+     * @param <T>          Type of item
      */
     private <T> void createItemInternal(
             final String cosmosDBName,
@@ -581,20 +634,30 @@ public class CosmosStore {
             throw new AppException(500, errorMessage, e.getMessage(), e);
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
+            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
             final String dependencyData = String.format("partition_key=%s", partitionKey);
-            dependencyLogger.logDependency("CREATE_ITEM", dependencyData, dependencyTarget, timeTaken, requestCharge, statusCode, statusCode == HttpStatus.SC_OK);
+            final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                    .type(COSMOS_STORE)
+                    .name("CREATE_ITEM")
+                    .data(dependencyData)
+                    .target(dependencyTarget)
+                    .timeTakenInMs(timeTaken)
+                    .requestCharge(requestCharge)
+                    .resultCode(statusCode)
+                    .success(statusCode == HttpStatus.SC_OK)
+                    .build();
+            dependencyLogger.logDependency(options);
         }
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
-     * @param container       Cosmos container
-     * @param query           {@link SqlQuerySpec} to execute
-     * @param options         Options
-     * @param clazz           Class type of response
-     * @param <T>             Type
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
+     * @param container    Cosmos container
+     * @param query        {@link SqlQuerySpec} to execute
+     * @param options      Options
+     * @param clazz        Class type of response
+     * @param <T>          Type
      * @return List<T> List of items found on specific page in container
      */
     private <T> List<T> queryItemsInternal(
@@ -614,11 +677,19 @@ public class CosmosStore {
             results.addAll(cosmosItemPropertiesFeedResponse.getResults());
         });
         final long timeTaken = System.currentTimeMillis() - start;
-        final String dependencyTarget = dependencyLogger.getDependencyTarget(cosmosDBName, collection);
+        final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
         final String dependencyData = String.format("query=%s", query.getQueryText());
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
-        dependencyLogger.logDependency("QUERY_ITEMS", dependencyData, dependencyTarget, timeTaken, HttpStatus.SC_OK, true);
-
+        final DependencyLoggingOptions loggingOptions = DependencyLoggingOptions.builder()
+                .type(COSMOS_STORE)
+                .name("QUERY_ITEMS")
+                .data(dependencyData)
+                .target(dependencyTarget)
+                .timeTakenInMs(timeTaken)
+                .resultCode(HttpStatus.SC_OK)
+                .success(true)
+                .build();
+        dependencyLogger.logDependency(loggingOptions);
         return results;
     }
 
@@ -644,8 +715,8 @@ public class CosmosStore {
     }
 
     /**
-     * @param cosmosDBName    Database name
-     * @param collection      Collection name
+     * @param cosmosDBName Database name
+     * @param collection   Collection name
      * @return Cosmos container
      */
     private CosmosContainer getSystemCosmosContainer(
@@ -660,6 +731,18 @@ public class CosmosStore {
         } catch (Exception e) {
             throw this.handleCosmosStoreException(500, "Error creating creating Cosmos Client", e);
         }
+    }
+
+    /**
+     * Return a string composed of partition ID, database name and collection.
+     *
+     * @param partitionId  the data partition ID
+     * @param databaseName the Cosmos database name
+     * @param collection   the Cosmos collection name
+     * @return the dependency target string
+     */
+    private String getDependencyTarget(final String partitionId, final String databaseName, final String collection) {
+        return String.format("%s:%s/%s", partitionId, databaseName, collection);
     }
 
     /**

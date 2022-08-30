@@ -15,50 +15,20 @@ public class DependencyLogger {
     /**
      * Log dependency.
      *
-     * @param name          the name of the command initiated with this dependency call
-     * @param data          the command initiated by this dependency call
-     * @param target        the target of this dependency call
-     * @param timeTakenInMs the request duration in milliseconds
-     * @param resultCode    the result code of the call
-     * @param success       indication of successful or unsuccessful call
+     * @param options the dependency logging options
      */
-    public void logDependency(final String name, final String data, final String target, final long timeTakenInMs, final int resultCode, final boolean success) {
-        DependencyPayload payload = new DependencyPayload(name, data, Duration.ofMillis(timeTakenInMs), String.valueOf(resultCode), success);
-        payload.setType("CosmosStore");
-        payload.setTarget(target);
+    public void logDependency(final DependencyLoggingOptions options) {
+        DependencyPayload payload = new DependencyPayload();
+        payload.setName(options.getName());
+        payload.setData(options.getData());
+        payload.setDuration(Duration.ofMillis(options.getTimeTakenInMs()));
+        payload.setRequestCharge(options.getRequestCharge());
+        payload.setResultCode(String.valueOf(options.getResultCode()));
+        payload.setSuccess(options.isSuccess());
+        payload.setType(options.getType());
+        payload.setTarget(options.getTarget());
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
-    }
-
-    /**
-     * Log dependency.
-     *
-     * @param name          the name of the command initiated with this dependency call
-     * @param data          the command initiated by this dependency call
-     * @param target        the target of this dependency call
-     * @param timeTakenInMs the request duration in milliseconds
-     * @param requestCharge the request charge
-     * @param resultCode    the result code of the call
-     * @param success       indication of successful or unsuccessful call
-     */
-    public void logDependency(final String name, final String data, final String target, final long timeTakenInMs, final double requestCharge, final int resultCode, final boolean success) {
-        DependencyPayload payload = new DependencyPayload(name, data, Duration.ofMillis(timeTakenInMs), requestCharge, String.valueOf(resultCode), success);
-        payload.setType("CosmosStore");
-        payload.setTarget(target);
-
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
-    }
-
-    /**
-     * Return a string composed of partition ID, database name and collection.
-     *
-     * @param partitionId  the data partition ID
-     * @param databaseName the Cosmos database name
-     * @param collection   the Cosmos collection name
-     * @return the dependency target string
-     */
-    public String getDependencyTarget(final String partitionId, final String databaseName, final String collection) {
-        return String.format("%s:%s/%s", partitionId, databaseName, collection);
     }
 
     /**
@@ -68,7 +38,7 @@ public class DependencyLogger {
      * @param collection   the Cosmos collection name
      * @return the dependency target string
      */
-    public String getDependencyTarget(final String databaseName, final String collection) {
+    public static String getCosmosDependencyTarget(final String databaseName, final String collection) {
         return String.format("%s/%s", databaseName, collection);
     }
 }
