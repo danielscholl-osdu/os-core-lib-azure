@@ -72,12 +72,16 @@ public class CosmosBulkExecutorImplTest {
         verify(this.bulkExecutorFactory, times(1)).getClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION);
         verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
         DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
-        assertEquals(COSMOS_STORE, actualLoggingOptions.getType());
-        assertEquals("UPSERT_ITEMS", actualLoggingOptions.getName());
-        assertEquals("collectionName=collection", actualLoggingOptions.getData());
-        assertEquals("cosmosdb/collection", actualLoggingOptions.getTarget());
-        assertEquals(1.0, actualLoggingOptions.getRequestCharge());
-        assertEquals(200, actualLoggingOptions.getResultCode());
-        assertEquals(true, actualLoggingOptions.isSuccess());
+        verifyDependencyLogging(actualLoggingOptions, "UPSERT_ITEMS", "collectionName=collection", "cosmosdb/collection", 1.0, 200, true);
+    }
+
+    private void verifyDependencyLogging(DependencyLoggingOptions capturedLoggingOptions, String name, String data, String target, double requestCharge, int resultCode, boolean success) {
+        assertEquals(COSMOS_STORE, capturedLoggingOptions.getType());
+        assertEquals(name, capturedLoggingOptions.getName());
+        assertEquals(data, capturedLoggingOptions.getData());
+        assertEquals(target, capturedLoggingOptions.getTarget());
+        assertEquals(requestCharge, capturedLoggingOptions.getRequestCharge());
+        assertEquals(resultCode, capturedLoggingOptions.getResultCode());
+        assertEquals(success, capturedLoggingOptions.isSuccess());
     }
 }
