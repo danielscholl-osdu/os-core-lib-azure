@@ -4,7 +4,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.azure.security.keyvault.secrets.SecretClient;
 import org.apache.http.HttpStatus;
-import org.opengroup.osdu.azure.dependencies.AzureOSDUConfig;
 import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
 import org.opengroup.osdu.azure.di.PodIdentityConfiguration;
 import org.opengroup.osdu.core.common.model.http.AppException;
@@ -42,8 +41,6 @@ public class AzureServicePrincipleTokenService {
 
     @Autowired
     private PodIdentityConfiguration podIdentityConfiguration;
-    @Autowired
-    private AzureOSDUConfig appDevSpPassword;
     @Autowired
     private AzureActiveDirectoryConfiguration aadConfiguration;
     @Autowired
