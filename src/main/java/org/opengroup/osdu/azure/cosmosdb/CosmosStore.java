@@ -668,13 +668,14 @@ public class CosmosStore {
             final CosmosQueryRequestOptions options,
             final Class<T> clazz) {
         List<T> results = new ArrayList<>();
-
+        final double[] requestCharge = {0.0};
         final long start = System.currentTimeMillis();
         CosmosPagedIterable<T> paginatedResponse = container.queryItems(query, options, clazz);
         paginatedResponse.iterableByPage(PREFERRED_PAGE_SIZE).forEach(cosmosItemPropertiesFeedResponse -> {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Got a page of query result with {} items(s)",
                     cosmosItemPropertiesFeedResponse.getResults().size());
             results.addAll(cosmosItemPropertiesFeedResponse.getResults());
+            requestCharge[0] += cosmosItemPropertiesFeedResponse.getRequestCharge();
         });
         final long timeTaken = System.currentTimeMillis() - start;
         final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
@@ -686,6 +687,7 @@ public class CosmosStore {
                 .data(dependencyData)
                 .target(dependencyTarget)
                 .timeTakenInMs(timeTaken)
+                .requestCharge(requestCharge[0])
                 .resultCode(HttpStatus.SC_OK)
                 .success(true)
                 .build();
