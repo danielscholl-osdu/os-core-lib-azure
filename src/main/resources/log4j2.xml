@@ -30,20 +30,20 @@
         </Script>
     </Scripts>
 
-    <Properties>
-        <Property name="LOG_PATTERN">
-            %d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} correlation-id=%X{correlation-id} data-partition-id=%X{data-partition-id} api-method=%X{api-method} operation-name=%X{operation-name} user-id=%X{user-id} app-id=%X{app-id}: %m%replace{%m}{[\r\n]}{|} %throwable{separator(|)}%n
-        </Property>
-    </Properties>
-    <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} correlation-id=%X{correlation-id} data-partition-id=%X{data-partition-id} api-method=%X{api-method} operation-name=%X{operation-name} user-id=%X{user-id} app-id=%X{app-id}: %m%replace{%m}{[\r\n]}{|} %throwable{separator(|)}%n"/>
-        </Console>
-        <ApplicationInsightsAppender name="aiAppender" />
-        <AzureIfxAuditAppender name="azureAuditAppender"/>
-    </Appenders>
-    <Loggers>
-<!--        TODO: In future it will be changed to warn-->
+        <Properties>
+            <Property name="LOG_PATTERN">
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} correlation-id=%X{correlation-id} data-partition-id=%X{data-partition-id} api-method=%X{api-method} operation-name=%X{operation-name} user-id=%X{user-id} app-id=%X{app-id}: %m%xEx{full}{filters(org.apache,org.springframework,sun.reflect,javax.servlet)}{separator(|)}%n"
+            </Property>
+        </Properties>
+        <Appenders>
+            <Console name="Console" target="SYSTEM_OUT">
+                <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} correlation-id=%X{correlation-id} data-partition-id=%X{data-partition-id} api-method=%X{api-method} operation-name=%X{operation-name} user-id=%X{user-id} app-id=%X{app-id}:%m%xEx{full}{filters(org.apache,org.springframework,sun.reflect,javax.servlet)}{separator(|)}%n"/>
+            </Console>
+            <ApplicationInsightsAppender name="aiAppender" />
+            <AzureIfxAuditAppender name="azureAuditAppender"/>
+        </Appenders>
+        <Loggers>
+    <!--        TODO: In future it will be changed to warn-->
         <Root level="info">
             <AppenderRef ref="Console"  />
             <AppenderRef ref="aiAppender">
