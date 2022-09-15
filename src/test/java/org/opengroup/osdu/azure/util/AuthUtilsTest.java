@@ -1,14 +1,22 @@
 package org.opengroup.osdu.azure.util;
 
+import com.azure.security.keyvault.secrets.SecretClient;
 import com.nimbusds.jwt.JWTClaimsSet;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mock;
+import org.opengroup.osdu.azure.KeyVaultFacade;
+import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({KeyVaultFacade.class})
 public class AuthUtilsTest {
 
     // Mock JWT Token: {"aud": "audience","appid": "application-id","oid": "my-oid","sub": "my-sub","tid": "my-tenant"}
@@ -22,8 +30,16 @@ public class AuthUtilsTest {
     private static final String TOKEN_TENANT = "my-tenant";
     private static final String TOKEN_APPID = "application-id";
 
+    private static final String SECRET_NAME = "app-dev-sp-password";
+
     @InjectMocks
     private AuthUtils authUtils;
+
+    @Mock
+    private AzureActiveDirectoryConfiguration aadConfiguration;
+
+    @Mock
+    private SecretClient secretClient;
 
     @Test
     public void ShouldSuccessfullyGetClaims() throws Exception {
@@ -72,5 +88,33 @@ public class AuthUtilsTest {
     public void ShouldReturnNullOidForEmptyToken() throws Exception {
         String oid = authUtils.getOidFromJwtToken(EMPTY_JWT_TOKEN_CLAIMS);
         assertEquals(null, oid);
+    }
+
+    @Test
+    public void ShouldGetClientSecret_ifClientSecretNotNullOrEmpty() {
+        String secretValue = "testValue";
+
+        when(aadConfiguration.getClientSecret()).thenReturn(secretValue);
+
+        assertEquals(secretValue, AuthUtils.getClientSecret(aadConfiguration, secretClient));
+    }
+
+    @Test
+    public void ShouldGetClientSecret_ifClientSecretIsNull() {
+        testGetClientSecretForNullOrEmptyCases(null);
+    }
+
+    @Test
+    public void ShouldGetClientSecret_ifClientSecretIsEmpty() {
+        testGetClientSecretForNullOrEmptyCases(EMPTY);
+    }
+
+    private void testGetClientSecretForNullOrEmptyCases(String aadConfigSecret) {
+        String secretValue = "testValue";
+
+        when(aadConfiguration.getClientSecret()).thenReturn(aadConfigSecret);
+        when(KeyVaultFacade.getSecretWithValidation(secretClient, SECRET_NAME)).thenReturn(secretValue);
+
+        assertEquals(secretValue, AuthUtils.getClientSecret(aadConfiguration, secretClient));
     }
 }
