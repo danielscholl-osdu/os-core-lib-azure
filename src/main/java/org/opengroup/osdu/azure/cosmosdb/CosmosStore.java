@@ -25,7 +25,6 @@ import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import com.google.common.base.Strings;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
@@ -510,7 +509,7 @@ public class CosmosStore {
                 break;
             }
             currentPageSize = currentPageSize - results.size();
-        } while (Strings.isNullOrEmpty(internalContinuationToken) || results.size() >= currentPageSize);
+        } while (internalContinuationToken != null && currentPageSize > 0);
 
         final long timeTaken = System.currentTimeMillis() - start;
         final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
