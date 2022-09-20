@@ -26,6 +26,8 @@
               files="."/>
     <suppress checks="MagicNumber"
               files="."/>
+    <suppress checks="ParameterNumber"
+              files="."/>
     <suppress checks="ParameterName"
               files="."/>
     <!-- No need to have java docs for private variables -->

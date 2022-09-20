@@ -25,6 +25,7 @@ import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.google.common.base.Strings;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
@@ -444,6 +445,90 @@ public class CosmosStore {
         dependencyLogger.logDependency(options);
 
         CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
+        return new PageImpl(results, pageRequest, documentNumber);
+    }
+
+    /**
+     * @param dataPartitionId   Data partition id
+     * @param cosmosDBName      Database name
+     * @param collection        Collection name
+     * @param query             {@link SqlQuerySpec} to execute
+     * @param partitionKey      Partition key of item
+     * @param clazz             Class type
+     * @param pageSize          Page size
+     * @param continuationToken Continuation token
+     * @param <T>               Type
+     * @return Page<T> Page of items found
+     */
+    public <T> Page<T> queryItemsPage(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final SqlQuerySpec query,
+            final String partitionKey,
+            final Class<T> clazz,
+            final int pageSize,
+            final String continuationToken) {
+
+        int currentPageNumber = 1;
+        int currentPageSize = pageSize;
+        int documentNumber = 0;
+        double requestCharge = 0.0;
+
+        String internalContinuationToken = continuationToken;
+        List<T> results = new ArrayList<>();
+        CosmosContainer container = getCosmosContainer(dataPartitionId, cosmosDBName, collection);
+
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Receiving a set of query response pages.");
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Continuation Token: " + internalContinuationToken + "\n");
+
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
+        queryOptions.setPartitionKey(new PartitionKey(partitionKey));
+        final long start = System.currentTimeMillis();
+
+        do {
+            Iterable<FeedResponse<T>> feedResponseIterator =
+                    container.queryItems(query, queryOptions, clazz).iterableByPage(internalContinuationToken, currentPageSize);
+
+            for (FeedResponse<T> page : feedResponseIterator) {
+                requestCharge += page.getRequestCharge();
+                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("Current page number: %d", currentPageNumber));
+                // Access all of the documents in this result page
+                for (T item : page.getResults()) {
+                    documentNumber++;
+                    results.add(item);
+                }
+
+                // Page count so far
+                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("Total documents received so far: %d", documentNumber));
+
+                // Along with page results, get a continuation token
+                // which enables the client to "pick up where it left off"
+                // in accessing query response pages.
+                internalContinuationToken = page.getContinuationToken();
+                currentPageNumber++;
+                break;
+            }
+            currentPageSize = currentPageSize - results.size();
+        } while (Strings.isNullOrEmpty(internalContinuationToken) || results.size() >= currentPageSize);
+
+        final long timeTaken = System.currentTimeMillis() - start;
+        final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
+        final String dependencyData = String.format("query=%s", query.getQueryText());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
+        final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                .type(COSMOS_STORE)
+                .name("QUERY_ITEMS_PAGE")
+                .data(dependencyData)
+                .target(dependencyTarget)
+                .timeTakenInMs(timeTaken)
+                .requestCharge(requestCharge)
+                .resultCode(HttpStatus.SC_OK)
+                .success(true)
+                .build();
+        dependencyLogger.logDependency(options);
+
+        CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalContinuationToken);
         return new PageImpl(results, pageRequest, documentNumber);
     }
 
