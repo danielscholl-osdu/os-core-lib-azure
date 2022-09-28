@@ -9,8 +9,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.logging.CoreLogger;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
-import org.springframework.boot.actuate.endpoint.http.ApiVersion;
+import org.springframework.boot.actuate.endpoint.ApiVersion;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointResponse;
+import org.springframework.boot.actuate.endpoint.web.WebServerNamespace;
 import org.springframework.boot.actuate.health.CompositeHealth;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthComponent;
@@ -50,6 +51,9 @@ public class AzureHealthEndpointWebExtensionTest {
 
     @Mock
     SecurityContext securityContext;
+
+    @Mock
+    WebServerNamespace serverNamespace;
 
     @Mock
     Health health;
@@ -93,8 +97,8 @@ public class AzureHealthEndpointWebExtensionTest {
 
         WebEndpointResponse<HealthComponent> expected = new WebEndpointResponse<>(compositeHealth, WebEndpointResponse.STATUS_OK);
 
-        doReturn(expected).when(spy).superClassCall(ApiVersion.LATEST, securityContext, true);
-        spy.health(ApiVersion.LATEST, securityContext, true, new String[0]);
+        doReturn(expected).when(spy).superClassCall(ApiVersion.LATEST, serverNamespace, securityContext, true);
+        spy.health(ApiVersion.LATEST, serverNamespace, securityContext, true, new String[0]);
 
         verify(logger, times(0)).error(anyString(), any(), any());
 
@@ -113,9 +117,9 @@ public class AzureHealthEndpointWebExtensionTest {
 
         WebEndpointResponse<HealthComponent> expected = new WebEndpointResponse<>(compositeHealth, WebEndpointResponse.STATUS_SERVICE_UNAVAILABLE);
 
-        doReturn(expected).when(spy).superClassCall(ApiVersion.LATEST, securityContext, true);
+        doReturn(expected).when(spy).superClassCall(ApiVersion.LATEST, serverNamespace, securityContext, true);
 
-        spy.health(ApiVersion.LATEST, securityContext, true, new String[0]);
+        spy.health(ApiVersion.LATEST, serverNamespace, securityContext, true, new String[0]);
         verify(logger, times(1)).error(anyString(), any(), any());
 
     }
