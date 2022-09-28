@@ -493,7 +493,7 @@ public class CosmosStore {
             for (FeedResponse<T> page : feedResponseIterator) {
                 requestCharge += page.getRequestCharge();
                 CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("Current page number: %d", currentPageNumber));
-                // Access all of the documents in this result page
+                // Access all the documents in this result page
                 for (T item : page.getResults()) {
                     documentNumber++;
                     results.add(item);
@@ -510,7 +510,7 @@ public class CosmosStore {
                 break;
             }
             currentPageSize = currentPageSize - results.size();
-        } while (Strings.isNullOrEmpty(internalContinuationToken) && currentPageSize > 0);
+        } while (!Strings.isNullOrEmpty(internalContinuationToken) && currentPageSize > 0);
 
         final long timeTaken = System.currentTimeMillis() - start;
         final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);

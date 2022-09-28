@@ -24,6 +24,9 @@ import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.models.FeedResponse;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,8 +41,13 @@ import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
 import org.opengroup.osdu.azure.multitenancy.TenantInfoDoc;
 import org.opengroup.osdu.core.common.model.http.AppException;
+import org.springframework.data.domain.Page;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -65,9 +74,9 @@ class CosmosStoreTest {
     private static final String PARTITION_KEY = "pk";
     private static final String COSMOS_DB = "cosmosdb";
     private static final String COLLECTION = "collection";
-    private static final String COLLECTION_LINK = "/dbs/cosmosdb/colls/collection";
     private static final String DATA_PARTITION_ID = "data-partition-id";
     private static final String ITEM = "ITEM";
+    private static final String PARTITION_KEY_SOME_DATA = "some-data";
 
     @Mock
     private CoreLoggerFactory coreLoggerFactory;
@@ -264,7 +273,7 @@ class CosmosStoreTest {
     void upsertItem_throws500_ifUnknownError() throws CosmosException {
         doThrow(CosmosException.class).when(container).upsertItem(any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
+            cosmosStore.upsertItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, PARTITION_KEY_SOME_DATA, any());
         });
         assertEquals(500, exception.getError().getCode());
 
@@ -328,7 +337,7 @@ class CosmosStoreTest {
     void createItem_throws409_ifDuplicateDocument() throws CosmosException {
         doThrow(ConflictException.class).when(container).createItem(any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
+            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, PARTITION_KEY_SOME_DATA, any());
         });
         assertEquals(409, exception.getError().getCode());
 
@@ -342,7 +351,7 @@ class CosmosStoreTest {
     void createItem_throws409_ifDuplicateDocument_System() throws CosmosException {
         lenient().doThrow(ConflictException.class).when(container).createItem(any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
+            cosmosStore.createItem(COSMOS_DB, COLLECTION, PARTITION_KEY_SOME_DATA, Object.class);
         });
         assertEquals(409, exception.getError().getCode());
 
@@ -356,7 +365,7 @@ class CosmosStoreTest {
     void createItem_throws500_ifUnknownError() throws CosmosException {
         doThrow(CosmosException.class).when(container).createItem(any(), any(), any());
         AppException exception = assertThrows(AppException.class, () -> {
-            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
+            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, PARTITION_KEY_SOME_DATA, any());
         });
         assertEquals(500, exception.getError().getCode());
 
@@ -373,11 +382,11 @@ class CosmosStoreTest {
         when(cosmosItemResponse.getRequestCharge()).thenReturn(1.0);
         doReturn(cosmosItemResponse).when(container).createItem(any(), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
         try {
-            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, "some-data", any());
+            cosmosStore.createItem(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, PARTITION_KEY_SOME_DATA, any());
         } catch (Exception ex) {
             fail("Should not fail.");
         }
-        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains("some-data"));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY_SOME_DATA));
 
         ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
         verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
@@ -392,16 +401,49 @@ class CosmosStoreTest {
         when(cosmosItemResponse.getRequestCharge()).thenReturn(1.0);
         doReturn(cosmosItemResponse).when(container).createItem(any(), partitionKeyArgumentCaptor.capture(), any(CosmosItemRequestOptions.class));
         try {
-            cosmosStore.createItem(COSMOS_DB, COLLECTION, "some-data", Object.class);
+            cosmosStore.createItem(COSMOS_DB, COLLECTION, PARTITION_KEY_SOME_DATA, Object.class);
         } catch (Exception ex) {
             fail("Should not fail.");
         }
-        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains("some-data"));
+        assertTrue(partitionKeyArgumentCaptor.getValue().toString().contains(PARTITION_KEY_SOME_DATA));
 
         ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
         verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
         DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
         verifyDependencyLogging(actualLoggingOptions, "CREATE_ITEM", "partition_key=some-data", "cosmosdb/collection", 200, true);
+    }
+
+    @Test
+    void queryItems_byPageNumber() {
+        mockQueryResponse("s1", "s2", "s3");
+        Page results = cosmosStore.queryItemsPage(DATA_PARTITION_ID, COSMOS_DB, COLLECTION,
+                new SqlQuerySpec("SELECT * FROM c"), PARTITION_KEY_SOME_DATA, String.class, 1, "");
+
+        assertEquals(3, results.getTotalElements());
+
+        mockQueryResponse();
+        results = cosmosStore.queryItemsPage(DATA_PARTITION_ID, COSMOS_DB, COLLECTION,
+                new SqlQuerySpec("SELECT * FROM c"), PARTITION_KEY_SOME_DATA, String.class, 1, "");
+
+        assertEquals(0, results.getTotalElements());
+    }
+
+    private void mockQueryResponse(String... responses) {
+        ArrayList<FeedResponse> paginatedResponse = new ArrayList<>();
+        for (String response : responses) {
+            @SuppressWarnings("unchecked")
+            FeedResponse pageResponse = mock(FeedResponse.class);
+
+            Map<String, String> properties =  mock(LinkedHashMap.class);
+            lenient().doReturn(response).when(properties).get(any());
+            lenient().doReturn("any").when(pageResponse).getContinuationToken();
+            lenient().doReturn(Collections.singletonList(properties)).when(pageResponse).getResults();
+
+            paginatedResponse.add(pageResponse);
+        }
+        CosmosPagedIterable pagedIterable = mock(CosmosPagedIterable.class);
+        doReturn(pagedIterable).when(container).queryItems(any(SqlQuerySpec.class), any(), any());
+        when(pagedIterable.iterableByPage(anyString(), anyInt())).thenReturn(paginatedResponse);
     }
 
     private void verifyDependencyLogging(DependencyLoggingOptions capturedLoggingOptions, String name, String data, String target, int resultCode, boolean success) {
