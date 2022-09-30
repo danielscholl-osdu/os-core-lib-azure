@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Lazy;
 
 import javax.inject.Named;
 
+import static org.opengroup.osdu.azure.util.AuthUtils.getClientSecret;
 /**
  * Bootstraps Azure dependencies for OSDU.
  */
@@ -113,10 +114,7 @@ public class AzureOSDUConfig {
     @Bean
     @Named("APP_DEV_SP_PASSWORD")
     public String appDevSpPassword(final SecretClient sc) {
-        if (aadConfiguration.getClientSecret() != null && !aadConfiguration.getClientSecret().isEmpty()) {
-            return aadConfiguration.getClientSecret();
-        }
-        return KeyVaultFacade.getSecretWithValidation(sc, "app-dev-sp-password");
+        return getClientSecret(aadConfiguration, sc);
     }
 
 

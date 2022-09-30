@@ -2,7 +2,9 @@ package org.opengroup.osdu.azure.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.azure.security.keyvault.secrets.SecretClient;
 import org.apache.http.HttpStatus;
+import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
 import org.opengroup.osdu.azure.di.PodIdentityConfiguration;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.search.IdToken;
@@ -14,6 +16,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.opengroup.osdu.azure.util.AuthUtils.getClientSecret;
 
 /**
  * Azure Service Principle token service.
@@ -37,6 +41,10 @@ public class AzureServicePrincipleTokenService {
 
     @Autowired
     private PodIdentityConfiguration podIdentityConfiguration;
+    @Autowired
+    private AzureActiveDirectoryConfiguration aadConfiguration;
+    @Autowired
+    private SecretClient sc;
 
     private final AzureServicePrincipal azureServicePrincipal = new AzureServicePrincipal();
 
@@ -53,7 +61,21 @@ public class AzureServicePrincipleTokenService {
                 return cachedToken.getTokenValue();
             }
             if (!podIdentityConfiguration.getIsEnabled()) {
-                accessToken = this.azureServicePrincipal.getIdToken(clientID, clientSecret, tenantId, aadClientId);
+                try {
+                    accessToken = this.azureServicePrincipal.getIdToken(clientID, clientSecret, tenantId, aadClientId);
+                } catch (AppException e) {
+                    if (e.getError().getCode() != HttpStatus.SC_UNAUTHORIZED) {
+                        throw e;
+                    }
+
+                    String newClientSecret = getClientSecret(aadConfiguration, sc);
+                    if (clientSecret.equals(newClientSecret)) {
+                        throw e;
+                    } else {
+                        accessToken = this.azureServicePrincipal.getIdToken(clientID, newClientSecret, tenantId, aadClientId);
+                        clientSecret = newClientSecret;
+                    }
+                }
             } else {
                 accessToken = this.azureServicePrincipal.getMSIToken();
             }

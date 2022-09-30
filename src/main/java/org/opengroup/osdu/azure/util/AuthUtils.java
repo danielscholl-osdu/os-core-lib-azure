@@ -1,6 +1,9 @@
 package org.opengroup.osdu.azure.util;
 
+import com.azure.security.keyvault.secrets.SecretClient;
 import com.nimbusds.jwt.JWTClaimsSet;
+import org.opengroup.osdu.azure.KeyVaultFacade;
+import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
 import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
@@ -11,6 +14,9 @@ import java.util.Base64;
  */
 @Component
 public final class AuthUtils {
+
+    private static final String SECRET_NAME = "app-dev-sp-password";
+
     /**
      * Get claims set from JWT token.
      *
@@ -41,5 +47,20 @@ public final class AuthUtils {
         } catch (ParseException e) {
             return null;
         }
+    }
+
+
+    /**
+     * Get client secret.
+     *
+     * @param aadConfiguration Azure Active Directory configuration bean.
+     * @param sc KeyVault client
+     * @return client secrete
+     */
+    public static String getClientSecret(final AzureActiveDirectoryConfiguration aadConfiguration, final SecretClient sc) {
+        if (aadConfiguration.getClientSecret() != null && !aadConfiguration.getClientSecret().isEmpty()) {
+            return aadConfiguration.getClientSecret();
+        }
+        return KeyVaultFacade.getSecretWithValidation(sc, SECRET_NAME);
     }
 }
