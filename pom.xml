@@ -32,7 +32,6 @@
     <checkstyle.version>3.1.0</checkstyle.version>
     <junit.jupiter.version>5.6.0</junit.jupiter.version>
     <mockito-junit-jupiter.version>2.23.0</mockito-junit-jupiter.version>
-    <maven.surefire.version>2.22.2</maven.surefire.version>
     <azure.appinsights.version>2.6.4</azure.appinsights.version>
     <azure.appinsights.log4j.version>2.6.4</azure.appinsights.log4j.version>
     <azure.spring.boot.version>3.4.0</azure.spring.boot.version>
@@ -47,8 +46,8 @@
     <azure-spring-data-cosmos.version>3.21.0</azure-spring-data-cosmos.version>
     <resilience4jVersion>1.7.0</resilience4jVersion>
     <redisson.version>3.15.3</redisson.version>
-    <azure-storage-file-datalake.version>12.6.0</azure-storage-file-datalake.version>
-    <azure-storage-blob.version>12.14.2</azure-storage-blob.version>
+    <azure-storage-file-datalake.version>12.13.0</azure-storage-file-datalake.version>
+    <azure-storage-blob.version>12.20.0</azure-storage-blob.version>
     <azure-core.version>1.25.0</azure-core.version>
 
 
@@ -367,10 +366,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven.surefire.version}</version>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
