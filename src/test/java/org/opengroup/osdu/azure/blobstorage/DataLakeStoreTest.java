@@ -71,11 +71,11 @@ public class DataLakeStoreTest {
     @Mock
     private DataLakeDirectoryClient dataLakeDirectoryClient;
 
-    @InjectMocks
-    private DataLakeStore dataLakeStore;
+    @Mock
+    private PathInfo pathInfo;
 
     @InjectMocks
-    private PathInfo pathInfo;
+    private DataLakeStore dataLakeStore;
 
     @Mock
     private CoreLogger coreLogger;
@@ -135,7 +135,6 @@ public class DataLakeStoreTest {
 
     @Test
     public void createDirectory_Success(){
-
         when(dataLakeDirectoryClient.create()).thenReturn(pathInfo);
         dataLakeStore.createDirectory(PARTITION_ID, FILE_SYSTEM_NAME,DIRECTORY_NAME);
 
