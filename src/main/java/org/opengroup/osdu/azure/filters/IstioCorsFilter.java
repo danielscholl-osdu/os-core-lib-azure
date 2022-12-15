@@ -21,19 +21,22 @@ import static org.springframework.web.cors.CorsUtils.isCorsRequest;
 import static org.springframework.web.cors.CorsUtils.isPreFlightRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
+    /**
+     * For Implement istio CORS policy.
+     */
 @Component
 @ConditionalOnProperty(value = "azure.istio.auth.enabled", havingValue = "true", matchIfMissing = false)
 @Order(Integer.MIN_VALUE)
-public class IstioCorsFilter implements Filter {
+public final class IstioCorsFilter implements Filter {
     private static final Logger LOGGER = LoggerFactory.getLogger(IstioCorsFilter.class);
     private static final String LOGGER_NAME = "CORSLogger";
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+    public void doFilter(final ServletRequest request, final ServletResponse response,
+                         final FilterChain chain) throws IOException, ServletException {
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        final HttpServletRequest httpRequest = (HttpServletRequest) request;
+        final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         //Only execute CORS policy if request is cross-origin and a Preflight request
         if (isCorsRequest(httpRequest) && isPreFlightRequest(httpRequest)) {
@@ -49,7 +52,10 @@ public class IstioCorsFilter implements Filter {
         chain.doFilter(httpRequest, httpResponse);
     }
 
-    //Updates response headers to null and returns control to caller so that istio's CORS is honored
+    /**
+     * Updates response headers to null and returns control to caller so that istio's CORS is honored.
+     * @return response headers
+     */
     public Map<String, String> getCorsHeadersWithNullValues() {
         Map<String, String> responseHeaders = new HashMap<>();
         responseHeaders.put("Access-Control-Allow-Origin", null);
