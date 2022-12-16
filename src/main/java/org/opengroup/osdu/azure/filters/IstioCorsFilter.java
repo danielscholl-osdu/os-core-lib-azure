@@ -21,19 +21,26 @@ import static org.springframework.web.cors.CorsUtils.isCorsRequest;
 import static org.springframework.web.cors.CorsUtils.isPreFlightRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
-    /**
-     * For Implement istio CORS policy.
-     */
+/**
+ * To set response headers to null for a Preflight CORS Request. For non-CORS requests, request directed to next Filter in chain.
+ */
 @Component
-@ConditionalOnProperty(value = "azure.istio.auth.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(value = "azure.istio.corsEnabled", havingValue = "true", matchIfMissing = false)
 @Order(Integer.MIN_VALUE)
 public final class IstioCorsFilter implements Filter {
     private static final Logger LOGGER = LoggerFactory.getLogger(IstioCorsFilter.class);
     private static final String LOGGER_NAME = "CORSLogger";
 
+    /**
+     * Filter logic.
+     *
+     * @param request  Request object.
+     * @param response Response object.
+     * @param chain    Filter Chain object.
+     */
     @Override
-    public void doFilter(final ServletRequest request, final ServletResponse response,
-                         final FilterChain chain) throws IOException, ServletException {
+    public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
+            throws IOException, ServletException {
 
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
@@ -53,8 +60,8 @@ public final class IstioCorsFilter implements Filter {
     }
 
     /**
-     * Updates response headers to null and returns control to caller so that istio's CORS is honored.
-     * @return response headers
+     * Function sets response headers to null.
+     * @return responseHeaders Null response.
      */
     public Map<String, String> getCorsHeadersWithNullValues() {
         Map<String, String> responseHeaders = new HashMap<>();

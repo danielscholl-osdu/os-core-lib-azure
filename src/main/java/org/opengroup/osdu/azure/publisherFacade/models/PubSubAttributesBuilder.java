@@ -15,7 +15,6 @@
 package org.opengroup.osdu.azure.publisherFacade.models;
 
 import lombok.Builder;
-import org.opengroup.osdu.core.common.model.http.CollaborationContext;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.springframework.context.annotation.Lazy;
 
@@ -29,7 +28,6 @@ import java.util.HashMap;
 @Builder
 public class PubSubAttributesBuilder {
     private DpsHeaders dpsHeaders;
-    private CollaborationContext collaborationContext;
 
     /**
      * Create properties map from headers.
@@ -41,12 +39,6 @@ public class PubSubAttributesBuilder {
         attributesMap.put("correlation-id", this.dpsHeaders.getCorrelationId());
         attributesMap.put("data-partition-id", this.dpsHeaders.getPartitionIdWithFallbackToAccountId());
         attributesMap.put("account-id", this.dpsHeaders.getPartitionIdWithFallbackToAccountId());
-
-        if (this.collaborationContext != null && this.collaborationContext.hasId()) {
-            attributesMap.put("x-collaboration",
-                    "id=" + this.collaborationContext.getId()
-                            + ",application=" + this.collaborationContext.getApplication());
-        }
 
         return attributesMap;
     }
