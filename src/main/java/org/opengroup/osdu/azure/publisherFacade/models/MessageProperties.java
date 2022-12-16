@@ -39,7 +39,4 @@ public class MessageProperties {
     @SerializedName("correlation-id")
     private String correlationId;
 
-    @SerializedName("x-collaboration")
-    private String collaborationDirectives;
-
 }

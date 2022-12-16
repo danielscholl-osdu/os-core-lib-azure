@@ -25,11 +25,11 @@ public class IstioCorsFilterTest {
         request.setMethod("OPTIONS");
         request.addHeader("Access-Control-Request-Method", "OPTIONS");
 
-        IstioCorsFilter customCorsFilter = new IstioCorsFilter();
+        IstioCorsFilter istioCorsFilter = new IstioCorsFilter();
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain filterChain = new MockFilterChain();
 
-        customCorsFilter.doFilter(request, response, filterChain);
+        istioCorsFilter.doFilter(request, response, filterChain);
 
         Assert.assertTrue(response.getHeader("Access-Control-Allow-Origin")==null);
         Assert.assertTrue(response.getHeader("Access-Control-Allow-Methods")== null);
@@ -52,9 +52,9 @@ public class IstioCorsFilterTest {
         request.addHeader("Origin", "https://www.apache.org");
         request.setMethod("GET");
         request.addHeader("Access-Control-Request-Method", "GET");
-        IstioCorsFilter customCorsFilter = new IstioCorsFilter();
+        IstioCorsFilter istioCorsFilter = new IstioCorsFilter();
 
-        customCorsFilter.doFilter(request, response, filterChain);
+        istioCorsFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
     }
 
@@ -69,9 +69,9 @@ public class IstioCorsFilterTest {
         request.setMethod("GET");
         request.addHeader("Origin", "https://www.apache.org");
 
-        IstioCorsFilter customCorsFilter = new IstioCorsFilter();
+        IstioCorsFilter istioCorsFilter = new IstioCorsFilter();
 
-        customCorsFilter.doFilter(request, response, filterChain);
+        istioCorsFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
     }
 
@@ -85,9 +85,9 @@ public class IstioCorsFilterTest {
         FilterChain filterChain = mock(FilterChain.class);
         request.setMethod("OPTIONS");
 
-        IstioCorsFilter customCorsFilter = new IstioCorsFilter();
+        IstioCorsFilter istioCorsFilter = new IstioCorsFilter();
 
-        customCorsFilter.doFilter(request, response, filterChain);
+        istioCorsFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
     }
 
@@ -101,9 +101,9 @@ public class IstioCorsFilterTest {
         FilterChain filterChain = mock(FilterChain.class);
         request.setMethod("OPTIONS");
 
-        IstioCorsFilter customCorsFilter = new IstioCorsFilter();
+        IstioCorsFilter istioCorsFilter = new IstioCorsFilter();
 
-        customCorsFilter.doFilter(request, response, filterChain);
+        istioCorsFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
     }
 
@@ -118,9 +118,9 @@ public class IstioCorsFilterTest {
         request.addHeader("Origin", "https://www.apache.org");
         request.setMethod("OPTIONS");
 
-        IstioCorsFilter customCorsFilter = new IstioCorsFilter();
+        IstioCorsFilter istioCorsFilter = new IstioCorsFilter();
 
-        customCorsFilter.doFilter(request, response, filterChain);
+        istioCorsFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
     }
 
