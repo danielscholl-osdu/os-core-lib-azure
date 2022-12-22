@@ -76,7 +76,7 @@ public class ServiceBusPublisher {
                     .accountId(headers.getPartitionIdWithFallbackToAccountId())
                     .partitionId(headers.getPartitionIdWithFallbackToAccountId())
                     .correlationId(headers.getCorrelationId())
-                    .collaborationDirectives("x-collaboration:" + "id= " + collaborationContext.get().getId() + ",application= " + collaborationContext.get().getApplication())
+                    .collaborationDirectives("id=" + collaborationContext.get().getId() + ",application=" + collaborationContext.get().getApplication())
                     .build();
         } else {
             messageProperties = MessageProperties.builder()
