@@ -16,6 +16,7 @@ package org.opengroup.osdu.azure.publisherFacade;
 import com.microsoft.azure.servicebus.Message;
 import com.microsoft.azure.servicebus.TopicClient;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +27,7 @@ import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
 import org.opengroup.osdu.core.common.model.http.CollaborationContext;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,6 +46,9 @@ public class ServiceBusPublisherTest {
     private static final String SERVICE_BUS_TOPIC_NAME = "recordstopic";
 
     private static final String MESSAGE_ID = "message-id";
+    private static final String X_COLLABORATION = "x-collaboration";
+    private static final String MESSAGE = "message";
+    private static final String ACCOUNT_ID = "account-id";
     @Mock
     private DpsHeaders dpsHeaders;
     @Mock
@@ -107,8 +112,11 @@ public class ServiceBusPublisherTest {
             verify(topicClient).send(argumentCaptor.capture());
             Message capturedMessage = argumentCaptor.getValue();
             Map<String, Object> capturedProperties = capturedMessage.getProperties();
-            assertEquals(DATA_PARTITION_WITH_FALLBACK_ACCOUNT_ID, capturedProperties.get("account-id"));
-            assertEquals(expectedProperty, capturedProperties.get("x-collaboration"));
+            String messageBody = new String(capturedMessage.getMessageBody().getBinaryData().get(0), StandardCharsets.US_ASCII);
+            JSONObject message  = (new JSONObject(messageBody)).getJSONObject(MESSAGE);
+            assertEquals(DATA_PARTITION_WITH_FALLBACK_ACCOUNT_ID, capturedProperties.get(ACCOUNT_ID));
+            assertEquals(expectedProperty, capturedProperties.get(X_COLLABORATION));
+            assertEquals(expectedProperty, message.getString(X_COLLABORATION));
         } catch (Exception e) {
             fail("Should not get any exception. Received " + e.getClass());
         }
