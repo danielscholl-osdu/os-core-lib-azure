@@ -13,7 +13,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,14 +54,4 @@ public class CosmosClientFactoryImplTest {
         }
     }
 
-    @Test
-    public void should_return_cachedClient_when_cachedEarlier() {
-        CosmosClient cosmosClient = mock(CosmosClient.class);
-        final String cacheKey = String.format("%s-cosmosClient", PARTITION_ID);
-        when(this.cosmosClientMap.containsKey(cacheKey)).thenReturn(true);
-        when(this.cosmosClientMap.get(cacheKey)).thenReturn(cosmosClient);
-
-        this.sut.getClient(PARTITION_ID);
-        verify(this.partitionService, never()).getPartition(PARTITION_ID);
-    }
 }

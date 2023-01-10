@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.azure.cosmosdb;
 
+import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.ConflictException;
@@ -24,6 +25,7 @@ import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.util.CosmosPagedFlux;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.google.common.base.Strings;
 import org.apache.http.HttpStatus;
@@ -446,6 +448,70 @@ public class CosmosStore {
 
         CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalcontinuationToken);
         return new PageImpl(results, pageRequest, documentNumber);
+    }
+
+    /**
+     * @param dataPartitionId   Data partition id
+     * @param cosmosDBName      Database name
+     * @param collection        Collection name
+     * @param query             {@link SqlQuerySpec} to execute
+     * @param clazz             Class type
+     * @param pageSize          Page size
+     * @param continuationToken Continuation token
+     * @param <T>               Type
+     * @return Page<T> Page of itemns found
+     */
+    public <T> Page<T> queryItemsPageAsync(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final SqlQuerySpec query,
+            final Class<T> clazz,
+            final int pageSize,
+            final String continuationToken) {
+
+        int currentPageNumber = 1;
+        int documentNumber = 0;
+        double requestCharge = 0.0;
+
+        String internalContinuationToken = continuationToken;
+        CosmosAsyncContainer cosmosAsyncContainer = cosmosClientFactory.getAsyncClient(dataPartitionId).getDatabase(cosmosDBName).getContainer(collection);
+
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Receiving a set of query response pages.");
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Continuation Token: " + internalContinuationToken + "\n");
+
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
+        queryOptions.setMaxBufferedItemCount(pageSize);
+
+        final long start = System.currentTimeMillis();
+
+        CosmosPagedFlux<T> cosmosPagedFlux = cosmosAsyncContainer.queryItems(query, queryOptions, clazz);
+        FeedResponse<T> page = cosmosPagedFlux.byPage(pageSize).blockFirst();
+        List<T> results = new ArrayList<>();
+
+        if (page != null) {
+            results.addAll(page.getResults());
+            internalContinuationToken = page.getContinuationToken();
+        }
+
+        final long timeTaken = System.currentTimeMillis() - start;
+        final String dependencyTarget = getDependencyTarget(dataPartitionId, cosmosDBName, collection);
+        final String dependencyData = String.format("query=%s", query.getQueryText());
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done. Retrieved {} results", results.size());
+        final DependencyLoggingOptions options = DependencyLoggingOptions.builder()
+                .type(COSMOS_STORE)
+                .name("QUERY_ITEMS_PAGE_ASYNC")
+                .data(dependencyData)
+                .target(dependencyTarget)
+                .timeTakenInMs(timeTaken)
+                .requestCharge(requestCharge)
+                .resultCode(HttpStatus.SC_OK)
+                .success(true)
+                .build();
+        dependencyLogger.logDependency(options);
+
+        CosmosStorePageRequest pageRequest = CosmosStorePageRequest.of(currentPageNumber, pageSize, internalContinuationToken);
+        return new PageImpl<>(results, pageRequest, documentNumber);
     }
 
     /**
