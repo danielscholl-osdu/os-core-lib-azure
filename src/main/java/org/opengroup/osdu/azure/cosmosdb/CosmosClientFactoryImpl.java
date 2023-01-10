@@ -1,5 +1,6 @@
 package org.opengroup.osdu.azure.cosmosdb;
 
+import com.azure.cosmos.CosmosAsyncClient;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Component;
 public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     private static final String LOGGER_NAME = CosmosClientFactoryImpl.class.getName();
     private static final String SYSTEM_COSMOS_CACHE_KEY = "system_cosmos";
+    private static final String DATA_PARTITION_ID = "dataPartitionId";
 
     @Lazy
     @Autowired
@@ -42,6 +44,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     private SystemCosmosConfig systemCosmosConfig;
 
     private Map<String, CosmosClient> cosmosClientMap;
+    private Map<String, CosmosAsyncClient> cosmosAsyncClientMap;
 
     @Autowired
     private CosmosRetryConfiguration cosmosRetryConfiguration;
@@ -58,6 +61,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     @PostConstruct
     public void initialize() {
         cosmosClientMap = new ConcurrentHashMap<>();
+        cosmosAsyncClientMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -66,14 +70,22 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
      */
     @Override
     public CosmosClient getClient(final String dataPartitionId) {
-        Validators.checkNotNullAndNotEmpty(dataPartitionId, "dataPartitionId");
-
+        Validators.checkNotNullAndNotEmpty(dataPartitionId, DATA_PARTITION_ID);
         String cacheKey = String.format("%s-cosmosClient", dataPartitionId);
-        if (this.cosmosClientMap.containsKey(cacheKey)) {
-            return this.cosmosClientMap.get(cacheKey);
-        }
 
         return this.cosmosClientMap.computeIfAbsent(cacheKey, cosmosClient -> createCosmosClient(dataPartitionId));
+    }
+
+    /**
+     * @param dataPartitionId Data Partition Id
+     * @return Cosmos Async Client instance
+     */
+    @Override
+    public CosmosAsyncClient getAsyncClient(final String dataPartitionId) {
+        Validators.checkNotNullAndNotEmpty(dataPartitionId, DATA_PARTITION_ID);
+        String cacheKey = String.format("%s-cosmosAsyncClient", dataPartitionId);
+
+        return this.cosmosAsyncClientMap.computeIfAbsent(cacheKey, cosmosClient -> createCosmosAsyncClient(dataPartitionId));
     }
 
     /**
@@ -82,9 +94,6 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
     @Override
     public CosmosClient getSystemClient() {
 
-        if (this.cosmosClientMap.containsKey(SYSTEM_COSMOS_CACHE_KEY)) {
-            return this.cosmosClientMap.get(SYSTEM_COSMOS_CACHE_KEY);
-        }
         return this.cosmosClientMap.computeIfAbsent(
                 SYSTEM_COSMOS_CACHE_KEY, cosmosClient -> createSystemCosmosClient()
         );
@@ -118,6 +127,36 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
                 .info("Created CosmosClient for dataPartition {}.", dataPartitionId);
         return cosmosClient;
+    }
+
+    /**
+     *
+     * @param dataPartitionId Data Partition Id
+     * @return Cosmos Async Client Instance
+     */
+    private CosmosAsyncClient createCosmosAsyncClient(final String dataPartitionId) {
+        PartitionInfoAzure pi = this.partitionService.getPartition(dataPartitionId);
+
+        ThrottlingRetryOptions throttlingRetryOptions = cosmosRetryConfiguration.getThrottlingRetryOptions();
+        CosmosAsyncClient cosmosAsyncClient;
+
+        if (msiConfiguration.getIsEnabled()) {
+            cosmosAsyncClient = new CosmosClientBuilder()
+                    .endpoint(pi.getCosmosEndpoint())
+                    .credential(defaultAzureCredential)
+                    .throttlingRetryOptions(throttlingRetryOptions)
+                    .buildAsyncClient();
+        } else {
+            cosmosAsyncClient = new CosmosClientBuilder()
+                    .endpoint(pi.getCosmosEndpoint())
+                    .key(pi.getCosmosPrimaryKey())
+                    .throttlingRetryOptions(throttlingRetryOptions)
+                    .buildAsyncClient();
+        }
+
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
+                .info("Created CosmosAsyncClient for dataPartition {}.", dataPartitionId);
+        return cosmosAsyncClient;
     }
 
     /**
