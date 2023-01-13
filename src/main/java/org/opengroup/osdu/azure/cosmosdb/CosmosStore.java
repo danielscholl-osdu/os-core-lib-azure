@@ -492,6 +492,7 @@ public class CosmosStore {
         if (page != null) {
             results.addAll(page.getResults());
             internalContinuationToken = page.getContinuationToken();
+            requestCharge = page.getRequestCharge();
         }
 
         final long timeTaken = System.currentTimeMillis() - start;
