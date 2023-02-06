@@ -22,7 +22,6 @@ Apache-2.0
 ========================================================================
 The following software have components provided under the terms of this license:
 
-- AHC/Client (from https://repo1.maven.org/maven2/org/asynchttpclient/async-http-client)
 - ASM based accessors helper used by json-smart (from https://urielch.github.io/)
 - Adapter: RxJava (from https://github.com/square/retrofit)
 - Apache Commons BeanUtils (from http://commons.apache.org/proper/commons-beanutils/, https://commons.apache.org/proper/commons-beanutils/, https://repo1.maven.org/maven2/commons-beanutils/commons-beanutils)
@@ -38,6 +37,7 @@ The following software have components provided under the terms of this license:
 - Apache Log4j Core (from https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-core)
 - Apache Log4j JUL Adapter (from https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-jul)
 - Apache Log4j SLF4J Binding (from https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-slf4j-impl)
+- Asynchronous Http Client (from https://repo1.maven.org/maven2/org/asynchttpclient/async-http-client)
 - Asynchronous Http Client Netty Utils (from https://repo1.maven.org/maven2/org/asynchttpclient/async-http-client-netty-utils)
 - Bean Validation API (from http://beanvalidation.org)
 - Brave (from https://repo1.maven.org/maven2/io/zipkin/brave/brave)
@@ -80,7 +80,7 @@ The following software have components provided under the terms of this license:
 - Java Native Access (from https://github.com/java-native-access/jna, https://github.com/twall/jna)
 - Java Native Access Platform (from https://github.com/java-native-access/jna)
 - Java UUID Generator (from http://wiki.fasterxml.com/JugHome)
-- JavaBeans Activation Framework (from https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
+- JavaBeans Activation Framework (from <http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp>, http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp, https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
 - Javassist (from http://www.javassist.org/)
 - JetBrains Java Annotations (from https://github.com/JetBrains/java-annotations)
 - Joda-Time (from http://joda-time.sourceforge.net, http://www.joda.org/joda-time/, https://www.joda.org/joda-time/)
@@ -92,8 +92,8 @@ The following software have components provided under the terms of this license:
 - KeePassJava2 :: Simple (from https://repo1.maven.org/maven2/org/linguafranca/pwdb/KeePassJava2-simple)
 - Kotlin Stdlib (from https://kotlinlang.org/, https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib)
 - Kotlin Stdlib Common (from https://kotlinlang.org/)
-- Kotlin Stdlib Jdk7 (from https://kotlinlang.org/)
-- Kotlin Stdlib Jdk8 (from https://kotlinlang.org/)
+- Kotlin Stdlib Jdk7 (from <https://kotlinlang.org/>, https://kotlinlang.org/)
+- Kotlin Stdlib Jdk8 (from <https://kotlinlang.org/>, https://kotlinlang.org/)
 - LatencyUtils (from http://latencyutils.github.io/LatencyUtils/)
 - Metrics Core (from https://repo1.maven.org/maven2/io/dropwizard/metrics/metrics-core)
 - Microsoft Application Insights Java Agent (from https://github.com/Microsoft/ApplicationInsights-Java)
@@ -114,7 +114,7 @@ The following software have components provided under the terms of this license:
 - Netty/Common (from https://repo1.maven.org/maven2/io/netty/netty-common)
 - Netty/Handler (from https://repo1.maven.org/maven2/io/netty/netty-handler)
 - Netty/Handler/Proxy (from https://repo1.maven.org/maven2/io/netty/netty-handler-proxy)
-- Netty/Incubator/Codec/Classes/Quic (from https://repo1.maven.org/maven2/io/netty/incubator/netty-incubator-codec-classes-quic)
+- Netty/Incubator/Codec/Classes/Quic (from <https://repo1.maven.org/maven2/io/netty/incubator/netty-incubator-codec-classes-quic>, https://repo1.maven.org/maven2/io/netty/incubator/netty-incubator-codec-classes-quic)
 - Netty/Resolver (from https://repo1.maven.org/maven2/io/netty/netty-resolver)
 - Netty/Resolver/DNS (from https://repo1.maven.org/maven2/io/netty/netty-resolver-dns)
 - Netty/Resolver/DNS/Classes/MacOS (from https://repo1.maven.org/maven2/io/netty/netty-resolver-dns-classes-macos)
@@ -276,7 +276,7 @@ The following software have components provided under the terms of this license:
 - Apache Log4j Core (from https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-core)
 - Jakarta Activation API (from https://github.com/eclipse-ee4j/jaf, https://repo1.maven.org/maven2/jakarta/activation/jakarta.activation-api)
 - Java Architecture for XML Binding (from http://jaxb.java.net/, https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api)
-- JavaBeans Activation Framework (from https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
+- JavaBeans Activation Framework (from <http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp>, http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp, https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
 - javax.annotation-api (from http://jcp.org/en/jsr/detail?id=250)
 
 ========================================================================
@@ -285,7 +285,7 @@ CDDL-1.1
 The following software have components provided under the terms of this license:
 
 - Java Architecture for XML Binding (from http://jaxb.java.net/, https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api)
-- JavaBeans Activation Framework (from https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
+- JavaBeans Activation Framework (from <http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp>, http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp, https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
 - javax.annotation-api (from http://jcp.org/en/jsr/detail?id=250)
 - tomcat-embed-core (from http://tomcat.apache.org/)
 
@@ -337,7 +337,7 @@ The following software have components provided under the terms of this license:
 
 - Jakarta Annotations API (from https://projects.eclipse.org/projects/ee4j.ca)
 - Java Architecture for XML Binding (from http://jaxb.java.net/, https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api)
-- JavaBeans Activation Framework (from https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
+- JavaBeans Activation Framework (from <http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp>, http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp, https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
 - tomcat-embed-core (from http://tomcat.apache.org/)
 
 ========================================================================
@@ -348,7 +348,7 @@ The following software have components provided under the terms of this license:
 - Jakarta Annotations API (from https://projects.eclipse.org/projects/ee4j.ca)
 - Jakarta Bean Validation API (from https://beanvalidation.org)
 - Java Architecture for XML Binding (from http://jaxb.java.net/, https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api)
-- JavaBeans Activation Framework (from https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
+- JavaBeans Activation Framework (from <http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp>, http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp, https://repo1.maven.org/maven2/com/sun/activation/javax.activation)
 - javax.annotation-api (from http://jcp.org/en/jsr/detail?id=250)
 - tomcat-embed-core (from http://tomcat.apache.org/)
 
