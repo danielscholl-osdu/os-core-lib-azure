@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.util.ServletRequestPathUtils;
@@ -81,10 +82,11 @@ public class Slf4jMDCFilter implements Filter {
         contextMap.put(DpsHeaders.DATA_PARTITION_ID, dpsHeaders.getPartitionId());
 
         //Adding custom columns for business metric
-
-        String operationApiPath = getOperationName(servletRequest);
         contextMap.put("api-method", ((HttpServletRequest) servletRequest).getMethod());
-        contextMap.put("operation-name", operationApiPath);
+        String operationApiPath = getOperationName(servletRequest);
+        if (operationApiPath != null) {
+            contextMap.put("operation-name", operationApiPath);
+        }
 
         if (dpsHeaders.getAppId() != null) {
             contextMap.put("app-id", dpsHeaders.getAppId());
@@ -125,7 +127,11 @@ public class Slf4jMDCFilter implements Filter {
         }
 
         try {
-            operationApiPath = handlerApiMap.get(Objects.requireNonNull(requestMappingHandlerMapping.getHandler((HttpServletRequest) servletRequest)).getHandler().toString());
+            HandlerExecutionChain handlerExecutionChain = requestMappingHandlerMapping.getHandler((HttpServletRequest) servletRequest);
+            if (handlerExecutionChain == null) {
+                return operationApiPath;
+            }
+            operationApiPath = handlerApiMap.get(Objects.requireNonNull(handlerExecutionChain).getHandler().toString());
         } catch (Exception e) {
             LOGGER.warn("Unable to get the operation-name due to {}", e.getMessage(), e);
         }
