@@ -26,7 +26,7 @@ import org.opengroup.osdu.core.common.model.http.AppException;
  */
 public final class AzureServicePrincipal {
 
-    private static final int ERROR_STATUS_CODE = 204;
+    private static final int ERROR_STATUS_CODE = 500;
     private static final String ERROR_REASON = "Received empty token";
     private static final String ERROR_MESSAGE_SPN = "SPN client returned null token";
     private static final String ERROR_MESSAGE_MSI = "MSI client returned null token";
@@ -39,24 +39,27 @@ public final class AzureServicePrincipal {
      * @return                  AUTHENTICATION TOKEN
      */
     public String getIdToken(final String sp_id, final String sp_secret, final String tenant_id, final String app_resource_id) {
+        System.out.println("Access token token_msi is starting to build - abhiramTesting");
 
         IdentityClientBuilder identityClientBuilder = createIdentityClientBuilder();
-        System.out.println("IdentityClientBuilder created");
-
         IdentityClient identityClientSPN = identityClientBuilder.tenantId(tenant_id)
                 .clientId(sp_id)
                 .clientSecret(sp_secret)
                 .build();
+        System.out.println("identityClientSPN created");
+
         TokenRequestContext requestContextSPN = new TokenRequestContext();
         String scope = String.format(app_resource_id, "/.default");
         requestContextSPN.addScopes(scope);
         AccessToken tokenSpnCreds = identityClientSPN.authenticateWithConfidentialClient(requestContextSPN).block();
-        System.out.println("Access token token_spn_creds generated");
+        System.out.println("Access token token_spn_creds generated - abhiramTesting");
 
-        if (tokenSpnCreds == null) {
-            throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, ERROR_MESSAGE_SPN);
+        if (tokenSpnCreds != null && tokenSpnCreds.getToken() != null) {
+            System.out.println("Access token token_spn_creds is not null - abhiramTesting");
+            System.out.println(tokenSpnCreds.getToken());
+            return tokenSpnCreds.getToken();
         }
-        return tokenSpnCreds.getToken();
+        throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, ERROR_MESSAGE_SPN);
     }
 
     /**
@@ -64,18 +67,23 @@ public final class AzureServicePrincipal {
      * @return AUTHENTICATION TOKEN
      */
     public String getMSIToken() {
+        System.out.println("Access token token_msi is starting to build - abhiramTesting");
 
         IdentityClientBuilder identityClientBuilder = createIdentityClientBuilder();
         IdentityClient identityClientMSI = identityClientBuilder.build();
+        System.out.println("identityClientMSI created");
 
         TokenRequestContext requestContextMSI = new TokenRequestContext();
         requestContextMSI.addScopes("https://management.azure.com/");
         AccessToken tokenMsi =  identityClientMSI.authenticateToIMDSEndpoint(requestContextMSI).block();
-        System.out.println("Access token token_msi generated");
-        if (tokenMsi == null) {
-            throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, ERROR_MESSAGE_MSI);
+        System.out.println("Access token token_msi generated - abhiramTesting");
+
+        if (tokenMsi != null && tokenMsi.getToken() != null) {
+            System.out.println("Access token token_msi is not null - abhiramTesting\n");
+            System.out.println(tokenMsi.getToken());
+            return tokenMsi.getToken();
         }
-        return tokenMsi.getToken();
+        throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, ERROR_MESSAGE_MSI);
     }
 
     /**
