@@ -6,20 +6,17 @@ import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.web.util.ServletRequestPathUtils;
 
 import javax.servlet.Filter;
-import javax.servlet.ServletContext;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -29,6 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * MDC Filter for logging.
@@ -45,11 +43,14 @@ import java.util.Objects;
 @Order(-104)
 public class Slf4jMDCFilter implements Filter {
 
+    private Map<String, String> handlerApiMap = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(Slf4jMDCFilter.class);
     @Autowired
     private DpsHeaders dpsHeaders;
     @Autowired
     private AuthUtils authUtils;
+    @Autowired
+    private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     /**
      * Filter logic.
@@ -71,19 +72,21 @@ public class Slf4jMDCFilter implements Filter {
 
     /**
      * Method to create context map for mdc.
+     *
      * @param servletRequest Response Object
      * @return Context map.
      */
-    private Map<String, String> getContextMap(final ServletRequest servletRequest)  {
+    private Map<String, String> getContextMap(final ServletRequest servletRequest) {
         final Map<String, String> contextMap = new HashMap<>();
         contextMap.put(DpsHeaders.CORRELATION_ID, dpsHeaders.getCorrelationId());
         contextMap.put(DpsHeaders.DATA_PARTITION_ID, dpsHeaders.getPartitionId());
 
         //Adding custom columns for business metric
-
-        String operationApiPath = getOperationName(servletRequest);
         contextMap.put("api-method", ((HttpServletRequest) servletRequest).getMethod());
-        contextMap.put("operation-name", operationApiPath);
+        String operationApiPath = getOperationName(servletRequest);
+        if (operationApiPath != null) {
+            contextMap.put("operation-name", operationApiPath);
+        }
 
         if (dpsHeaders.getAppId() != null) {
             contextMap.put("app-id", dpsHeaders.getAppId());
@@ -106,36 +109,44 @@ public class Slf4jMDCFilter implements Filter {
         return claimsSet == null ? null : claimsSet.getSubject();
     }
 
-
     /**
      * Method to create context map for mdc.
+     *
      * @param servletRequest Response Object
      * @return OperationApiPath name
      */
     private String getOperationName(final ServletRequest servletRequest) {
-
         String operationApiPath = "";
-        ServletContext servletContext = ((HttpServletRequest) servletRequest).getSession().getServletContext();
-        WebApplicationContext appContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
 
-        if (appContext != null) {
-            Map<String, HandlerMapping> allRequestMappings = BeanFactoryUtils.beansOfTypeIncludingAncestors(appContext, HandlerMapping.class, true, false);
-            HandlerMapping handlerMapping = allRequestMappings.get("requestMappingHandlerMapping");
-            RequestMappingHandlerMapping requestMappingHandlerMapping = (RequestMappingHandlerMapping) handlerMapping;
-            Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
-            /* Swapping key value pair */
-            Map<String, String> handlerApiMap = new HashMap<>();
-            for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
-                handlerApiMap.put(entry.getValue().toString(), entry.getKey().toString());
-            }
+        if (!ServletRequestPathUtils.hasParsedRequestPath(servletRequest)) {
+            ServletRequestPathUtils.parseAndCache((HttpServletRequest) servletRequest);
+        }
 
-            try {
-                operationApiPath = handlerApiMap.get(Objects.requireNonNull(requestMappingHandlerMapping.getHandler((HttpServletRequest) servletRequest)).getHandler().toString());
-            } catch (Exception e) {
-                LOGGER.warn("Unable to get the operation-name  due to {}", e.getMessage(), e);
+        if (handlerApiMap.isEmpty()) {
+            parseAndCacheApiPaths();
+        }
+
+        try {
+            HandlerExecutionChain handlerExecutionChain = requestMappingHandlerMapping.getHandler((HttpServletRequest) servletRequest);
+            if (handlerExecutionChain == null) {
+                return operationApiPath;
             }
+            operationApiPath = handlerApiMap.get(Objects.requireNonNull(handlerExecutionChain).getHandler().toString());
+        } catch (Exception e) {
+            LOGGER.warn("Unable to get the operation-name due to {}", e.getMessage(), e);
         }
         return operationApiPath;
+    }
+
+    /**
+     * Populates and caches context map.
+     */
+    private void parseAndCacheApiPaths() {
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
+        /* Swapping key value pair */
+        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
+            handlerApiMap.put(entry.getValue().toString(), entry.getKey().toString());
+        }
     }
 }
 
