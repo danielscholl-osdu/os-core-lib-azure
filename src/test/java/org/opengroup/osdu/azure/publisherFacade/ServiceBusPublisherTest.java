@@ -16,16 +16,23 @@ package org.opengroup.osdu.azure.publisherFacade;
 import com.microsoft.azure.servicebus.Message;
 import com.microsoft.azure.servicebus.TopicClient;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.opengroup.osdu.azure.servicebus.TopicClientFactoryImpl;
 import org.opengroup.osdu.core.common.logging.JaxRsDpsLog;
+import org.opengroup.osdu.core.common.model.http.CollaborationContext;
 import org.opengroup.osdu.core.common.model.http.DpsHeaders;
 
-import java.util.Random;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +44,11 @@ public class ServiceBusPublisherTest {
     private static final String CORRELATION_ID = "correlation-id";
     private static final String PARTITION_ID = "partition-id";
     private static final String SERVICE_BUS_TOPIC_NAME = "recordstopic";
+
     private static final String MESSAGE_ID = "message-id";
+    private static final String X_COLLABORATION = "x-collaboration";
+    private static final String MESSAGE = "message";
+    private static final String ACCOUNT_ID = "account-id";
     @Mock
     private DpsHeaders dpsHeaders;
     @Mock
@@ -60,7 +71,6 @@ public class ServiceBusPublisherTest {
     @BeforeEach
     public void init() throws ServiceBusException, InterruptedException {
         initMocks(this);
-
         lenient().doReturn(DATA_PARTITION_WITH_FALLBACK_ACCOUNT_ID).when(dpsHeaders).getPartitionIdWithFallbackToAccountId();
         lenient().doReturn(PARTITION_ID).when(dpsHeaders).getPartitionId();
         lenient().doReturn(CORRELATION_ID).when(dpsHeaders).getCorrelationId();
@@ -68,15 +78,18 @@ public class ServiceBusPublisherTest {
         lenient().doReturn(batch).when(publisherInfo).getBatch();
         lenient().doReturn(topicClient).when(topicClientFactory).getClient(any(), any());
         lenient().doReturn(MESSAGE_ID).when(publisherInfo).getMessageId();
+
     }
 
     @Test
     public void shouldPublishToServiceBus() {
         try {
+            UUID CollaborationId = UUID.randomUUID();
+            CollaborationContext collaborationContext = CollaborationContext.builder().id(CollaborationId).application("unit test").build();
             doReturn(topicClient).when(topicClientFactory).getClient(PARTITION_ID, SERVICE_BUS_TOPIC_NAME);
             doNothing().when(topicClient).send(message);
             doReturn("3").when(pubsubConfiguration).getRetryLimit();
-            sut.publishToServiceBus(dpsHeaders, publisherInfo);
+            sut.publishToServiceBus(dpsHeaders, publisherInfo,Optional.of(collaborationContext));
             verify(topicClientFactory, times(1)).getClient(PARTITION_ID, SERVICE_BUS_TOPIC_NAME);
         } catch (Exception e) {
             fail("Should not get any exception. Received " + e.getClass());
@@ -84,10 +97,37 @@ public class ServiceBusPublisherTest {
     }
 
     @Test
+    public void shouldPublishToServiceBusWithCollaborationContext() {
+        try {
+            UUID CollaborationId = UUID.randomUUID();
+            CollaborationContext collaborationContext = CollaborationContext.builder().id(CollaborationId).application("unit test").build();
+            String expectedProperty = "id=" + collaborationContext.getId()
+                    + ",application=" + collaborationContext.getApplication();
+            doReturn("3").when(pubsubConfiguration).getRetryLimit();
+            ArgumentCaptor<Message> argumentCaptor = ArgumentCaptor.forClass(Message.class);
+            String partitionId = dpsHeaders.getPartitionId();
+            String topic = publisherInfo.getServiceBusTopicName();
+            doReturn(topicClient).when(topicClientFactory).getClient(partitionId,topic);
+            sut.publishToServiceBus(dpsHeaders, publisherInfo,Optional.of(collaborationContext));
+            verify(topicClient).send(argumentCaptor.capture());
+            Message capturedMessage = argumentCaptor.getValue();
+            Map<String, Object> capturedProperties = capturedMessage.getProperties();
+            String messageBody = new String(capturedMessage.getMessageBody().getBinaryData().get(0), StandardCharsets.US_ASCII);
+            JSONObject message  = (new JSONObject(messageBody)).getJSONObject(MESSAGE);
+            assertEquals(DATA_PARTITION_WITH_FALLBACK_ACCOUNT_ID, capturedProperties.get(ACCOUNT_ID));
+            assertEquals(expectedProperty, capturedProperties.get(X_COLLABORATION));
+            assertEquals(expectedProperty, message.getString(X_COLLABORATION));
+        } catch (Exception e) {
+            fail("Should not get any exception. Received " + e.getClass());
+        }
+    }
+
+
+    @Test
     public void shouldThrowExceptionWhenPublishToServiceBusFails() {
         try {
             doThrow(new Exception()).when(topicClientFactory).getClient(PARTITION_ID, SERVICE_BUS_TOPIC_NAME);
-            sut.publishToServiceBus(dpsHeaders, publisherInfo);
+            sut.publishToServiceBus(dpsHeaders, publisherInfo, Optional.empty());
             fail("Should throw exception");
         } catch (Exception e) {
             assertNotNull(e);
