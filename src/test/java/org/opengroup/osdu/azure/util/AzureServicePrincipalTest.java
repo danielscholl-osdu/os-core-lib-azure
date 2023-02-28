@@ -65,6 +65,24 @@ public class AzureServicePrincipalTest {
     }
 
     @Test
+    public void TestGenerateIDToken_failure() throws Exception {
+
+        AccessToken accessToken = new AccessToken(accessTokenContent, OffsetDateTime.now());
+
+        when(azureServicePrincipal.createIdentityClientBuilder()).thenReturn(identityClientBuilder);
+
+        when(identityClientBuilder.tenantId(any(String.class))).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.clientId(any(String.class))).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.clientSecret(any(String.class))).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.build()).thenReturn(identityClient);
+
+        when(identityClient.authenticateWithConfidentialClient(any(TokenRequestContext.class))).thenReturn(responseMono);
+        when(responseMono.block()).thenReturn(null);
+
+        assertThrows(AppException.class, () -> azureServicePrincipal.getIdToken(spId, spSecret, tenantId, appResourceId));
+    }
+
+    @Test
     public void TestGenerateMsiToken() throws Exception {
 
         AccessToken accessToken = new AccessToken(accessTokenContent, OffsetDateTime.now());
@@ -76,6 +94,18 @@ public class AzureServicePrincipalTest {
 
         String result = azureServicePrincipal.getMSIToken();
         assertEquals(accessTokenContent, result);
+    }
+
+    @Test
+    public void TestGenerateMsiToken_failure() throws Exception {
+        AccessToken accessToken = new AccessToken(accessTokenContent, OffsetDateTime.now());
+
+        when(azureServicePrincipal.createIdentityClientBuilder()).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.build()).thenReturn(identityClient);
+        when(identityClient.authenticateToIMDSEndpoint(any(TokenRequestContext.class))).thenReturn(responseMono);
+        when(responseMono.block()).thenReturn(null);
+
+        assertThrows(AppException.class, () -> azureServicePrincipal.getMSIToken());
     }
 
     /**
