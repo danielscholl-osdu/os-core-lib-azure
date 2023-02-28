@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import static org.mockito.Mockito.verify;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import reactor.core.publisher.Mono;
 
@@ -18,6 +19,7 @@ import java.time.OffsetDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,6 +60,10 @@ public class AzureServicePrincipalTest {
 
         String result = azureServicePrincipal.getIdToken(spId, spSecret, tenantId, appResourceId);
         assertEquals(accessTokenContent, result);
+
+        verify(identityClientBuilder, times(1)).build();
+        verify(identityClient, times(1)).authenticateWithConfidentialClient(any(TokenRequestContext.class));
+        verify(responseMono, times(1)).block();
     }
 
     @Test
@@ -76,7 +82,10 @@ public class AzureServicePrincipalTest {
         when(responseMono.block()).thenReturn(null);
 
         assertThrows(AppException.class, () -> azureServicePrincipal.getIdToken(spId, spSecret, tenantId, appResourceId));
-    }
+
+        verify(identityClientBuilder, times(1)).build();
+        verify(identityClient, times(1)).authenticateWithConfidentialClient(any(TokenRequestContext.class));
+        verify(responseMono, times(1)).block();    }
 
     @Test
     public void TestGenerateMsiToken() throws Exception {
@@ -90,6 +99,10 @@ public class AzureServicePrincipalTest {
 
         String result = azureServicePrincipal.getMSIToken();
         assertEquals(accessTokenContent, result);
+
+        verify(identityClientBuilder, times(1)).build();
+        verify(identityClient, times(1)).authenticateToIMDSEndpoint(any(TokenRequestContext.class));
+        verify(responseMono, times(1)).block();
     }
 
     @Test
@@ -102,6 +115,10 @@ public class AzureServicePrincipalTest {
         when(responseMono.block()).thenReturn(null);
 
         assertThrows(AppException.class, () -> azureServicePrincipal.getMSIToken());
+
+        verify(identityClientBuilder, times(1)).build();
+        verify(identityClient, times(1)).authenticateToIMDSEndpoint(any(TokenRequestContext.class));
+        verify(responseMono, times(1)).block();
     }
 
     /**
