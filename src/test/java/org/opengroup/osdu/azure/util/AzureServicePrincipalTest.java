@@ -50,9 +50,9 @@ public class AzureServicePrincipalTest {
 
         when(azureServicePrincipal.createIdentityClientBuilder()).thenReturn(identityClientBuilder);
 
-        when(identityClientBuilder.tenantId(any(String.class))).thenReturn(identityClientBuilder);
-        when(identityClientBuilder.clientId(any(String.class))).thenReturn(identityClientBuilder);
-        when(identityClientBuilder.clientSecret(any(String.class))).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.tenantId(tenantId)).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.clientId(spId)).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.clientSecret(spSecret)).thenReturn(identityClientBuilder);
         when(identityClientBuilder.build()).thenReturn(identityClient);
 
         when(identityClient.authenticateWithConfidentialClient(any(TokenRequestContext.class))).thenReturn(responseMono);
@@ -73,9 +73,9 @@ public class AzureServicePrincipalTest {
 
         when(azureServicePrincipal.createIdentityClientBuilder()).thenReturn(identityClientBuilder);
 
-        when(identityClientBuilder.tenantId(any(String.class))).thenReturn(identityClientBuilder);
-        when(identityClientBuilder.clientId(any(String.class))).thenReturn(identityClientBuilder);
-        when(identityClientBuilder.clientSecret(any(String.class))).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.tenantId(tenantId)).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.clientId(spId)).thenReturn(identityClientBuilder);
+        when(identityClientBuilder.clientSecret(spSecret)).thenReturn(identityClientBuilder);
         when(identityClientBuilder.build()).thenReturn(identityClient);
 
         when(identityClient.authenticateWithConfidentialClient(any(TokenRequestContext.class))).thenReturn(responseMono);
