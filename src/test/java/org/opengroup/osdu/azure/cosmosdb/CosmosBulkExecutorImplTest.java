@@ -1,5 +1,13 @@
 package org.opengroup.osdu.azure.cosmosdb;
 
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.models.CosmosBulkExecutionOptions;
+import com.azure.cosmos.models.CosmosBulkItemResponse;
+import com.azure.cosmos.models.CosmosBulkOperationResponse;
+import com.azure.cosmos.models.CosmosItemOperation;
+import com.azure.cosmos.models.CosmosPatchOperations;
 import com.google.gson.Gson;
 import com.microsoft.azure.documentdb.DocumentClientException;
 import com.microsoft.azure.documentdb.bulkexecutor.BulkImportResponse;
@@ -73,6 +81,39 @@ public class CosmosBulkExecutorImplTest {
         verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
         DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
         verifyDependencyLogging(actualLoggingOptions, "UPSERT_ITEMS", "collectionName=collection", "cosmosdb/collection", 1.0, 200, true);
+    }
+
+    @Test
+    public void bulkPatch_Success() throws DocumentClientException {
+        CosmosClient cosmosClient = mock(CosmosClient.class);
+        CosmosContainer cosmosContainer = mock(CosmosContainer.class);
+        CosmosPatchOperations cosmosPatchOperations = mock(CosmosPatchOperations.class);
+        CosmosItemOperation cosmosItemOperation = mock(CosmosItemOperation.class);
+        CosmosBulkExecutionOptions cosmosBulkExecutionOptions = mock(CosmosBulkExecutionOptions.class);
+        cosmosBulkExecutionOptions.setMaxMicroBatchConcurrency(1);
+        List<CosmosItemOperation> cosmosItemOperations = new ArrayList<>();
+        cosmosItemOperations.add(cosmosItemOperation);
+        CosmosBulkOperationResponse cosmosBulkOperationResponse = mock(CosmosBulkOperationResponse.class);
+        List<CosmosBulkOperationResponse> bulkPatchResponse = new ArrayList<>();
+        bulkPatchResponse.add(cosmosBulkOperationResponse);
+        List<String> ids = new ArrayList<>();
+        ids.add("id1");
+
+        lenient().doReturn(cosmosClient).when(cosmosClientFactory).getClient(DATA_PARTITION_ID);
+        CosmosBulkItemResponse cosmosBulkItemResponse = mock(CosmosBulkItemResponse.class);
+        lenient().doReturn(cosmosBulkItemResponse).when(cosmosBulkOperationResponse).getResponse();
+        lenient().doReturn(bulkPatchResponse).when(cosmosContainer).executeBulkOperations(cosmosItemOperations, cosmosBulkExecutionOptions);
+        CosmosDatabase cosmosDatabase = mock(CosmosDatabase.class);
+        when(cosmosClient.getDatabase(COSMOS_DB)).thenReturn(cosmosDatabase);
+        when(cosmosDatabase.getContainer(COLLECTION)).thenReturn(cosmosContainer);
+        ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
+
+        this.sut.bulkPatchWithCosmosClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ids, cosmosPatchOperations, ids, 1);
+
+        verify(this.cosmosClientFactory, times(1)).getClient(DATA_PARTITION_ID);
+        verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
+        DependencyLoggingOptions actualLoggingOptions = loggingOptionsArgumentCaptor.getValue();
+        verifyDependencyLogging(actualLoggingOptions, "PATCH_ITEMS", "partition_key=[id1]", "cosmosdb/collection", 0.0, 200, true);
     }
 
     private void verifyDependencyLogging(DependencyLoggingOptions capturedLoggingOptions, String name, String data, String target, double requestCharge, int resultCode, boolean success) {
