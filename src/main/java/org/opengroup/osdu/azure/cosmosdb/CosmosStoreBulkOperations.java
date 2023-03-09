@@ -210,14 +210,14 @@ public class CosmosStoreBulkOperations {
                 } else {
                     LOGGER.error(
                             "The operation for Item : [{}] Failed. Response code : {}. , Request Charge: {}, Exception : {}",
-                            cosmosItemOperation.getItem().toString(),
+                            cosmosItemOperation.getId(),
                             cosmosBulkItemResponse.getStatusCode(),
                             cosmosBulkItemResponse.getRequestCharge(),
                             cosmosBulkOperationResponse.getException());
                     if (cosmosBulkOperationResponse.getException() != null) {
-                        exceptions.add(cosmosItemOperation.getId() + ":Error occurred for " + operation + " operation. Exception is: " + cosmosBulkOperationResponse.getException().toString());
+                        exceptions.add(cosmosItemOperation.getId() + "| Error occurred for " + operation + " operation with status code |" + cosmosBulkItemResponse.getStatusCode() + "| Exception is: " + cosmosBulkOperationResponse.getException().toString());
                     } else {
-                        exceptions.add(cosmosItemOperation.getId() + ":Internal error occurred for " + operation + " operation");
+                        exceptions.add(cosmosItemOperation.getId() + "| Internal error occurred for " + operation + " operation with status code |" + cosmosBulkItemResponse.getStatusCode());
                     }
                     if (cosmosBulkItemResponse.getStatusCode() >= 500) {
                         statusCode[0] = cosmosBulkItemResponse.getStatusCode();
