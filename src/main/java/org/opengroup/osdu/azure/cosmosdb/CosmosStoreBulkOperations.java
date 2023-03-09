@@ -215,9 +215,9 @@ public class CosmosStoreBulkOperations {
                             cosmosBulkItemResponse.getRequestCharge(),
                             cosmosBulkOperationResponse.getException());
                     if (cosmosBulkOperationResponse.getException() != null) {
-                        exceptions.add(cosmosBulkOperationResponse.getException().toString());
+                        exceptions.add(cosmosItemOperation.getId() + ":" + cosmosBulkOperationResponse.getException().toString());
                     } else {
-                        exceptions.add("Error occurred while " + operation + " operation");
+                        exceptions.add(cosmosItemOperation.getId() + ":" + "Internal error occurred while " + operation + " operation");
                     }
                     if (cosmosBulkItemResponse.getStatusCode() >= 500) {
                         statusCode[0] = cosmosBulkItemResponse.getStatusCode();
