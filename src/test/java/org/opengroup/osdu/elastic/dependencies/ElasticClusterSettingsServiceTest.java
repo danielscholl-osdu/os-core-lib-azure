@@ -14,6 +14,7 @@
 
 package org.opengroup.osdu.elastic.dependencies;
 
+import kotlin.collections.UArraySortingKt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +30,10 @@ import org.opengroup.osdu.core.common.multitenancy.ITenantInfoService;
 import org.opengroup.osdu.core.common.provider.interfaces.IElasticRepository;
 
 import javax.inject.Provider;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -61,6 +66,21 @@ class ElasticClusterSettingsServiceTest {
         doReturn(tenant).when(tenantService).getTenantInfo();
     }
 
+    void mockMultiTenants(List<String> dataPartitionIDs){
+        //mock the tenant service
+        ITenantInfoService tenantService = mock(ITenantInfoService.class);
+        doReturn(tenantService).when(tenantProvider).get();
+
+        List<TenantInfo> tenantInfos = new ArrayList<>();
+        //mock the tenants
+        for (String tenant: dataPartitionIDs) {
+            TenantInfo tn = new TenantInfo();
+            tn.setName(tenant);
+            tn.setDataPartitionId(tenant);
+            tenantInfos.add(tn);
+        }
+        doReturn(tenantInfos).when(tenantService).getAllTenantInfos();
+    }
     @Test
     void get_willCacheBasedOnTenantName(){
         doReturn(mock(ClusterSettings.class)).when(esRepo).getElasticClusterSettings(any());
@@ -74,5 +94,13 @@ class ElasticClusterSettingsServiceTest {
         esSettingsService.getElasticClusterInformation();
 
         verify(esRepo, times(2)).getElasticClusterSettings(any());
+    }
+
+    @Test
+    void get_AllClusterSettings(){
+        doReturn(mock(ClusterSettings.class)).when(esRepo).getElasticClusterSettings(any());
+        mockMultiTenants(Arrays.asList("t1", "t2", "t3"));
+        esSettingsService.getAllClustersSettings();
+        verify(esRepo, times(3)).getElasticClusterSettings(any());
     }
 }
