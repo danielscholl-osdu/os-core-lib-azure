@@ -45,6 +45,7 @@ public class PartitionServiceClient {
      */
     public PartitionInfoAzure getPartition(final String partitionId) throws AppException {
         Validators.checkNotNullAndNotEmpty(partitionId, "partitionId");
+        Validators.checkValidDataPartition(partitionId);
         try {
             IPartitionProvider serviceClient = getServiceClient();
             PartitionInfo partitionInfo = serviceClient.get(partitionId);

@@ -14,12 +14,19 @@
 
 package org.opengroup.osdu.common;
 
+import org.apache.http.HttpStatus;
+import org.opengroup.osdu.core.common.model.http.AppException;
+
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A collection of useful validators.
  */
 public final class Validators {
+
+    private static final String WHITELISTED_CHARACTERS = "[-_[A-Za-z0-9]]";
 
     /**
      * This class is all static methods - no need for a constructor to be public.
@@ -57,4 +64,37 @@ public final class Validators {
             throw new IllegalArgumentException(fieldName + " cannot be empty!");
         }
     }
+
+    /**
+     * Throws an
+     * Throws a {@link IllegalArgumentException} if it is not valid.
+     *
+     * @param data      The field which should not be null or empty
+     * @throws IllegalArgumentException  if the string is empty
+     * @throws NullPointerException  if the string is null
+     */
+    public static void checkValidDataPartition(
+            final String data) {
+        if (!checkValidString(data)) {
+            throw new AppException(HttpStatus.SC_FORBIDDEN, "Service unavailable", String.format("Data partition name: %s is not valid", data));
+        }
+    }
+
+    /**
+     * Helper function to check if the input string contains only the allowed characters
+     * Alphanumeric characters and - and underscore...
+     * We match the length of input string and the length of characters matched from the allowed list
+     * @param input      The field which should not be null or empty
+     * @return Boolean
+     * */
+    private static Boolean checkValidString(final String input) {
+        Pattern pattern = Pattern.compile(WHITELISTED_CHARACTERS);
+        Matcher matcher = pattern.matcher(input);
+        int matchedCharacterCount = 0;
+        while (matcher.find()) {
+            matchedCharacterCount++;
+        }
+        return matchedCharacterCount == input.length();
+    }
+
 }
