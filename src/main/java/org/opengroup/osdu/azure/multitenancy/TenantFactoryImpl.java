@@ -130,7 +130,7 @@ public class TenantFactoryImpl implements ITenantFactory {
         try {
             partitionInfo = this.partitionService.getPartition(tenantId);
         } catch (AppException e) {
-            this.logger.error(LOG_PREFIX, String.format("Error getting tenant: %s via partition service.", tenantId), Collections.emptyMap());
+            this.logger.error(LOG_PREFIX, String.format("Error getting tenant: %s via partition service.", tenantId), e, Collections.emptyMap());
             return;
         }
 
