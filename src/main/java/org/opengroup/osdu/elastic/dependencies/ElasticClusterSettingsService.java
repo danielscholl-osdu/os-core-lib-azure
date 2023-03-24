@@ -28,6 +28,9 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of {@link IElasticSettingService} for Azure.
@@ -85,5 +88,45 @@ public class ElasticClusterSettingsService implements IElasticSettingService {
 
         this.clusterSettingsCache.put(cacheKey, clusterSettings);
         return clusterSettings;
+    }
+
+    /**
+     * @return {@link Map} that can be used to show versions of elastic search from connected services
+     */
+    @Override
+    public Map<String, ClusterSettings> getAllClustersSettings() {
+        List<TenantInfo> tenantInfos = tenantProvider.get().getAllTenantInfos();
+        Map<String, ClusterSettings> mapClusterSettings = new HashMap<>();
+        for (TenantInfo tenantInfo: tenantInfos) {
+            ClusterSettings clusterSettings = getClusterSettingsByTenantInfo(tenantInfo);
+            if (clusterSettings != null) {
+                mapClusterSettings.put(tenantInfo.getDataPartitionId(), clusterSettings);
+            }
+        }
+        return mapClusterSettings;
+    }
+    /**
+     * @return {@link ClusterSettings} helper function to get cluster setting for each tenant.
+     * @param tenantInfo tenant for which this function is called
+     */
+    private ClusterSettings getClusterSettingsByTenantInfo(final TenantInfo tenantInfo) {
+        String cacheKey = this.clusterSettingsCache.getCacheKey(tenantInfo.getName());
+
+        ClusterSettings cachedSettings = this.clusterSettingsCache.get(cacheKey);
+        if (cachedSettings != null) {
+            return cachedSettings;
+        }
+        this.log.warning(String.format("elastic-credential cache missed for tenant: %s", tenantInfo.getName()));
+        try {
+            ClusterSettings clusterSettings = esRepo.getElasticClusterSettings(tenantInfo);
+            if (clusterSettings != null) {
+                this.clusterSettingsCache.put(cacheKey, clusterSettings);
+                return clusterSettings;
+            }
+            this.log.warning(String.format("cluster setting were not found for tenant: %s", tenantInfo.getName()));
+        } catch (Exception e) {
+            this.log.warning(String.format("exception while fetching cluster settings: %s", e.getMessage()));
+        }
+        return null;
     }
 }
