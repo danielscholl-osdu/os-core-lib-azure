@@ -389,6 +389,30 @@ public class CosmosStore {
             final Class<T> clazz,
             final int pageSize,
             final String continuationToken) {
+        return queryItemsPage(dataPartitionId, cosmosDBName, collection, query, clazz, pageSize, continuationToken, new CosmosQueryRequestOptions());
+    }
+
+    /**
+     * @param dataPartitionId   Data partition id
+     * @param cosmosDBName      Database name
+     * @param collection        Collection name
+     * @param query             {@link SqlQuerySpec} to execute
+     * @param clazz             Class type
+     * @param pageSize          Page size
+     * @param continuationToken Continuation token
+     * @param queryOptions      Query options
+     * @param <T>               Type
+     * @return Page<T> Page of itemns found
+     */
+    public <T> Page<T> queryItemsPage(
+            final String dataPartitionId,
+            final String cosmosDBName,
+            final String collection,
+            final SqlQuerySpec query,
+            final Class<T> clazz,
+            final int pageSize,
+            final String continuationToken,
+            final CosmosQueryRequestOptions queryOptions) {
 
         int currentPageNumber = 1;
         int iterationNumber = 1;
@@ -401,8 +425,6 @@ public class CosmosStore {
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Receiving a set of query response pages.");
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Continuation Token: " + internalcontinuationToken + "\n");
-
-        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
 
         final long start = System.currentTimeMillis();
         Iterable<FeedResponse<T>> feedResponseIterator =
