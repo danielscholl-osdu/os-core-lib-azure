@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static org.opengroup.osdu.azure.logging.DependencyType.COSMOS_STORE;
 
@@ -144,26 +145,25 @@ public class CosmosStoreBulkOperations {
      * Partition Keys must be provided in the same order as records.
      * ith Record's partition Key will be at ith position in the List.
      *
-     * @param dataPartitionId                 name of data partition.
-     * @param cosmosDBName                    name of Cosmos db.
-     * @param collectionName                  name of collection in Cosmos.
-     * @param docIds                          ids of the documents to be patched
-     * @param cosmosPatchOperations           CosmosPatchOperations to be performed on each document
-     * @param partitionKeys                   List of partition keys corresponding to "docs" provided
-     * @param maxConcurrencyPerPartitionRange concurrency per partition (1-5)
+     * @param dataPartitionId                       name of data partition.
+     * @param cosmosDBName                          name of Cosmos db.
+     * @param collectionName                        name of collection in Cosmos.
+     * @param cosmosPatchOperationsPerDoc           CosmosPatchOperations corresponding to each document
+     * @param partitionKeyForDoc                    Partition keys corresponding to each document
+     * @param maxConcurrencyPerPartitionRange       concurrency per partition (1-5)
      */
     public final void bulkPatchWithCosmosClient(final String dataPartitionId,
                                                      final String cosmosDBName,
                                                      final String collectionName,
-                                                     final List<String> docIds,
-                                                     final CosmosPatchOperations cosmosPatchOperations,
-                                                     final List<String> partitionKeys,
+                                                     final Map<String, CosmosPatchOperations> cosmosPatchOperationsPerDoc,
+                                                     final Map<String, String> partitionKeyForDoc,
                                                      final int maxConcurrencyPerPartitionRange) {
         List<CosmosItemOperation> cosmosItemOperations = new ArrayList<>();
-        for (int i = 0; i < docIds.size(); i++) {
-            cosmosItemOperations.add(CosmosBulkOperations.getPatchItemOperation(docIds.get(i), new PartitionKey(partitionKeys.get(i)), cosmosPatchOperations));
+        for (String docId : cosmosPatchOperationsPerDoc.keySet()) {
+            cosmosItemOperations.add(CosmosBulkOperations.getPatchItemOperation(docId, new PartitionKey(partitionKeyForDoc.get(docId)), cosmosPatchOperationsPerDoc.get(docId)));
         }
-        performBulkOperation(dataPartitionId, cosmosDBName, collectionName, cosmosItemOperations, partitionKeys, maxConcurrencyPerPartitionRange, "patch");
+
+        performBulkOperation(dataPartitionId, cosmosDBName, collectionName, cosmosItemOperations, new ArrayList(partitionKeyForDoc.values()), maxConcurrencyPerPartitionRange, "patch");
     }
 
     /**
