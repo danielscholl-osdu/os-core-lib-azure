@@ -141,9 +141,11 @@ public class CosmosStoreBulkOperations {
 
 
     /**
-     * Bulk patch items into cosmos collection using CosmosClient.
-     * Partition Keys must be provided in the same order as records.
-     * ith Record's partition Key will be at ith position in the List.
+     * Bulk patch items into cosmos collection using CosmosClient. CosmosPatchOperations can differ for different documents, thus we are
+     * using a Map<documentId, CosmosPatchOperations>. This approach is used (instead of applying the same CosmosPatchOperations on all
+     * documents in the list) to avoid potential duplicates on certain document attributes (like acl/viewers, acl/owners).
+     * The caller is responsible to generate this map.
+     * Correct partition key for the corresponding document is stored in a map
      *
      * @param dataPartitionId                       name of data partition.
      * @param cosmosDBName                          name of Cosmos db.
