@@ -15,6 +15,7 @@
 package org.opengroup.osdu.common;
 
 import org.junit.jupiter.api.Test;
+import org.opengroup.osdu.core.common.model.http.AppException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,5 +43,15 @@ class ValidatorsTest {
     @Test
     void checkNotNullAndNotEmpty_ignoresNonNullAndNonEmpty() {
         Validators.checkNotNullAndNotEmpty("non-null-data", "foo");
+    }
+
+    @Test
+    void checkValidDataPartition_ignoresValidPattern() {
+        Validators.checkValidDataPartition("valid-string");
+    }
+
+    @Test
+    void checkValidDataPartition_catchesInvalidPattern() {
+        assertThrows(AppException.class, () -> Validators.checkValidDataPartition("invalid-}-string"));
     }
 }
