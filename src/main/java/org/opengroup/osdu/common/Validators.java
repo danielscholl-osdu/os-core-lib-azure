@@ -69,14 +69,13 @@ public final class Validators {
      * Throws an
      * Throws a {@link IllegalArgumentException} if it is not valid.
      *
-     * @param data      The field which should not be null or empty
-     * @throws IllegalArgumentException  if the string is empty
-     * @throws NullPointerException  if the string is null
+     * @param data      The field which is to be verified
+     * @throws AppException if the string does not have allowed chars
      */
     public static void checkValidDataPartition(
             final String data) {
-        if (!checkValidString(data)) {
-            throw new AppException(HttpStatus.SC_FORBIDDEN, "Service unavailable", String.format("Data partition name: %s is not valid", data));
+        if (!checkValidPattern(data)) {
+            throw new AppException(HttpStatus.SC_FORBIDDEN, "Invalid Data Partition Name", String.format("Data partition name: %s is not valid", data));
         }
     }
 
@@ -87,7 +86,7 @@ public final class Validators {
      * @param input      The field which should not be null or empty
      * @return Boolean
      * */
-    private static Boolean checkValidString(final String input) {
+    private static Boolean checkValidPattern(final String input) {
         Pattern pattern = Pattern.compile(WHITELISTED_CHARACTERS);
         Matcher matcher = pattern.matcher(input);
         int matchedCharacterCount = 0;
