@@ -24,7 +24,9 @@ import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -96,8 +98,10 @@ public class CosmosBulkExecutorImplTest {
         CosmosBulkOperationResponse cosmosBulkOperationResponse = mock(CosmosBulkOperationResponse.class);
         List<CosmosBulkOperationResponse> bulkPatchResponse = new ArrayList<>();
         bulkPatchResponse.add(cosmosBulkOperationResponse);
-        List<String> ids = new ArrayList<>();
-        ids.add("id1");
+        Map<String, CosmosPatchOperations> cosmosPatchOperationsPerDoc = new HashMap<>();
+        cosmosPatchOperationsPerDoc.put("id1", cosmosPatchOperations);
+        Map<String, String> partitionKeyForDoc = new HashMap<>();
+        partitionKeyForDoc.put("id1", "id1");
 
         lenient().doReturn(cosmosClient).when(cosmosClientFactory).getClient(DATA_PARTITION_ID);
         CosmosBulkItemResponse cosmosBulkItemResponse = mock(CosmosBulkItemResponse.class);
@@ -108,7 +112,7 @@ public class CosmosBulkExecutorImplTest {
         when(cosmosDatabase.getContainer(COLLECTION)).thenReturn(cosmosContainer);
         ArgumentCaptor<DependencyLoggingOptions> loggingOptionsArgumentCaptor = ArgumentCaptor.forClass(DependencyLoggingOptions.class);
 
-        this.sut.bulkPatchWithCosmosClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, ids, cosmosPatchOperations, ids, 1);
+        this.sut.bulkPatchWithCosmosClient(DATA_PARTITION_ID, COSMOS_DB, COLLECTION, cosmosPatchOperationsPerDoc, partitionKeyForDoc, 1);
 
         verify(this.cosmosClientFactory, times(1)).getClient(DATA_PARTITION_ID);
         verify(dependencyLogger, times(1)).logDependency(loggingOptionsArgumentCaptor.capture());
