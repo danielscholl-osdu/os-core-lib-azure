@@ -30,8 +30,6 @@ import java.util.concurrent.TimeUnit;
 @Lazy
 public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
     private static final String LOGGER_NAME = RedisClientFactory.class.getName();
-    private static final String HOST_KEY = "redis-hostname";
-    private static final String PASSWORD_KEY = "redis-password";
     private static RedissonClient redissonClient = null;
 
     @Autowired
@@ -78,8 +76,8 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
      * @return redis client
      */
     private IRedisCache<K, V> createRedisClient(final Class<K> keyClass, final Class<V> valueClass, final RedisAzureConfiguration redisConfiguration) {
-        final String host = getSecret(HOST_KEY);
-        final String password = getSecret(PASSWORD_KEY);
+        final String host = getSecret(redisConfiguration.getHostKey());
+        final String password = getSecret(redisConfiguration.getPasswordKey());
         if (host == null || password == null) {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Required secrets does not exist. Redis is not available yet.");
             return null;
@@ -102,8 +100,8 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
     public RedissonClient getRedissonClient(final String applicationName, final RedisAzureConfiguration redisAzureConfiguration) {
         if (redissonClient == null) {
             synchronized (RedissonClient.class) {
-                String redisHost = getSecret(HOST_KEY);
-                String redisPassword = getSecret(PASSWORD_KEY);
+                String redisHost = getSecret(redisAzureConfiguration.getHostKey());
+                String redisPassword = getSecret(redisAzureConfiguration.getPasswordKey());
                 if (redissonClient == null && redisHost != null && redisPassword != null) {
                     Config config = new Config();
                     config.useSingleServer().setAddress(String.format("rediss://%s:%d", redisHost, redisAzureConfiguration.getPort()))

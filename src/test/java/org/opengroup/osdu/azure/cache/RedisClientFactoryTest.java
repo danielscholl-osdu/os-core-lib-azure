@@ -116,6 +116,8 @@ public class RedisClientFactoryTest {
 
     @Test
     public void getRedissonClient_should_return_null_if_redis_secret_not_present() {
+        when(redisConfiguration.getHostKey()).thenReturn("dummyHost");
+        when(redisConfiguration.getPasswordKey()).thenReturn("dummyPassword");
         when(secretClient.getSecret(any())).thenThrow(new ResourceNotFoundException("SecretDoesNotExists", null));
         mockSingleton(coreLoggerFactory);
         when(coreLoggerFactory.getLogger(anyString())).thenReturn(coreLogger);
