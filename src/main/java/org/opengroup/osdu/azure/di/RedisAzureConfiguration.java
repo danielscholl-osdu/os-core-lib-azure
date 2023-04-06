@@ -15,4 +15,17 @@ public class RedisAzureConfiguration {
     private int expiration;
     private int port;
     private long timeout;
+    private String hostKey;
+    private String passwordKey;
+
+    /**
+     * Constructor with default hostKey and passwordKey.
+     * @param pDatabase database
+     * @param pExpiration expiration
+     * @param pPort port
+     * @param pTimeout timeout
+     */
+    public RedisAzureConfiguration(final int pDatabase, final int pExpiration, final int pPort, final long pTimeout) {
+        this(pDatabase, pExpiration, pPort, pTimeout, "redis-hostname", "redis-password");
+    }
 }
