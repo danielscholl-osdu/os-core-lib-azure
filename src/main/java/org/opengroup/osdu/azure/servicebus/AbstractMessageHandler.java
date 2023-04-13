@@ -31,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
 public abstract class AbstractMessageHandler implements IMessageHandler {
 
     private static final ICoreLogger LOGGER = CoreLoggerFactory.getInstance().getLogger(AbstractMessageHandler.class.getName());
-    private static final String START_LOG_TEMPLATE = "Start worker task";
     private static final String END_LOG_TEMPLATE = "End worker task duration(ms)=%d success=%s";
     private String workerName;
     private SubscriptionClient receiveClient;
@@ -54,17 +53,11 @@ public abstract class AbstractMessageHandler implements IMessageHandler {
     @Override
     public CompletableFuture<Void> onMessageAsync(final IMessage message) {
         long startTime = System.currentTimeMillis();
-        long enqueueTime = message.getEnqueuedTimeUtc().toEpochMilli();
         String messageId = message.getMessageId();
-
-        logWorkerStart(messageId, this.workerName, "Received message from service bus");
 
         try {
             processMessage(message);
-            long stopTime = System.currentTimeMillis();
-            logWorkerEnd(messageId, this.workerName, String.format("Successfully processed message. End to end time from enqueue : %d", stopTime - enqueueTime), stopTime - startTime, true);
             return this.receiveClient.completeAsync(message.getLockToken());
-
         } catch (Exception e) {
             long stopTime = System.currentTimeMillis();
             logWorkerEnd(messageId, this.workerName, String.format("Exception occurred : %s", e), stopTime - startTime, false);
@@ -96,18 +89,6 @@ public abstract class AbstractMessageHandler implements IMessageHandler {
      * @throws Exception Throws exception in case of failure.
      */
     public abstract void processMessage(IMessage message) throws Exception;
-
-
-    /***
-     * Log start of worker task.
-     * @param messageId unique id of the message.
-     * @param appName name of worker service.
-     * @param data information to be logged.
-     */
-    public void logWorkerStart(final String messageId, final String appName, final String data) {
-        WorkerPayload payload = new WorkerPayload(messageId, appName, data, START_LOG_TEMPLATE);
-        LOGGER.logWorkerTask(payload);
-    }
 
     /***
      * Log end of worker task.
