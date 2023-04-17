@@ -14,7 +14,8 @@ public class RedisAzureConfiguration {
     private int database;
     private int expiration;
     private int port;
-    private long timeout;
+    private long connectionTimeout = 10;
+    private int commandTimeout = 5;
     private String hostKey;
     private String passwordKey;
 
@@ -23,9 +24,11 @@ public class RedisAzureConfiguration {
      * @param pDatabase database
      * @param pExpiration expiration
      * @param pPort port
-     * @param pTimeout timeout
+     * @param pConnectionTimeout connectionTimeout
+     * @param pCommandTimeout commandTimeout
      */
-    public RedisAzureConfiguration(final int pDatabase, final int pExpiration, final int pPort, final long pTimeout) {
-        this(pDatabase, pExpiration, pPort, pTimeout, "redis-hostname", "redis-password");
+    public RedisAzureConfiguration(final int pDatabase, final int pExpiration, final int pPort, final long pConnectionTimeout, final int pCommandTimeout) {
+        this(pDatabase, pExpiration, pPort, pConnectionTimeout, pCommandTimeout, "redis-hostname", "redis-password");
     }
+
 }
