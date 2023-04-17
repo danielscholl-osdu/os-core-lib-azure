@@ -82,11 +82,11 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Required secrets does not exist. Redis is not available yet.");
             return null;
         } else {
-            ClientOptions.builder()
+            ClientOptions options = ClientOptions.builder()
                     .socketOptions(SocketOptions.builder()
-                    .connectTimeout(redisConfiguration.getTimeout(), TimeUnit.SECONDS).build())
+                    .connectTimeout(redisConfiguration.getConnectionTimeout(), TimeUnit.SECONDS).build())
                     .build();
-            return new RedisCache<K, V>(host, redisConfiguration.getPort(), password, redisConfiguration.getExpiration(), redisConfiguration.getDatabase(), keyClass, valueClass);
+            return new RedisCache<K, V>(host, redisConfiguration.getPort(), password, redisConfiguration.getExpiration(), redisConfiguration.getCommandTimeout(), redisConfiguration.getDatabase(), options, keyClass, valueClass);
         }
     }
 
