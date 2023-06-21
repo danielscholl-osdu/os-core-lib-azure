@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  */
 @Component("clusterSettingsCache")
 @Lazy
-@ConditionalOnProperty(value = "cache.provider", havingValue = "vm", matchIfMissing = true)
+@ConditionalOnProperty(value = "elasticSearchCred.cache.provider", havingValue = "vm", matchIfMissing = true)
 public class ElasticCredentialsCacheImpl extends ElasticCredentialsCache {
 
   /**
