@@ -102,6 +102,12 @@ public class PartitionInfoAzure {
     @SerializedName("airflow-password")
     private Property airflowPasswordConfig;
 
+    @SerializedName("ingest-storage-account-key")
+    private Property ingestStorageAccountKeyConfig;
+
+    @SerializedName("ingest-storage-account-name")
+    private Property ingestStorageAccountNameConfig;
+
 
     private Property azureSubscriptionIdConfig = Property.builder().value("subscription-id").sensitive(true).build();
 
@@ -454,5 +460,25 @@ public class PartitionInfoAzure {
      */
     private String createStorageEndpointFromHierarchicalStorageAccountName() {
         return String.format("https://%s.dfs.core.windows.net", getHierarchicalStorageAccountName());
+    }
+
+    /**
+     * @return ingestion storage account key
+     */
+    public String getIngestStorageAccountKey() {
+        if (this.getIngestStorageAccountKeyConfig().isSensitive()) {
+            return getSecret(this.getIngestStorageAccountKeyConfig());
+        }
+        return String.valueOf(this.getIngestStorageAccountKeyConfig().getValue());
+    }
+
+    /**
+     * @return ingestion storage account name
+     */
+    public String getIngestStorageAccountName() {
+        if (this.getIngestStorageAccountNameConfig().isSensitive()) {
+            return getSecret(this.getIngestStorageAccountNameConfig());
+        }
+        return String.valueOf(this.getIngestStorageAccountNameConfig().getValue());
     }
 }
