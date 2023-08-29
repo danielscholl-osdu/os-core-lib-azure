@@ -20,7 +20,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure</artifactId>
   <packaging>jar</packaging>
-  <version>0.24.1-SNAPSHOT</version>
+  <version>0.24.0-SNAPSHOT</version>
   <name>core-lib-azure</name>
 
   <properties>
@@ -211,6 +211,7 @@
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
     </dependency>
+
     <!--
     documentdb-bulkexecutor:2.12.0 comes with problem dependency: org.json:json:jar:20140107
     because of that we need to enforce the higher version
