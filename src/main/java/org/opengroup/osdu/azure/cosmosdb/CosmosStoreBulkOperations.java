@@ -8,10 +8,6 @@ import com.azure.cosmos.models.CosmosBulkOperations;
 import com.azure.cosmos.models.CosmosItemOperation;
 import com.azure.cosmos.models.CosmosPatchOperations;
 import com.azure.cosmos.models.PartitionKey;
-import com.google.gson.Gson;
-import com.microsoft.azure.documentdb.DocumentClientException;
-import com.microsoft.azure.documentdb.bulkexecutor.BulkImportResponse;
-import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.azure.logging.DependencyLoggingOptions;
@@ -23,7 +19,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +26,7 @@ import java.util.Map;
 import static org.opengroup.osdu.azure.logging.DependencyType.COSMOS_STORE;
 
 /**
- * Class to perform bulk Cosmos operations using DocumentBulkExecutor or CosmosClient.
+ * Class to perform bulk Cosmos operations using CosmosClient.
  */
 @Component
 @Lazy
@@ -43,74 +38,7 @@ public class CosmosStoreBulkOperations {
     private DependencyLogger dependencyLogger;
 
     @Autowired
-    private ICosmosBulkExecutorFactory bulkExecutorFactory;
-
-    @Autowired
     private ICosmosClientFactory cosmosClientFactory;
-
-    /**
-     * Bulk upserts item into cosmos collection using DocumentBulkExecutor.
-     *
-     * @param dataPartitionId                 name of data partition.
-     * @param cosmosDBName                    name of Cosmos db.
-     * @param collectionName                  name of collection in Cosmos.
-     * @param documents                       collection of JSON serializable documents.
-     * @param isUpsert                        flag denoting if the isUpsert flag should be set to true.
-     * @param disableAutomaticIdGeneration    flag denoting if automatic id generation should be disabled in Cosmos.
-     * @param maxConcurrencyPerPartitionRange The maximum degree of concurrency per partition key range. The default value is 20.
-     * @param <T>                             Type of object being bulk inserted.
-     * @return BulkImportResponse object with the results of the operation.
-     */
-    public final <T> BulkImportResponse bulkInsert(final String dataPartitionId,
-                                                   final String cosmosDBName,
-                                                   final String collectionName,
-                                                   final Collection<T> documents,
-                                                   final boolean isUpsert,
-                                                   final boolean disableAutomaticIdGeneration,
-                                                   final int maxConcurrencyPerPartitionRange) {
-        Collection<String> serializedDocuments = new ArrayList<>();
-        Gson gson = new Gson();
-        final long start = System.currentTimeMillis();
-        int statusCode = HttpStatus.SC_OK;
-        double requestCharge = 0.0;
-
-        // Serialize documents to json strings
-        for (T item : documents) {
-            String serializedDocument = gson.toJson(item);
-            serializedDocuments.add(serializedDocument);
-        }
-
-        try {
-            DocumentBulkExecutor executor = bulkExecutorFactory.getClient(dataPartitionId, cosmosDBName, collectionName);
-            BulkImportResponse response = executor.importAll(serializedDocuments, isUpsert, disableAutomaticIdGeneration, maxConcurrencyPerPartitionRange);
-            requestCharge = response.getTotalRequestUnitsConsumed();
-
-            if (response.getNumberOfDocumentsImported() != documents.size()) {
-                LOGGER.warn("Failed to import all documents using DocumentBulkExecutor! Attempted to import " + documents.size() + " documents but only imported " + response.getNumberOfDocumentsImported());
-            }
-            return response;
-        } catch (DocumentClientException e) {
-            statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            String errorMessage = "Unexpectedly failed to bulk insert documents";
-            LOGGER.warn(errorMessage, e);
-            throw new AppException(statusCode, errorMessage, e.getMessage(), e);
-        } finally {
-            final long timeTaken = System.currentTimeMillis() - start;
-            final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collectionName);
-            final String dependencyData = String.format("collectionName=%s", collectionName);
-            final DependencyLoggingOptions loggingOptions = DependencyLoggingOptions.builder()
-                    .type(COSMOS_STORE)
-                    .name("UPSERT_ITEMS")
-                    .data(dependencyData)
-                    .target(dependencyTarget)
-                    .timeTakenInMs(timeTaken)
-                    .requestCharge(requestCharge)
-                    .resultCode(statusCode)
-                    .success(statusCode == HttpStatus.SC_OK)
-                    .build();
-            dependencyLogger.logDependency(loggingOptions);
-        }
-    }
 
     /**
      * Bulk upserts item into cosmos collection using CosmosClient.
