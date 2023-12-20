@@ -96,6 +96,32 @@ public class CosmosStoreBulkOperations {
         performBulkOperation(dataPartitionId, cosmosDBName, collectionName, cosmosItemOperations, new ArrayList(partitionKeyForDoc.values()), maxConcurrencyPerPartitionRange, "patch");
     }
 
+
+    /**
+     * One CosmosPatchOperations can have no more than 10 operations. To support a larger number of patch operation per doc (more than 10) we need to change
+     * Map<String, CosmosPatchOperations> to Map<String, List<CosmosPatchOperations>>
+     *
+     * @param dataPartitionId                       name of data partition.
+     * @param cosmosDBName                          name of Cosmos db.
+     * @param collectionName                        name of collection in Cosmos.
+     * @param cosmosPatchOperationsPerDoc           List of CosmosPatchOperations corresponding to each document
+     * @param partitionKeyForDoc                    Partition keys corresponding to each document
+     * @param maxConcurrencyPerPartitionRange       concurrency per partition (1-5)
+     */
+    public final void bulkMultiPatchWithCosmosClient(final String dataPartitionId,
+                                                final String cosmosDBName,
+                                                final String collectionName,
+                                                final Map<String, List<CosmosPatchOperations>> cosmosPatchOperationsPerDoc,
+                                                final Map<String, String> partitionKeyForDoc,
+                                                final int maxConcurrencyPerPartitionRange) {
+
+        List<CosmosItemOperation> cosmosItemOperations = new ArrayList<>();
+        cosmosPatchOperationsPerDoc.forEach((docId, operations) ->
+                operations.forEach(operation -> cosmosItemOperations.add(CosmosBulkOperations.getPatchItemOperation(docId, new PartitionKey(partitionKeyForDoc.get(docId)), operation))));
+
+        performBulkOperation(dataPartitionId, cosmosDBName, collectionName, cosmosItemOperations, new ArrayList<>(partitionKeyForDoc.values()), maxConcurrencyPerPartitionRange, "patch");
+    }
+
     /**
      * Bulk patch items into cosmos collection using CosmosClient.
      * Partition Keys must be provided in the same order as records.
