@@ -28,8 +28,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -53,7 +53,7 @@ public class TenantFactoryImpl implements ITenantFactory {
 
     private static final String LOG_PREFIX = "azure-core-lib";
 
-    private Map<String, TenantInfo> tenants = new HashMap<>();
+    private Map<String, TenantInfo> tenants = new ConcurrentHashMap<>();
 
     /**
      * @param tenantName Tenant name
