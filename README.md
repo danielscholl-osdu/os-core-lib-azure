@@ -20,8 +20,8 @@ This repository houses code that is used across the Microsoft Azure hosted OSDU 
 
 You need
  
- 1. Maven 3.6.x
- 2. Java 1.8
+ 1. Maven 3.8.0+
+ 2. Java 17
 
 # Local Usage
 
