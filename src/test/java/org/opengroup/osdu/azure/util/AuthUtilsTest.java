@@ -2,21 +2,20 @@ package org.opengroup.osdu.azure.util;
 
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.nimbusds.jwt.JWTClaimsSet;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.azure.KeyVaultFacade;
 import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({KeyVaultFacade.class})
+@ExtendWith(MockitoExtension.class)
 public class AuthUtilsTest {
 
     // Mock JWT Token: {"aud": "audience","appid": "application-id","oid": "my-oid","sub": "my-sub","tid": "my-tenant"}
@@ -101,12 +100,16 @@ public class AuthUtilsTest {
 
     @Test
     public void ShouldGetClientSecret_ifClientSecretIsNull() {
+        MockedStatic<KeyVaultFacade> mockedSettings = mockStatic(KeyVaultFacade.class);
         testGetClientSecretForNullOrEmptyCases(null);
+        mockedSettings.close();
     }
 
     @Test
     public void ShouldGetClientSecret_ifClientSecretIsEmpty() {
+        MockedStatic<KeyVaultFacade> mockedSettings = mockStatic(KeyVaultFacade.class);
         testGetClientSecretForNullOrEmptyCases(EMPTY);
+        mockedSettings.close();
     }
 
     private void testGetClientSecretForNullOrEmptyCases(String aadConfigSecret) {

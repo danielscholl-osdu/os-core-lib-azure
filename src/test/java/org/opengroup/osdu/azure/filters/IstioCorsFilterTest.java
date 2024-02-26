@@ -1,6 +1,8 @@
 package org.opengroup.osdu.azure.filters;
 
-import org.junit.Assert;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -8,7 +10,6 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import javax.servlet.FilterChain;
-import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link IstioCorsFilter}
@@ -31,12 +32,12 @@ public class IstioCorsFilterTest {
 
         istioCorsFilter.doFilter(request, response, filterChain);
 
-        Assert.assertTrue(response.getHeader("Access-Control-Allow-Origin")==null);
-        Assert.assertTrue(response.getHeader("Access-Control-Allow-Methods")== null);
-        Assert.assertTrue(response.getHeader("Access-Control-Max-Age")==null);
-        Assert.assertTrue(response.getHeader("Access-Control-Allow-Headers")==null);
-        Assert.assertTrue(response.getHeader("Access-Control-Expose-Headers")==null);
-        Assert.assertTrue(response.getStatus()==200);
+        assertTrue(response.getHeader("Access-Control-Allow-Origin")==null);
+        assertTrue(response.getHeader("Access-Control-Allow-Methods")== null);
+        assertTrue(response.getHeader("Access-Control-Max-Age")==null);
+        assertTrue(response.getHeader("Access-Control-Allow-Headers")==null);
+        assertTrue(response.getHeader("Access-Control-Expose-Headers")==null);
+        assertTrue(response.getStatus()==200);
     }
 
     /**
@@ -123,6 +124,5 @@ public class IstioCorsFilterTest {
         istioCorsFilter.doFilter(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
     }
-
 
 }

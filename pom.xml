@@ -24,20 +24,20 @@
   <name>core-lib-azure</name>
 
   <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <repos.id>os-core</repos.id>
     <repos.url>https://pkgs.dev.azure.com/slb-des-ext-collaboration/_packaging/os-core/maven/v1</repos.url>
     <checkstyle.version>3.1.0</checkstyle.version>
-    <junit.jupiter.version>5.6.0</junit.jupiter.version>
-    <mockito-junit-jupiter.version>2.23.0</mockito-junit-jupiter.version>
+    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+    <mockito-junit-jupiter.version>5.10.0</mockito-junit-jupiter.version>
     <maven.surefire.version>2.22.2</maven.surefire.version>
     <azure.appinsights.version>2.6.4</azure.appinsights.version>
     <azure.appinsights.log4j.version>2.6.4</azure.appinsights.log4j.version>
     <azure.spring.boot.version>3.4.0</azure.spring.boot.version>
-    <lombok.version>1.18.16</lombok.version>
-    <osdu.oscorecommon.version>0.25.0</osdu.oscorecommon.version>
+    <lombok.version>1.18.28</lombok.version>
+    <osdu.oscorecommon.version>0.26.0-SNAPSHOT</osdu.oscorecommon.version>
     <azure-mgmt-eventgrid.version>1.0.0-beta-3</azure-mgmt-eventgrid.version>
     <azure-security-keyvault-keys.version>4.2.3</azure-security-keyvault-keys.version>
     <azure-eventgrid.version>1.2.0</azure-eventgrid.version>
@@ -50,8 +50,6 @@
     <azure-storage-blob.version>12.20.0</azure-storage-blob.version>
     <azure-core.version>1.35.0</azure-core.version>
     <guava.version>32.1.1-jre</guava.version>
-
-
   </properties>
 
   <licenses>
@@ -162,10 +160,10 @@
           <groupId>net.minidev</groupId>
           <artifactId>json-smart</artifactId>
         </exclusion>
-		<exclusion>
-              <groupId>org.simpleframework</groupId>
-              <artifactId>simple-xml</artifactId>
-          </exclusion>
+        <exclusion>
+          <groupId>org.simpleframework</groupId>
+          <artifactId>simple-xml</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
@@ -247,6 +245,11 @@
     <!-- Test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit.jupiter.version}</version>
       <scope>test</scope>
@@ -257,19 +260,6 @@
       <version>${mockito-junit-jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-module-junit4</artifactId>
-      <version>2.0.9</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-mockito2</artifactId>
-      <version>2.0.9</version>
-      <scope>test</scope>
-    </dependency>
-
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
@@ -385,6 +375,25 @@
             <phase>validate</phase>
             <goals>
               <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.8</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>report</goal>
             </goals>
           </execution>
         </executions>
