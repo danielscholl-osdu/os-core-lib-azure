@@ -19,9 +19,9 @@ This repository houses code that is used across the Microsoft Azure hosted OSDU 
 # Pre-requisites
 
 You need
- 
- 1. Maven 3.8.0+
- 2. Java 17
+
+- [Maven 3.8.0+](https://maven.apache.org/download.cgi)
+- [JDK17](https://adoptopenjdk.net/)
 
 # Local Usage
 
@@ -65,6 +65,7 @@ You need to connect to our feed on [Azure DevOps](https://slb-swt.visualstudio.c
     </dependencies>
 </project>
 ```
+- If you wish to see the code coverage report then go to job artifacts browse/target/site/jacoco and open index.html
 
 ## Changes to support newly Added transaction logger and slf4jlogger
 The consumer service might run into multiple logger bindings error on start up
