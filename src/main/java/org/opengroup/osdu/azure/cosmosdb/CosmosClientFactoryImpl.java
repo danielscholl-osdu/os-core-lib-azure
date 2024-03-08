@@ -6,7 +6,7 @@ import com.azure.cosmos.CosmosClientBuilder;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import com.azure.cosmos.ThrottlingRetryOptions;
 import com.azure.identity.DefaultAzureCredential;
