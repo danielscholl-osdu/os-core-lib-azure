@@ -26,8 +26,8 @@ import org.opengroup.osdu.core.common.provider.interfaces.IElasticRepository;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

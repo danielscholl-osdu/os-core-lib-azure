@@ -4,7 +4,7 @@ variables:
 include:
   - project: 'osdu/platform/ci-cd-pipelines'
     ref: 'master'
-    file: 'standard-setup.yml'
+    file: 'standard-setup.yml' 
 
   - project: 'osdu/platform/ci-cd-pipelines'
     ref: 'master'

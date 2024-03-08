@@ -14,7 +14,7 @@
 
 package org.opengroup.osdu.azure.cache;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import org.opengroup.osdu.core.common.cache.VmCache;
 import org.opengroup.osdu.core.common.model.search.ClusterSettings;

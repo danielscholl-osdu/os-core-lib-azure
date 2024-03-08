@@ -2,8 +2,8 @@ package org.opengroup.osdu.azure.util;
 
 import java.util.HashMap;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import org.springframework.stereotype.Component;
 
