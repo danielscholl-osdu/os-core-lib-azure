@@ -36,13 +36,9 @@ public class GraphService {
             log.info("User " + userName + " validated");
             return userName;
         } catch (ODataError error) {
-            throw new AppException(error.getResponseStatusCode(),
-                    "OID Validation failed",
-                    error.getMessage());
+            throw new AppException(error.getResponseStatusCode(), "OID Validation failed", error.getMessage());
         } catch (IllegalArgumentException | NullPointerException exception) {
-            throw new AppException(HttpStatus.SC_FORBIDDEN,
-                    "OID Validation failed",
-                    exception.getMessage());
+            throw new AppException(HttpStatus.SC_FORBIDDEN, "OID Validation failed", exception.getMessage());
         }
     }
 }

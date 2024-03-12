@@ -21,6 +21,7 @@ class GraphServiceClientFactoryTest {
 
     @InjectMocks
     private GraphServiceClientFactory sut;
+
     @Test
     void getGraphServiceClient_successfullyReturnsClient_ifValidationsOk() {
         sut.getGraphServiceClient("data-partition-id");
@@ -28,14 +29,14 @@ class GraphServiceClientFactoryTest {
 
     @Test
     void getGraphServiceClient_throwsException_ifEmptyDataPartitionIdIsProvided() {
-        assertThrows(IllegalArgumentException.class, ()->{
+        assertThrows(IllegalArgumentException.class, () -> {
             sut.getGraphServiceClient("");
         });
     }
 
     @Test
     void getGraphServiceClient_throwsException_ifNullDataPartitionIdIsProvided() {
-        assertThrows(NullPointerException.class, ()->{
+        assertThrows(NullPointerException.class, () -> {
             sut.getGraphServiceClient(null);
         });
     }

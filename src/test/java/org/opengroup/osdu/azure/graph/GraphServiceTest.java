@@ -27,6 +27,7 @@ class GraphServiceTest {
 
     @Mock
     private GraphServiceClient graphServiceClient;
+
     @Test
     void getByOidReturnsUserId_ifTokenIssuerIsAADAndOIDIsValid() {
         User userInfo = new User();
@@ -82,6 +83,7 @@ class GraphServiceTest {
         assertEquals(error.getResponseStatusCode(), exception.getError().getCode());
 
     }
+
     @Test
     void getByOidThrowsAppException_ifGraphClientThrowsAnyOtherODataErrorFromUsersAPI() {
         when(graphServiceClientFactory.getGraphServiceClient("data-partition")).thenReturn(graphServiceClient);
