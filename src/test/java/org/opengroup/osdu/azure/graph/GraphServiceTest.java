@@ -1,10 +1,17 @@
 package org.opengroup.osdu.azure.graph;
 
+import com.microsoft.graph.groups.GroupsRequestBuilder;
+import com.microsoft.graph.groups.item.GroupItemRequestBuilder;
+import com.microsoft.graph.models.Group;
+import com.microsoft.graph.models.ServicePrincipal;
+import com.microsoft.graph.models.ServicePrincipalCollectionResponse;
 import com.microsoft.graph.models.User;
-import com.microsoft.graph.models.odataerrors.ODataError;
 import com.microsoft.graph.serviceclient.GraphServiceClient;
+import com.microsoft.graph.serviceprincipals.ServicePrincipalsRequestBuilder;
+import com.microsoft.graph.serviceprincipals.item.ServicePrincipalItemRequestBuilder;
 import com.microsoft.graph.users.UsersRequestBuilder;
 import com.microsoft.graph.users.item.UserItemRequestBuilder;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,7 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +42,7 @@ class GraphServiceTest {
     private GraphServiceClient graphServiceClient;
 
     @Test
-    void getByOidReturnsUserId_ifTokenIssuerIsAADAndOIDIsValid() {
+    void isOidValid_returnsTrue_ifTokenIssuerIsAAD_andOidIsValidUser() {
         User userInfo = new User();
         userInfo.setGivenName("userName");
         UserItemRequestBuilder response = mock(UserItemRequestBuilder.class);
@@ -41,67 +54,72 @@ class GraphServiceTest {
 
         when(graphServiceClient.users()).thenReturn(usersRequestBuilder);
 
-        assertEquals("userName", sut.getByOid("data-partition", "oid"));
+        assertTrue(sut.isOidValid("data-partition", "oid"));
     }
 
     @Test
-    void getByOidThrowsAppException_ifDataPartitionIsEmpty() {
-        assertThrows(AppException.class,
-                () -> {
-                    sut.getByOid("", "oid");
-                });
+    void isOidValid_returnsFalse_ifDataPartitionIsEmpty() {
+        assertFalse(sut.isOidValid("", "oid"));
     }
 
     @Test
-    void getByOidThrowsAppException_ifOidIsEmpty() {
-        assertThrows(AppException.class,
-                () -> {
-                    sut.getByOid("data-partition", "");
-                });
+    void isOidValid_returnsFalse_ifOidIsEmpty() {
+        assertFalse(sut.isOidValid("data-partition", ""));
     }
 
     @Test
-    void getByOidThrowsAppException_ifGraphClientThrowsNotFoundODataError() {
+    void isOidValid_throwsBadRequestException_ifOIDIsValidPrincipalServiceOid() {
+        ServicePrincipal userInfo = new ServicePrincipal();
+        userInfo.setDisplayName("service-principal");
+        ServicePrincipalItemRequestBuilder response = mock(ServicePrincipalItemRequestBuilder.class);
+
+        when(response.get()).thenReturn(userInfo);
+        when(graphServiceClientFactory.getGraphServiceClient("data-partition")).thenReturn(graphServiceClient);
+        ServicePrincipalsRequestBuilder servicePrincipalsRequestBuilder = mock(ServicePrincipalsRequestBuilder.class);
+        when(servicePrincipalsRequestBuilder.byServicePrincipalId("oid")).thenReturn(response);
+
+        when(graphServiceClient.servicePrincipals()).thenReturn(servicePrincipalsRequestBuilder);
+
+        AppException exception = assertThrows(AppException.class, () -> sut.isOidValid("data-partition", "oid"));
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getError().getCode());
+        assertEquals("Service principals should be added via client-ids", exception.getMessage());
+    }
+
+    @Test
+    void isOidValid_returnsTrue_ifClientIdIsValidPrincipalServiceClientId() {
+        ServicePrincipal userInfo = new ServicePrincipal();
+        userInfo.setDisplayName("service-principal");
+
+        ServicePrincipalCollectionResponse servicePrincipalCollectionResponse = new ServicePrincipalCollectionResponse();
+        servicePrincipalCollectionResponse.setValue(Collections.singletonList(userInfo));
+
+        ServicePrincipalsRequestBuilder requestBuilder = mock(ServicePrincipalsRequestBuilder.class);
+
+        when(requestBuilder.get(any())).thenReturn(servicePrincipalCollectionResponse);
+
         when(graphServiceClientFactory.getGraphServiceClient("data-partition")).thenReturn(graphServiceClient);
 
-        ODataError error = mock(ODataError.class);
-        when(error.getMessage()).thenReturn("Not Found");
-        when(error.getResponseStatusCode()).thenReturn(404);
+        when(graphServiceClient.servicePrincipals()).thenReturn(requestBuilder);
 
-        UsersRequestBuilder usersRequestBuilder = mock(UsersRequestBuilder.class);
-        when(usersRequestBuilder.byUserId("oid")).thenThrow(error);
-
-        when(graphServiceClient.users()).thenReturn(usersRequestBuilder);
-
-
-        AppException exception = assertThrows(AppException.class,
-                () -> {
-                    sut.getByOid("data-partition", "oid");
-                });
-
-        assertEquals(error.getMessage(), exception.getMessage());
-        assertEquals(error.getResponseStatusCode(), exception.getError().getCode());
-
+        assertTrue(sut.isOidValid("data-partition", "clientId"));
     }
 
     @Test
-    void getByOidThrowsAppException_ifGraphClientThrowsAnyOtherODataErrorFromUsersAPI() {
+    void isOidValid_returnsTrue_ifClientIdIsValidAadGroupId() {
+        Group group = new Group();
+        group.setDisplayName("group-name");
+
+        GroupItemRequestBuilder groupItemRequestBuilder = mock(GroupItemRequestBuilder.class);
+        when(groupItemRequestBuilder.get()).thenReturn(group);
+
+        GroupsRequestBuilder requestBuilder = mock(GroupsRequestBuilder.class);
+        when(requestBuilder.byGroupId("oId")).thenReturn(groupItemRequestBuilder);
+
         when(graphServiceClientFactory.getGraphServiceClient("data-partition")).thenReturn(graphServiceClient);
 
-        ODataError error = mock(ODataError.class);
-        when(error.getMessage()).thenReturn("BadRequest");
-        when(error.getResponseStatusCode()).thenReturn(400);
+        when(graphServiceClient.groups()).thenReturn(requestBuilder);
 
-        when(graphServiceClient.users()).thenThrow(error);
-
-
-        AppException exception = assertThrows(AppException.class,
-                () -> {
-                    sut.getByOid("data-partition", "oid");
-                });
-
-        assertEquals(error.getMessage(), exception.getMessage());
-        assertEquals(error.getResponseStatusCode(), exception.getError().getCode());
-
+        assertTrue(sut.isOidValid("data-partition", "oId"));
     }
 }
