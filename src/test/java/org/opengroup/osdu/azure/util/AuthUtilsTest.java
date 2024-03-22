@@ -12,6 +12,8 @@ import org.opengroup.osdu.azure.KeyVaultFacade;
 import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +22,22 @@ public class AuthUtilsTest {
 
     // Mock JWT Token: {"aud": "audience","appid": "application-id","oid": "my-oid","sub": "my-sub","tid": "my-tenant"}
     private static final String JWT_TOKEN = "part1.eyJhdWQiOiJhdWRpZW5jZSIsImFwcGlkIjoiYXBwbGljYXRpb24taWQiLCJvaWQiOiJteS1vaWQiLCJzdWIiOiJteS1zdWIiLCJ0aWQiOiJteS10ZW5hbnQifQ.part3";
+
+    // Mock JWT Token: {"sub": "1234567890",
+    //  "name": "John Doe",
+    //  "iat": 1516239022,
+    //  "iss": "https://login.microsoftonline.com/"}
+    private static final String JWT_TOKEN_WITH_AAD_ISSUER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vIn0.uHJ3CKjG1QrRp3hA1Jn5m_dOV6cema5SorFvq94G1zE";
+
+    // Mock Jwt Token:
+    //    {
+    //        "sub": "1234567890",
+    //            "name": "John Doe",
+    //            "iat": 1516239022,
+    //            "iss": "https://something.com/"
+    //    }
+    private static final String JWT_TOKEN_WITH_NON_AAD_ISSUER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc3MiOiJodHRwczovL3NvbWV0aGluZy5jb20vIn0.vjjX6rz4Y2ojoWwBhxcCHbOeJuMLJ3T6J5dAh2vM-kg";
+
     private static final String INVALID_JWT_TOKEN = "invalidjwttoken";
     private static final String INVALID_JWT_TOKEN_CLAIMS = "part1.invalidclaims.part2";
     private static final String EMPTY_JWT_TOKEN_CLAIMS = "part1.e30.part3";
@@ -119,5 +137,20 @@ public class AuthUtilsTest {
         when(KeyVaultFacade.getSecretWithValidation(secretClient, SECRET_NAME)).thenReturn(secretValue);
 
         assertEquals(secretValue, AuthUtils.getClientSecret(aadConfiguration, secretClient));
+    }
+
+    @Test
+    void isAadTokenReturnsTrue_when_issuerIsAAD() {
+        assertTrue(authUtils.isAadToken(JWT_TOKEN_WITH_AAD_ISSUER));
+    }
+
+    @Test
+    void isAadTokenReturnsFalse_when_issuerIsNotAAD() {
+        assertFalse(authUtils.isAadToken(JWT_TOKEN_WITH_NON_AAD_ISSUER));
+    }
+
+    @Test
+    void isAadTokenReturnsFalse_when_noIssuerPresent() {
+        assertFalse(authUtils.isAadToken(JWT_TOKEN));
     }
 }

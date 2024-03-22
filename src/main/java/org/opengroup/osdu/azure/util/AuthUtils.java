@@ -16,6 +16,9 @@ import java.util.Base64;
 public final class AuthUtils {
 
     private static final String SECRET_NAME = "app-dev-sp-password";
+    private static final String LOGIN_MICROSOFT_ONLINE_ISSUER = "https://login.microsoftonline.com/";
+    private static final String STS_WINDOWS_ISSUER = "https://sts.windows.net/";
+    private static final String STS_CHINA_CLOUD_API_ISSUER = "https://sts.chinacloudapi.cn/";
 
     /**
      * Get claims set from JWT token.
@@ -54,7 +57,7 @@ public final class AuthUtils {
      * Get client secret.
      *
      * @param aadConfiguration Azure Active Directory configuration bean.
-     * @param sc KeyVault client
+     * @param sc               KeyVault client
      * @return client secrete
      */
     public static String getClientSecret(final AzureActiveDirectoryConfiguration aadConfiguration, final SecretClient sc) {
@@ -62,5 +65,29 @@ public final class AuthUtils {
             return aadConfiguration.getClientSecret();
         }
         return KeyVaultFacade.getSecretWithValidation(sc, SECRET_NAME);
+    }
+
+    /**
+     * Verifies if the token is issued by AAD.
+     *
+     * @param token token that needs to be validated
+     * @return boolean
+     */
+    public Boolean isAadToken(final String token) {
+        JWTClaimsSet claimsSet = getClaimsFromJwtToken(token);
+        return (claimsSet != null && isAadIssuer(claimsSet.getIssuer()));
+    }
+
+    /***
+     * Checks if issuer is Azure.
+     * @param issuer Token Issuer
+     * @return boolean
+     */
+    private static boolean isAadIssuer(final String issuer) {
+        return (issuer != null
+                && (issuer.startsWith(LOGIN_MICROSOFT_ONLINE_ISSUER)
+                    || issuer.startsWith(STS_WINDOWS_ISSUER)
+                    || issuer.startsWith(STS_CHINA_CLOUD_API_ISSUER))
+        );
     }
 }
