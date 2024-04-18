@@ -83,7 +83,7 @@ class GraphServiceTest {
         AppException exception = assertThrows(AppException.class, () -> sut.isOidValid("data-partition", "oid"));
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getError().getCode());
-        assertEquals("Service principals should be added via client-ids", exception.getMessage());
+        assertEquals("The given OID matches with a provisioned Service Principal. They should be added to OSDU groups via their Client ID. Please use the correct ID as the input", exception.getMessage());
     }
 
     @Test
