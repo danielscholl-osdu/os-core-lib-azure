@@ -5,7 +5,7 @@ import com.microsoft.graph.models.ServicePrincipalCollectionResponse;
 import com.microsoft.graph.serviceprincipals.item.ServicePrincipalItemRequestBuilder;
 import com.microsoft.graph.users.item.UserItemRequestBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpStatus;
+import org.springframework.http.HttpStatus;
 import org.opengroup.osdu.common.Validators;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,7 +132,7 @@ public class GraphService {
     public boolean isOidValid(final String dataPartitionId, final String id) {
         boolean isOidValid = true;
         if (isPrincipalServiceOidValid(dataPartitionId, id)) {
-            throw new AppException(HttpStatus.SC_BAD_REQUEST, "Bad Request", "Service principals should be added via client-ids");
+            throw new AppException(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), "The given OID matches with a provisioned Service Principal. They should be added to OSDU groups via their Client ID. Please use the correct ID as the input");
         }
 
         //check if its client id of another service principal, otherwise check if it's a normal user
