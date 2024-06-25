@@ -17,7 +17,7 @@ import java.io.IOException;
 
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
-public class LogCustomDimensionFilter implements Filter {
+public final class LogCustomDimensionFilter implements Filter {
     @Override
     public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain filterChain) throws IOException, ServletException {
         RequestTelemetry requestTelemetry = ThreadContext.getRequestTelemetryContext().getHttpRequestTelemetry();
