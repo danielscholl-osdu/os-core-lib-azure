@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+/**
+ * LogCustomDimensionFilter.
+ */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
 public final class LogCustomDimensionFilter implements Filter {
