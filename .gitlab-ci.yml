@@ -3,27 +3,27 @@ variables:
 
 include:
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'v0.26.1'
+    ref: 'master'
     file: 'standard-setup.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'v0.26.1'
+    ref: 'master'
     file: 'build/maven.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'v0.26.1'
+    ref: 'master'
     file: 'scanners/gitlab-ultimate.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'v0.26.1'
+    ref: 'master'
     file: 'scanners/fossa-maven.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'v0.26.1'
+    ref: 'master'
     file: 'release/maven-release-candidates.yml'
 
   - project: 'osdu/platform/ci-cd-pipelines'
-    ref: 'v0.26.1'
+    ref: 'master'
     file: 'publishing/pages.yml'
 
 .maven:

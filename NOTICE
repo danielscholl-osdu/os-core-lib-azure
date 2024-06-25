@@ -368,6 +368,7 @@ The following software have components provided under the terms of this license:
 - Azure Java Client Runtime for ARM (from https://github.com/Azure/autorest-clientruntime-for-java)
 - Azure Java Client Runtime for AutoRest (from https://github.com/Azure/autorest-clientruntime-for-java)
 - Checker Qual (from https://checkerframework.org)
+- Extensions on Apache Proton-J library (from https://github.com/Azure/qpid-proton-j-extensions)
 - JUL to SLF4J bridge (from http://www.slf4j.org)
 - Jackson-core (from http://wiki.fasterxml.com/JacksonHome, https://github.com/FasterXML/jackson-core)
 - Java Client Runtime for AutoRest (from https://github.com/Azure/autorest-clientruntime-for-java)
@@ -411,8 +412,7 @@ The following software have components provided under the terms of this license:
 - micrometer-core (from https://github.com/micrometer-metrics/micrometer)
 - mockito-junit-jupiter (from https://github.com/mockito/mockito)
 - msal4j (from https://github.com/AzureAD/microsoft-authentication-library-for-java)
-- msal4j-persistence-extension (from https://github.com/AzureAD/microsoft-authentication-extensions-for-java)
-- qpid-proton-j-extensions (from https://github.com/Azure/qpid-proton-j-extensions)
+- msal4j-persistence-extension (from https://github.com/AzureAD/microsoft-authentication-extensions-for-java, https://github.com/AzureAD/microsoft-authentication-library-for-java)
 
 ========================================================================
 MPL-1.1
@@ -441,7 +441,6 @@ gpl-2.0-classpath
 The following software have components provided under the terms of this license:
 
 - Jakarta Annotations API (from https://projects.eclipse.org/projects/ee4j.ca)
-- Jakarta Validation API (from https://beanvalidation.org)
 
 ========================================================================
 public-domain
@@ -449,4 +448,5 @@ public-domain
 The following software have components provided under the terms of this license:
 
 - HdrHistogram (from http://hdrhistogram.github.io/HdrHistogram/)
+- JBoss Logging 3 (from http://www.jboss.org)
 - JSON in Java (from https://github.com/douglascrockford/JSON-java)
