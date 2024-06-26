@@ -33,8 +33,7 @@
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
     <mockito-junit-jupiter.version>5.10.0</mockito-junit-jupiter.version>
     <maven.surefire.version>2.22.2</maven.surefire.version>
-    <azure.appinsights.version>2.6.4</azure.appinsights.version>
-    <azure.appinsights.log4j.version>2.6.4</azure.appinsights.log4j.version>
+    <azure.appinsights.version>3.4.18</azure.appinsights.version>
     <azure.spring.boot.version>5.9.1</azure.spring.boot.version>
     <lombok.version>1.18.28</lombok.version>
     <osdu.oscorecommon.version>0.26.0</osdu.oscorecommon.version>
@@ -207,7 +206,12 @@
     <!-- App Insights dependencies -->
     <dependency>
       <groupId>com.microsoft.azure</groupId>
-      <artifactId>applicationinsights-spring-boot-starter</artifactId>
+      <artifactId>applicationinsights-core</artifactId>
+      <version>${azure.appinsights.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>applicationinsights-web</artifactId>
       <version>${azure.appinsights.version}</version>
     </dependency>
     <dependency>
@@ -224,11 +228,6 @@
           <artifactId>log4j-slf4j2-impl</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>applicationinsights-logging-log4j2</artifactId>
-      <version>${azure.appinsights.log4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.redisson</groupId>
