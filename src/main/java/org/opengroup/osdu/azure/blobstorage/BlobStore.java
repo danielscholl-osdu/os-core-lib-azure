@@ -505,7 +505,7 @@ public class BlobStore {
                     throw new AppException(statusCode, "Unknown error happened while restoring the blob", "Corrupt data");
                 }
             }
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Done undeleting blob at {}", filePath);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Done undeleting blob at {}", filePath);
             return true;
         } catch (BlobStorageException ex) {
             statusCode = ex.getStatusCode();
