@@ -1,8 +1,8 @@
 package org.opengroup.osdu.azure.cache;
 
 import com.azure.security.keyvault.secrets.SecretClient;
-import com.lambdaworks.redis.ClientOptions;
-import com.lambdaworks.redis.SocketOptions;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SocketOptions;
 import org.opengroup.osdu.azure.KeyVaultFacade;
 import org.opengroup.osdu.azure.di.RedisAzureConfiguration;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
@@ -17,9 +17,9 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Redis client factory.
@@ -84,7 +84,7 @@ public class RedisClientFactory<K, V> implements IRedisClientFactory<K, V> {
         } else {
             ClientOptions options = ClientOptions.builder()
                     .socketOptions(SocketOptions.builder()
-                    .connectTimeout(redisConfiguration.getConnectionTimeout(), TimeUnit.SECONDS).build())
+                    .connectTimeout(Duration.ofSeconds(redisConfiguration.getConnectionTimeout())).build())
                     .build();
             return new RedisCache<K, V>(host, redisConfiguration.getPort(), password, redisConfiguration.getExpiration(), redisConfiguration.getCommandTimeout(), redisConfiguration.getDatabase(), options, keyClass, valueClass);
         }
