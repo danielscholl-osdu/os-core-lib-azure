@@ -49,6 +49,7 @@
     <azure-storage-blob.version>12.25.2</azure-storage-blob.version>
     <azure-core.version>1.46.0</azure-core.version>
     <guava.version>32.1.1-jre</guava.version>
+    <spring-webmvc.version>6.1.3</spring-webmvc.version>
   </properties>
 
   <licenses>
@@ -125,6 +126,12 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>${spring-webmvc.version}</version>
+    </dependency>
+
 
     <!-- OSDU dependencies -->
     <dependency>
