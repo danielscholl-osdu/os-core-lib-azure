@@ -125,7 +125,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         }
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Created CosmosClient for dataPartition {}.", dataPartitionId);
+                .debug("Created CosmosClient for dataPartition {}.", dataPartitionId);
         return cosmosClient;
     }
 
@@ -155,7 +155,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         }
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Created CosmosAsyncClient for dataPartition {}.", dataPartitionId);
+                .debug("Created CosmosAsyncClient for dataPartition {}.", dataPartitionId);
         return cosmosAsyncClient;
     }
 
@@ -179,7 +179,7 @@ public class CosmosClientFactoryImpl implements ICosmosClientFactory {
         }
 
         CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME)
-                .info("Created CosmosClient for system resources");
+                .debug("Created CosmosClient for system resources");
 
         return cosmosClient;
     }
