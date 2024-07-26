@@ -1,8 +1,10 @@
 package org.opengroup.osdu.azure.logging;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Random;
 
 /**
  * Dependency logger.
@@ -12,8 +14,13 @@ public class DependencyLogger {
 
     private static final String LOGGER_NAME = DependencyLogger.class.getName();
 
+    private Random random;
+
+    @Autowired
+    private LogSamplerConfiguration logSamplerConfiguration;
+
     /**
-     * Log dependency.
+     * Log dependency with options.
      *
      * @param options the dependency logging options
      */
@@ -27,9 +34,19 @@ public class DependencyLogger {
         payload.setSuccess(options.isSuccess());
         payload.setType(options.getType());
         payload.setTarget(options.getTarget());
-
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+        logDependencyWithPayload(payload);
     }
+
+    /**
+     * Log dependency with payload.
+     * @param payload Dependency payload
+     */
+    public void logDependencyWithPayload(final DependencyPayload payload) {
+        if (getRandomNumberBetween1And100() <= logSamplerConfiguration.getDependencySamplingPercentage() || !payload.isSuccess()) {
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+        }
+    }
+
 
     /**
      * Return a string composed of database name and collection.
@@ -40,5 +57,13 @@ public class DependencyLogger {
      */
     public static String getCosmosDependencyTarget(final String databaseName, final String collection) {
         return String.format("%s/%s", databaseName, collection);
+    }
+
+    /**
+     * Returns a random number between 1 and 100, inclusive.
+     * @return an int between 1 and 100, inclusive.
+     */
+    private int getRandomNumberBetween1And100() {
+        return random.nextInt(100) + 1;
     }
 }

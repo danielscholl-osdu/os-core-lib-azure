@@ -1,8 +1,10 @@
 package org.opengroup.osdu.azure.blobstorage;
 
 import com.azure.identity.DefaultAzureCredential;
+import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.azure.partition.PartitionServiceClient;
 import org.opengroup.osdu.core.common.logging.ILogger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(value = "azure.blobStore.required", havingValue = "true", matchIfMissing = false)
 public class BlobStoreProvider {
+
+    @Autowired
+    private DependencyLogger dependencyLogger;
+
     /**
      * Creates instance of {@link IBlobServiceClientFactory}.
      * @param defaultAzureCredential Azure credentials to use.
@@ -33,6 +39,6 @@ public class BlobStoreProvider {
      */
     @Bean
     public BlobStore buildBlobStore(final IBlobServiceClientFactory blobServiceClientFactory, final ILogger logger) {
-        return new BlobStore(blobServiceClientFactory, logger);
+        return new BlobStore(blobServiceClientFactory, logger, dependencyLogger);
     }
 }
