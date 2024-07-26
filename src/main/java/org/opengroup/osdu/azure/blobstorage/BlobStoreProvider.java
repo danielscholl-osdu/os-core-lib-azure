@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(value = "azure.blobStore.required", havingValue = "true", matchIfMissing = false)
 public class BlobStoreProvider {
-
     /**
      * Creates instance of {@link IBlobServiceClientFactory}.
      * @param defaultAzureCredential Azure credentials to use.

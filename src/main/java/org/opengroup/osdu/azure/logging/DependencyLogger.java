@@ -1,6 +1,7 @@
 package org.opengroup.osdu.azure.logging;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -10,6 +11,7 @@ import java.util.Random;
  * Dependency logger.
  */
 @Component
+@Lazy
 public class DependencyLogger {
 
     private static final String LOGGER_NAME = DependencyLogger.class.getName();
@@ -42,8 +44,12 @@ public class DependencyLogger {
      * @param payload Dependency payload
      */
     public void logDependencyWithPayload(final DependencyPayload payload) {
-        if (getRandomNumberBetween1And100() <= logSamplerConfiguration.getDependencySamplingPercentage() || !payload.isSuccess()) {
+        if (logSamplerConfiguration == null) {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+        } else {
+            if (getRandomNumberBetween1And100() <= logSamplerConfiguration.getDependencySamplingPercentage() || !payload.isSuccess()) {
+                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+            }
         }
     }
 
