@@ -10,12 +10,12 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @Getter
-@ConditionalOnProperty(value = "logging.slf4jlogger.sampling.enabled", havingValue = "true")
+@ConditionalOnProperty(value = "log.sampling.enabled", havingValue = "true")
 public class LogSamplerConfiguration {
 
-    @Value("${logging.slf4jlogger.sampling.info:100}")
+    @Value("${log.sampling.info:100}")
     private int infoSamplingPercentage;
 
-    @Value("${logging.slf4jlogger.sampling.dependency:100}")
+    @Value("${log.sampling.dependency:100}")
     private int dependencySamplingPercentage;
 }

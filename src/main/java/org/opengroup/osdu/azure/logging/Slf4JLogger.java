@@ -25,21 +25,26 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 /**
  * {@link ILogger} implementation with Slf4J Logger.
  */
 @Component
 @Primary
-@ConditionalOnProperty(value = "logging.slf4jlogger.enabled", havingValue = "true")
+@ConditionalOnProperty(value = "logging.slf4jlogger.enabled", havingValue = "true", matchIfMissing = true)
 public final class Slf4JLogger implements ILogger {
     private static final String DEFAULT_LOGGER_NAME = Slf4JLogger.class.getName();
     private static final String AZURE_AUDIT_LOGGER_NAME = "AzureAuditLogger";
     private static final String AZURE_AUDIT_ENABLED = "AZURE_AUDIT_ENABLED";
 
+    private Random random = new Random();
 
     @Autowired
     private HeadersToLog headersToLog;
+
+    @Autowired
+    private LogSamplerConfiguration logSamplerConfiguration;
 
     @Override
     public void audit(final String logPrefix, final AuditPayload auditPayload, final Map<String, String> headers) {
@@ -75,8 +80,15 @@ public final class Slf4JLogger implements ILogger {
 
     @Override
     public void info(final String loggerName, final String logPrefix, final String message, final Map<String, String> headers) {
-        CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
-                this.headersToLog.createStandardLabelsFromMap(headers));
+        if (logSamplerConfiguration == null) {
+            CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
+                    this.headersToLog.createStandardLabelsFromMap(headers));
+        } else {
+            if (getRandomNumberBetween1And100() <= logSamplerConfiguration.getInfoSamplingPercentage()) {
+                CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
+                        this.headersToLog.createStandardLabelsFromMap(headers));
+            }
+        }
     }
 
     @Override
@@ -138,5 +150,13 @@ public final class Slf4JLogger implements ILogger {
     @Override
     public void close() throws Exception {
         // do nothing
+    }
+
+    /**
+     * Returns a random number between 1 and 100, inclusive.
+     * @return an int between 1 and 100, inclusive.
+     */
+    private int getRandomNumberBetween1And100() {
+        return random.nextInt(100) + 1;
     }
 }

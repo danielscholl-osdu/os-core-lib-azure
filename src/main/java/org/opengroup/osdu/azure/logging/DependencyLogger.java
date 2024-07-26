@@ -1,7 +1,6 @@
 package org.opengroup.osdu.azure.logging;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -11,12 +10,11 @@ import java.util.Random;
  * Dependency logger.
  */
 @Component
-@Lazy
 public class DependencyLogger {
 
     private static final String LOGGER_NAME = DependencyLogger.class.getName();
 
-    private Random random;
+    private Random random = new Random();
 
     @Autowired
     private LogSamplerConfiguration logSamplerConfiguration;
