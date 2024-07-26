@@ -37,7 +37,6 @@ import com.azure.storage.blob.specialized.BlobInputStream;
 import com.azure.storage.blob.specialized.BlockBlobClient;
 import org.apache.http.HttpStatus;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
-import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.azure.logging.DependencyPayload;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
@@ -99,19 +98,16 @@ public class BlobStore {
     private static final int BLOB_LIST_TIMEOUT_IN_SECONDS = 60;
     private IBlobServiceClientFactory blobServiceClientFactory;
     private ILogger logger;
-    private DependencyLogger dependencyLogger;
 
     /**
      * Constructor to create BlobStore.
      *
      * @param factory        Factory that provides blob client.
      * @param loggerInstance logger instance to be used for logging.
-     * @param depLogger      Dependency logger instance.
      */
-    public BlobStore(final IBlobServiceClientFactory factory, final ILogger loggerInstance, final DependencyLogger depLogger) {
+    public BlobStore(final IBlobServiceClientFactory factory, final ILogger loggerInstance) {
         this.blobServiceClientFactory = factory;
         this.logger = loggerInstance;
-        this.dependencyLogger = depLogger;
     }
 
     /**
@@ -707,7 +703,7 @@ public class BlobStore {
         payload.setType("BlobStore");
         payload.setTarget(target);
 
-        dependencyLogger.logDependencyWithPayload(payload);
+        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
     }
 
     /**

@@ -31,7 +31,7 @@ import java.util.Objects;
  */
 @Component
 @Primary
-@ConditionalOnProperty(value = "logging.slf4jlogger.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "logging.slf4jlogger.enabled", havingValue = "true")
 public final class Slf4JLogger implements ILogger {
     private static final String DEFAULT_LOGGER_NAME = Slf4JLogger.class.getName();
     private static final String AZURE_AUDIT_LOGGER_NAME = "AzureAuditLogger";
