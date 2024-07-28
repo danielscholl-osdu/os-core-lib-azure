@@ -20,7 +20,7 @@
   <groupId>org.opengroup.osdu</groupId>
   <artifactId>core-lib-azure-spring6</artifactId>
   <packaging>jar</packaging>
-  <version>0.27.0-sampling</version>
+  <version>0.27.0-sampling1</version>
   <name>core-lib-azure</name>
 
   <properties>
