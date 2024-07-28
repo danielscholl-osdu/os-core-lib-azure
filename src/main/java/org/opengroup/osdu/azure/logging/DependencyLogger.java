@@ -42,12 +42,10 @@ public class DependencyLogger {
      * @param payload Dependency payload
      */
     public void logDependencyWithPayload(final DependencyPayload payload) {
-        if (logSamplerConfiguration == null) {
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+        if (logSamplerConfiguration != null && payload.isSuccess() && getRandomNumberBetween1And100() > logSamplerConfiguration.getDependencySamplingPercentage()) {
+            return;
         } else {
-            if (!payload.isSuccess() || getRandomNumberBetween1And100() <= logSamplerConfiguration.getDependencySamplingPercentage()) {
-                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
-            }
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
         }
     }
 

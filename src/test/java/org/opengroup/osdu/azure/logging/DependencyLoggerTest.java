@@ -89,6 +89,7 @@ public class DependencyLoggerTest {
     @Test
     public void testLogDependencyWithOptions() {
         doNothing().when(coreLogger).logDependency(any(DependencyPayload.class));
+        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(100);
         dependencyLogger.logDependency(dependencyLoggingOptions);
         verify(coreLogger, times(1)).logDependency(any(DependencyPayload.class));
         verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
@@ -97,6 +98,7 @@ public class DependencyLoggerTest {
     @Test
     public void testLogDependencyWithPayload() {
         doNothing().when(coreLogger).logDependency(any(DependencyPayload.class));
+        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(100);
         dependencyLogger.logDependencyWithPayload(dependencyPayload);
         verify(coreLogger, times(1)).logDependency(dependencyPayload);
         verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
@@ -105,6 +107,7 @@ public class DependencyLoggerTest {
     @Test
     public void testLogFailedDependencyWithOptionsWhenSampling() {
         when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(0);
+        when(dependencyPayload.isSuccess()).thenReturn(false);
         dependencyLogger.logDependency(dependencyLoggingOptions);
         verify(coreLogger, times(1)).logDependency(any(DependencyPayload.class));
         verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
@@ -113,6 +116,7 @@ public class DependencyLoggerTest {
     @Test
     public void testLogFailedDependencyWithPayloadWhenSampling() {
         when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(0);
+        when(dependencyPayload.isSuccess()).thenReturn(false);
         dependencyLogger.logDependencyWithPayload(dependencyPayload);
         verify(coreLogger, times(1)).logDependency(dependencyPayload);
         verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
