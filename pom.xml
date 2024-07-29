@@ -36,7 +36,7 @@
     <azure.appinsights.version>3.4.18</azure.appinsights.version>
     <azure.spring.boot.version>5.9.1</azure.spring.boot.version>
     <lombok.version>1.18.28</lombok.version>
-    <osdu.oscorecommon.version>0.26.0</osdu.oscorecommon.version>
+    <osdu.oscorecommon.version>1.0.0</osdu.oscorecommon.version>
     <azure-mgmt-eventgrid.version>1.0.0-beta-3</azure-mgmt-eventgrid.version>
     <azure-security-keyvault-keys.version>4.7.3</azure-security-keyvault-keys.version>
     <azure-eventgrid.version>1.2.0</azure-eventgrid.version>
@@ -87,7 +87,7 @@
       </dependency>
       <dependency>
         <groupId>org.opengroup.osdu</groupId>
-        <artifactId>os-core-common-spring6</artifactId>
+        <artifactId>os-core-common</artifactId>
         <version>${osdu.oscorecommon.version}</version>
         <type>pom</type>
         <scope>import</scope>
@@ -125,11 +125,15 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+    </dependency>
 
     <!-- OSDU dependencies -->
     <dependency>
       <groupId>org.opengroup.osdu</groupId>
-      <artifactId>os-core-common-spring6</artifactId>
+      <artifactId>os-core-common</artifactId>
       <version>${osdu.oscorecommon.version}</version>
       <exclusions>
         <exclusion>
