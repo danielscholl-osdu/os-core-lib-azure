@@ -181,14 +181,14 @@ public class Slf4JLoggerTest {
         verify(headersToLog, times(1)).createStandardLabelsFromMap(eq(headers));
     }
 
-//    @Test
-//    public void testInfoWithSampling() {
-//        when(logSamplerConfiguration.getInfoSamplingPercentage()).thenReturn(0);
-//        slf4JLogger.info(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
-//        verify(coreLogger, times(0)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
-//        verify(coreLoggerFactory, times(0)).getLogger(eq(LOGGER_NAME));
-//        verify(headersToLog, times(0)).createStandardLabelsFromMap(eq(headers));
-//    }
+    @Test
+    public void testInfoWithSampling() {
+        when(logSamplerConfiguration.getInfoSamplingPercentage()).thenReturn(0);
+        slf4JLogger.info(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
+        verify(coreLogger, times(0)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
+        verify(coreLoggerFactory, times(0)).getLogger(eq(LOGGER_NAME));
+        verify(headersToLog, times(0)).createStandardLabelsFromMap(eq(headers));
+    }
 
     @Test
     public void testDebug() {

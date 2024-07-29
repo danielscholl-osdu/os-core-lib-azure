@@ -81,8 +81,7 @@ public final class Slf4JLogger implements ILogger {
     @Override
     public void info(final String loggerName, final String logPrefix, final String message, final Map<String, String> headers) {
         if (logSamplerConfiguration != null && getRandomNumberBetween1And100() > logSamplerConfiguration.getInfoSamplingPercentage()) {
-            CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, "Sampling INFO",
-                    this.headersToLog.createStandardLabelsFromMap(headers));
+            return;
         } else {
             CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
                     this.headersToLog.createStandardLabelsFromMap(headers));
