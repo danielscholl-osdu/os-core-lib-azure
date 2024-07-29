@@ -16,7 +16,7 @@ public class DependencyLogger {
 
     private Random random = new Random();
 
-    @Autowired
+    @Autowired(required = false)
     private LogSamplerConfiguration logSamplerConfiguration;
 
     /**
