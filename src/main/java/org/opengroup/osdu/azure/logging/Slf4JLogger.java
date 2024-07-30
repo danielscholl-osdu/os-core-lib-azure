@@ -40,7 +40,7 @@ public final class Slf4JLogger implements ILogger {
     @Autowired
     private HeadersToLog headersToLog;
 
-    @Autowired(required = false)
+    @Autowired
     private LogSampler logSampler;
 
     @Override
