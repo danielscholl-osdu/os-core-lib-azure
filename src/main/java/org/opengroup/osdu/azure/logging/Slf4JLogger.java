@@ -25,7 +25,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 
 /**
  * {@link ILogger} implementation with Slf4J Logger.
@@ -38,13 +37,11 @@ public final class Slf4JLogger implements ILogger {
     private static final String AZURE_AUDIT_LOGGER_NAME = "AzureAuditLogger";
     private static final String AZURE_AUDIT_ENABLED = "AZURE_AUDIT_ENABLED";
 
-    private Random random = new Random();
-
     @Autowired
     private HeadersToLog headersToLog;
 
     @Autowired(required = false)
-    private LogSamplerConfiguration logSamplerConfiguration;
+    private LogSampler logSampler;
 
     @Override
     public void audit(final String logPrefix, final AuditPayload auditPayload, final Map<String, String> headers) {
@@ -80,7 +77,7 @@ public final class Slf4JLogger implements ILogger {
 
     @Override
     public void info(final String loggerName, final String logPrefix, final String message, final Map<String, String> headers) {
-        if (logSamplerConfiguration != null && getRandomNumberBetween1And100() > logSamplerConfiguration.getInfoSamplingPercentage()) {
+        if (logSampler.shouldSampleInfoLog()) {
             return;
         } else {
             CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
@@ -147,13 +144,5 @@ public final class Slf4JLogger implements ILogger {
     @Override
     public void close() throws Exception {
         // do nothing
-    }
-
-    /**
-     * Returns a random number between 1 and 100, inclusive.
-     * @return an int between 1 and 100, inclusive.
-     */
-    private int getRandomNumberBetween1And100() {
-        return random.nextInt(100) + 1;
     }
 }

@@ -70,7 +70,7 @@ public class Slf4JLoggerTest {
     private Exception e;
 
     @Mock
-    private LogSamplerConfiguration logSamplerConfiguration;
+    private LogSampler logSampler;
 
     private final Map<String, String> headers = new HashMap<>();
 
@@ -163,7 +163,7 @@ public class Slf4JLoggerTest {
 
     @Test
     public void testInfo() {
-        when(logSamplerConfiguration.getInfoSamplingPercentage()).thenReturn(100);
+        when(logSampler.shouldSampleInfoLog()).thenReturn(false);
         doNothing().when(coreLogger).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         slf4JLogger.info(LOG_PREFIX, LOG_MESSAGE, headers);
         verify(coreLogger, times(1)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
@@ -173,7 +173,7 @@ public class Slf4JLoggerTest {
 
     @Test
     public void testInfoWithLoggerName() {
-        when(logSamplerConfiguration.getInfoSamplingPercentage()).thenReturn(100);
+        when(logSampler.shouldSampleInfoLog()).thenReturn(false);
         doNothing().when(coreLogger).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         slf4JLogger.info(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
         verify(coreLogger, times(1)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
@@ -183,7 +183,7 @@ public class Slf4JLoggerTest {
 
     @Test
     public void testInfoWithSampling() {
-        when(logSamplerConfiguration.getInfoSamplingPercentage()).thenReturn(0);
+        when(logSampler.shouldSampleInfoLog()).thenReturn(true);
         slf4JLogger.info(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
         verify(coreLogger, times(0)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         verify(coreLoggerFactory, times(0)).getLogger(eq(LOGGER_NAME));

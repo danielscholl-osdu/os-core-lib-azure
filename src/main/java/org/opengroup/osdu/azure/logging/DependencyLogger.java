@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Random;
 
 /**
  * Dependency logger.
@@ -14,10 +13,8 @@ public class DependencyLogger {
 
     private static final String LOGGER_NAME = DependencyLogger.class.getName();
 
-    private Random random = new Random();
-
-    @Autowired(required = false)
-    private LogSamplerConfiguration logSamplerConfiguration;
+    @Autowired
+    private LogSampler logSampler;
 
     /**
      * Log dependency with options.
@@ -42,7 +39,7 @@ public class DependencyLogger {
      * @param payload Dependency payload
      */
     public void logDependencyWithPayload(final DependencyPayload payload) {
-        if (logSamplerConfiguration != null && payload.isSuccess() && getRandomNumberBetween1And100() > logSamplerConfiguration.getDependencySamplingPercentage()) {
+        if (payload.isSuccess() && logSampler.shouldSampleDependencyLog()) {
             return;
         } else {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
@@ -59,13 +56,5 @@ public class DependencyLogger {
      */
     public static String getCosmosDependencyTarget(final String databaseName, final String collection) {
         return String.format("%s/%s", databaseName, collection);
-    }
-
-    /**
-     * Returns a random number between 1 and 100, inclusive.
-     * @return an int between 1 and 100, inclusive.
-     */
-    private int getRandomNumberBetween1And100() {
-        return random.nextInt(100) + 1;
     }
 }

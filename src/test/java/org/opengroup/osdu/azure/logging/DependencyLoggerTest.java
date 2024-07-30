@@ -1,3 +1,17 @@
+// Copyright 2017-2024, SLB
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package org.opengroup.osdu.azure.logging;
 
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +50,7 @@ public class DependencyLoggerTest {
     private CoreLoggerFactory coreLoggerFactory;
 
     @Mock
-    private LogSamplerConfiguration logSamplerConfiguration;
+    private LogSampler logSampler;
 
     @Mock
     private DependencyLoggingOptions dependencyLoggingOptions;
@@ -89,7 +103,7 @@ public class DependencyLoggerTest {
     @Test
     public void testLogDependencyWithOptions() {
         doNothing().when(coreLogger).logDependency(any(DependencyPayload.class));
-        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(100);
+        when(logSampler.shouldSampleDependencyLog()).thenReturn(false);
         dependencyLogger.logDependency(dependencyLoggingOptions);
         verify(coreLogger, times(1)).logDependency(any(DependencyPayload.class));
         verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
@@ -98,7 +112,7 @@ public class DependencyLoggerTest {
     @Test
     public void testLogDependencyWithPayload() {
         doNothing().when(coreLogger).logDependency(any(DependencyPayload.class));
-        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(100);
+        when(logSampler.shouldSampleDependencyLog()).thenReturn(false);
         dependencyLogger.logDependencyWithPayload(dependencyPayload);
         verify(coreLogger, times(1)).logDependency(dependencyPayload);
         verify(coreLoggerFactory, times(1)).getLogger(eq(DEFAULT_LOGGER_NAME));
@@ -106,7 +120,7 @@ public class DependencyLoggerTest {
 
     @Test
     public void testLogFailedDependencyWithOptionsWhenSampling() {
-        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(0);
+        when(logSampler.shouldSampleDependencyLog()).thenReturn(true);
         when(dependencyPayload.isSuccess()).thenReturn(false);
         dependencyLogger.logDependency(dependencyLoggingOptions);
         verify(coreLogger, times(1)).logDependency(any(DependencyPayload.class));
@@ -115,7 +129,7 @@ public class DependencyLoggerTest {
 
     @Test
     public void testLogFailedDependencyWithPayloadWhenSampling() {
-        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(0);
+        when(logSampler.shouldSampleDependencyLog()).thenReturn(true);
         when(dependencyPayload.isSuccess()).thenReturn(false);
         dependencyLogger.logDependencyWithPayload(dependencyPayload);
         verify(coreLogger, times(1)).logDependency(dependencyPayload);
@@ -124,7 +138,7 @@ public class DependencyLoggerTest {
 
     @Test
     public void testLogSuccessfulDependencyWithOptionsWhenSampling() {
-        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(0);
+        when(logSampler.shouldSampleDependencyLog()).thenReturn(true);
         when(dependencyLoggingOptions.isSuccess()).thenReturn(true);
         dependencyLogger.logDependency(dependencyLoggingOptions);
         verify(coreLogger, times(0)).logDependency(any(DependencyPayload.class));
@@ -133,7 +147,7 @@ public class DependencyLoggerTest {
 
     @Test
     public void testLogSuccessfulDependencyWithPayloadWhenSampling() {
-        when(logSamplerConfiguration.getDependencySamplingPercentage()).thenReturn(0);
+        when(logSampler.shouldSampleDependencyLog()).thenReturn(true);
         when(dependencyPayload.isSuccess()).thenReturn(true);
         dependencyLogger.logDependencyWithPayload(dependencyPayload);
         verify(coreLogger, times(0)).logDependency(dependencyPayload);
