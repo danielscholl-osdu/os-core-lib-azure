@@ -1,5 +1,6 @@
 package org.opengroup.osdu.azure.logging;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -12,8 +13,11 @@ public class DependencyLogger {
 
     private static final String LOGGER_NAME = DependencyLogger.class.getName();
 
+    @Autowired
+    private LogSampler logSampler;
+
     /**
-     * Log dependency.
+     * Log dependency with options.
      *
      * @param options the dependency logging options
      */
@@ -27,9 +31,21 @@ public class DependencyLogger {
         payload.setSuccess(options.isSuccess());
         payload.setType(options.getType());
         payload.setTarget(options.getTarget());
-
-        CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+        logDependencyWithPayload(payload);
     }
+
+    /**
+     * Log dependency with payload.
+     * @param payload Dependency payload
+     */
+    public void logDependencyWithPayload(final DependencyPayload payload) {
+        if (payload.isSuccess() && logSampler.shouldSampleDependencyLog()) {
+            return;
+        } else {
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).logDependency(payload);
+        }
+    }
+
 
     /**
      * Return a string composed of database name and collection.
