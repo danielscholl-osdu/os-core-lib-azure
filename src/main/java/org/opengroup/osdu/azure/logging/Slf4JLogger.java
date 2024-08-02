@@ -37,9 +37,11 @@ public final class Slf4JLogger implements ILogger {
     private static final String AZURE_AUDIT_LOGGER_NAME = "AzureAuditLogger";
     private static final String AZURE_AUDIT_ENABLED = "AZURE_AUDIT_ENABLED";
 
-
     @Autowired
     private HeadersToLog headersToLog;
+
+    @Autowired
+    private LogSampler logSampler;
 
     @Override
     public void audit(final String logPrefix, final AuditPayload auditPayload, final Map<String, String> headers) {
@@ -75,8 +77,12 @@ public final class Slf4JLogger implements ILogger {
 
     @Override
     public void info(final String loggerName, final String logPrefix, final String message, final Map<String, String> headers) {
-        CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
-                this.headersToLog.createStandardLabelsFromMap(headers));
+        if (logSampler.shouldSampleInfoLog()) {
+            return;
+        } else {
+            CoreLoggerFactory.getInstance().getLogger(loggerName).info("{} {} {}", logPrefix, message,
+                    this.headersToLog.createStandardLabelsFromMap(headers));
+        }
     }
 
     @Override
