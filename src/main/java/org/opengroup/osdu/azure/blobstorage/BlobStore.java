@@ -230,6 +230,19 @@ public class BlobStore {
     /**
      * @param dataPartitionId Data partition id
      * @param containerName   Name of the storage container
+     * @return boolean indicating whether the given container exists or not.
+     *
+     */
+    public boolean checkIfBlobContainerExists(
+            final String dataPartitionId,
+            final String containerName) {
+        BlobContainerClient blobContainerClient = getBlobContainerClient(dataPartitionId, containerName);
+        return blobContainerClient.exists();
+    }
+
+    /**
+     * @param dataPartitionId Data partition id
+     * @param containerName   Name of the storage container
      * @return boolean indicating whether the deletion of the given container was successful or not.
      *         Throws exception in case of failure.
      */
