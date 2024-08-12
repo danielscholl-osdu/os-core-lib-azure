@@ -76,7 +76,7 @@ public final class KeyVaultFacade {
         int statusCode = HttpStatus.SC_OK;
         try {
             secret = kv.getSecret(secretName);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Successfully retrieved {}.", secretName);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Successfully retrieved {}.", secretName);
             if (secret == null || secret.getValue() == null || secret.getValue().isEmpty()) {
                 CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Value for {} is empty.", secretName);
                 return defaultValue;
@@ -106,7 +106,7 @@ public final class KeyVaultFacade {
         int statusCode = HttpStatus.SC_OK;
         try {
             kv.getSecret(secretName);
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).info("Successfully retrieved {}.", secretName);
+            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug("Successfully retrieved {}.", secretName);
         } catch (ResourceNotFoundException secretNotFound) {
             statusCode = HttpStatus.SC_NOT_FOUND;
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn("Failed to retrieve {}. Not found.", secretName);

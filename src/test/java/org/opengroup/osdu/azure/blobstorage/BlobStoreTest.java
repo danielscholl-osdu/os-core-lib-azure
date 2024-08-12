@@ -35,14 +35,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.opengroup.osdu.azure.logging.CoreLogger;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.azure.logging.DependencyLogger;
 import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
-import java.sql.Blob;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Iterator;
@@ -53,6 +55,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class BlobStoreTest {
     private static final String PARTITION_ID = "dataPartitionId";
     private static final String FILE_PATH = "filePath";
@@ -109,6 +112,9 @@ public class BlobStoreTest {
 
     @Mock
     private BlobSasPermission blobSasPermission;
+
+    @Mock
+    private DependencyLogger dependencyLogger;
 
     @InjectMocks
     private BlobStore blobStore;
@@ -885,7 +891,7 @@ public class BlobStoreTest {
         OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
         BlobSasPermission blobSasPermission = (new BlobSasPermission()).setReadPermission(true).setCreatePermission(true);
         String obtainedPreSignedUrl = blobStore.generatePreSignedURL(PARTITION_ID, FILE_PATH, STORAGE_CONTAINER_NAME, expiryTime, blobSasPermission, FILE_NAME, FILE_CONTENT_TYPE);
-        
+
         ArgumentCaptor<BlobServiceSasSignatureValues> blobServiceSasSignatureValuesArgumentCaptor = ArgumentCaptor.forClass(BlobServiceSasSignatureValues.class);
         verify(blockBlobClient).generateSas(blobServiceSasSignatureValuesArgumentCaptor.capture());
 

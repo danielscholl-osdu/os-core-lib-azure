@@ -1,6 +1,6 @@
 package org.opengroup.osdu.azure.cache;
 
-import com.lambdaworks.redis.codec.RedisCodec;
+import io.lettuce.core.codec.RedisCodec;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
 import org.opengroup.osdu.core.common.cache.IRedisCache;
 

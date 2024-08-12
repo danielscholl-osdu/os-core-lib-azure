@@ -1,7 +1,7 @@
 package org.opengroup.osdu.azure.cache;
 
-import com.lambdaworks.redis.codec.CompressionCodec;
-import com.lambdaworks.redis.codec.RedisCodec;
+import io.lettuce.core.codec.CompressionCodec;
+import io.lettuce.core.codec.RedisCodec;
 import org.opengroup.osdu.azure.di.RedisAzureConfiguration;
 import org.opengroup.osdu.core.common.cache.JsonCodec;
 import org.redisson.api.RedissonClient;
