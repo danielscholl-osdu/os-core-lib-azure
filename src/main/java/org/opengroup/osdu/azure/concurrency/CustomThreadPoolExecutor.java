@@ -15,7 +15,7 @@
 package org.opengroup.osdu.azure.concurrency;
 
 import org.springframework.web.context.request.RequestContextHolder;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;

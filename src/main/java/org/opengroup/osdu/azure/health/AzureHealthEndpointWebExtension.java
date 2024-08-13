@@ -27,6 +27,7 @@ import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -42,9 +43,10 @@ public class AzureHealthEndpointWebExtension extends HealthEndpointWebExtension 
     /**
      * @param registry the HealthContributorRegistry
      * @param groups   the HealthEndpointGroups
+     * @param slowIndicatorLoggingThreshold the threshold for slow indicator logging
      */
-    public AzureHealthEndpointWebExtension(final HealthContributorRegistry registry, final HealthEndpointGroups groups) {
-        super(registry, groups);
+    public AzureHealthEndpointWebExtension(final HealthContributorRegistry registry, final HealthEndpointGroups groups, final Duration slowIndicatorLoggingThreshold) {
+        super(registry, groups, slowIndicatorLoggingThreshold);
 
     }
 

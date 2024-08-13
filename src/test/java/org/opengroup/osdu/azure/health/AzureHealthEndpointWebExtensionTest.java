@@ -20,6 +20,7 @@ import org.springframework.boot.actuate.health.HealthEndpointGroups;
 import org.springframework.boot.actuate.health.Status;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,6 +42,7 @@ public class AzureHealthEndpointWebExtensionTest {
     private static AzureHealthEndpointWebExtension spy;
     private static HealthContributorRegistry registry;
     private static HealthEndpointGroups groups;
+    private static Duration slowIndicatorLoggingThreshold;
     private static Map<String, HealthComponent> componentMap; //Contains the 'components' of the health endpoint response
 
     @Mock
@@ -80,7 +82,8 @@ public class AzureHealthEndpointWebExtensionTest {
     public void setup() {
         registry = mock(HealthContributorRegistry.class);
         groups = mock(HealthEndpointGroups.class);
-        loggingHealthEndpointWebExtension = new AzureHealthEndpointWebExtension(registry,groups);
+        slowIndicatorLoggingThreshold = mock(Duration.class);
+        loggingHealthEndpointWebExtension = new AzureHealthEndpointWebExtension(registry,groups,slowIndicatorLoggingThreshold);
         spy = Mockito.spy(loggingHealthEndpointWebExtension);
         componentMap = new HashMap<>();
         componentMap.put("keyvault", health);

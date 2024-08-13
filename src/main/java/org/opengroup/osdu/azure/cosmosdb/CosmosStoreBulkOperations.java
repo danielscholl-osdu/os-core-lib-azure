@@ -161,13 +161,13 @@ public class CosmosStoreBulkOperations {
                     errorStatusCodes.add(500);
                     LOGGER.error("Invalid response : null");
                 } else {
-                    LOGGER.info("Item response : {}", cosmosBulkOperationResponse);
+                    LOGGER.debug("Item response : {}", cosmosBulkOperationResponse);
                     CosmosBulkItemResponse cosmosBulkItemResponse = cosmosBulkOperationResponse.getResponse();
                     CosmosItemOperation cosmosItemOperation = cosmosBulkOperationResponse.getOperation();
                     Exception exception = cosmosBulkOperationResponse.getException();
 
                     if (cosmosBulkOperationResponse.getResponse() != null && cosmosBulkOperationResponse.getResponse().isSuccessStatusCode()) {
-                        LOGGER.info("ItemId : [{}], Status Code: {}, Request Charge: {}", cosmosItemOperation.getId(), cosmosBulkItemResponse.getStatusCode(), cosmosBulkItemResponse.getRequestCharge());
+                        LOGGER.debug("ItemId : [{}], Status Code: {}, Request Charge: {}", cosmosItemOperation.getId(), cosmosBulkItemResponse.getStatusCode(), cosmosBulkItemResponse.getRequestCharge());
                     } else {
                         Integer statusCode = 500;
                         if (cosmosBulkItemResponse != null) {

@@ -21,6 +21,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.opengroup.osdu.core.common.logging.audit.AuditPayload;
 import org.opengroup.osdu.core.common.model.http.HeadersToLog;
 import org.opengroup.osdu.core.common.model.http.Request;
@@ -38,6 +40,7 @@ import static org.mockito.Mockito.*;
  * Contains tests for {@link Slf4JLogger}
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class Slf4JLoggerTest {
     private static final String LOG_PREFIX = "services.app";
     private static final String DEFAULT_LOGGER_NAME = Slf4JLogger.class.getName();
@@ -65,6 +68,9 @@ public class Slf4JLoggerTest {
 
     @Mock
     private Exception e;
+
+    @Mock
+    private LogSampler logSampler;
 
     private final Map<String, String> headers = new HashMap<>();
 
@@ -157,6 +163,7 @@ public class Slf4JLoggerTest {
 
     @Test
     public void testInfo() {
+        when(logSampler.shouldSampleInfoLog()).thenReturn(false);
         doNothing().when(coreLogger).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         slf4JLogger.info(LOG_PREFIX, LOG_MESSAGE, headers);
         verify(coreLogger, times(1)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
@@ -166,11 +173,21 @@ public class Slf4JLoggerTest {
 
     @Test
     public void testInfoWithLoggerName() {
+        when(logSampler.shouldSampleInfoLog()).thenReturn(false);
         doNothing().when(coreLogger).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         slf4JLogger.info(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
         verify(coreLogger, times(1)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
         verify(coreLoggerFactory, times(1)).getLogger(eq(LOGGER_NAME));
         verify(headersToLog, times(1)).createStandardLabelsFromMap(eq(headers));
+    }
+
+    @Test
+    public void testInfoWithSampling() {
+        when(logSampler.shouldSampleInfoLog()).thenReturn(true);
+        slf4JLogger.info(LOGGER_NAME, LOG_PREFIX, LOG_MESSAGE, headers);
+        verify(coreLogger, times(0)).info(eq("{} {} {}"), eq(LOG_PREFIX), eq(LOG_MESSAGE), eq(headers));
+        verify(coreLoggerFactory, times(0)).getLogger(eq(LOGGER_NAME));
+        verify(headersToLog, times(0)).createStandardLabelsFromMap(eq(headers));
     }
 
     @Test

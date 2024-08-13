@@ -67,7 +67,7 @@ You need to connect to our feed on [Azure DevOps](https://slb-swt.visualstudio.c
 ```
 - If you wish to see the code coverage report then go to job artifacts browse/target/site/jacoco and open index.html
 
-## Changes to support newly Added transaction logger and slf4jlogger
+##Changes to support newly Added transaction logger and slf4jlogger
 The consumer service might run into multiple logger bindings error on start up
 which can be fixed by excluding some of the logger dependencies.
 
