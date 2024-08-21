@@ -13,10 +13,12 @@
 // limitations under the License.
 package org.opengroup.osdu.azure.blobstorage;
 
+import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.file.datalake.DataLakeDirectoryClient;
 import com.azure.storage.file.datalake.DataLakeServiceClient;
 import com.azure.storage.file.datalake.models.DataLakeStorageException;
 import com.azure.storage.file.datalake.models.PathInfo;
+import com.azure.storage.file.datalake.models.PathItem;
 import com.azure.storage.file.datalake.models.UserDelegationKey;
 import com.azure.storage.file.datalake.sas.DataLakeServiceSasSignatureValues;
 import com.azure.storage.file.datalake.sas.FileSystemSasPermission;
@@ -34,18 +36,19 @@ import org.opengroup.osdu.azure.datalakestorage.DataLakeStore;
 import org.opengroup.osdu.azure.datalakestorage.IDataLakeClientFactory;
 import org.opengroup.osdu.azure.logging.CoreLogger;
 import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
-import org.opengroup.osdu.core.common.logging.ILogger;
 import org.opengroup.osdu.core.common.model.http.AppException;
 
 import java.lang.reflect.Field;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -96,7 +99,7 @@ public class DataLakeStoreTest {
         mockSingleton(coreLoggerFactory);
         lenient().when(coreLoggerFactory.getLogger(anyString())).thenReturn(coreLogger);
         lenient().when(dataLakeClientFactory.getDataLakeDirectoryClient(
-                PARTITION_ID,DIRECTORY_NAME, FILE_SYSTEM_NAME)).thenReturn(dataLakeDirectoryClient);
+                PARTITION_ID, DIRECTORY_NAME, FILE_SYSTEM_NAME)).thenReturn(dataLakeDirectoryClient);
     }
 
     @AfterEach
@@ -134,17 +137,17 @@ public class DataLakeStoreTest {
     }
 
     @Test
-    public void createDirectory_Success(){
+    public void createDirectory_Success() {
         when(dataLakeDirectoryClient.create()).thenReturn(pathInfo);
-        dataLakeStore.createDirectory(PARTITION_ID, FILE_SYSTEM_NAME,DIRECTORY_NAME);
+        dataLakeStore.createDirectory(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME);
 
         verify(dataLakeClientFactory).getDataLakeDirectoryClient(PARTITION_ID, DIRECTORY_NAME, FILE_SYSTEM_NAME);
         verify(dataLakeDirectoryClient).create();
     }
 
     @Test
-    public void createDirectory_AppException(){
-        doThrow(DataLakeStorageException.class).when(dataLakeClientFactory).getDataLakeDirectoryClient(PARTITION_ID,DIRECTORY_NAME, FILE_SYSTEM_NAME);
+    public void createDirectory_AppException() {
+        doThrow(DataLakeStorageException.class).when(dataLakeClientFactory).getDataLakeDirectoryClient(PARTITION_ID, DIRECTORY_NAME, FILE_SYSTEM_NAME);
         try {
             dataLakeStore.createDirectory(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME);
         } catch (AppException exception) {
@@ -158,7 +161,7 @@ public class DataLakeStoreTest {
     public void generatePreSignedURL_ReturnsValidSasToken() {
         String containerSasToken = "containerSasToken";
         String containerUrl = "containerUrl";
-        String containerPreSignedUrl = String.format("%s?%s",containerUrl,containerSasToken);
+        String containerPreSignedUrl = String.format("%s?%s", containerUrl, containerSasToken);
 
         doReturn(containerUrl).when(dataLakeDirectoryClient).getDirectoryUrl();
         doReturn(DIRECTORY_NAME).when(dataLakeDirectoryClient).getDirectoryName();
@@ -184,7 +187,7 @@ public class DataLakeStoreTest {
     public void generatePreSignedURLWithUserDelegationSas_ReturnsValidSasToken() {
         String containerSasToken = "containerSasToken";
         String containerUrl = "containerUrl";
-        String containerPreSignedUrl = String.format("%s?%s",containerUrl, containerSasToken);
+        String containerPreSignedUrl = String.format("%s?%s", containerUrl, containerSasToken);
         int expiryDays = 1;
         OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(expiryDays);
 
@@ -218,8 +221,8 @@ public class DataLakeStoreTest {
                 (new FileSystemSasPermission()).setReadPermission(true).setCreatePermission(true);
 
         try {
-        String obtainedPreSignedUrl = dataLakeStore.generatePreSignedURL(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME,
-                expiryTime, fileSystemSasPermission);
+            String obtainedPreSignedUrl = dataLakeStore.generatePreSignedURL(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME,
+                    expiryTime, fileSystemSasPermission);
         } catch (DataLakeStorageException ex) {
             verify(dataLakeDirectoryClient, times(1)).generateSas(any(DataLakeServiceSasSignatureValues.class));
         } catch (Exception ex) {
@@ -245,13 +248,51 @@ public class DataLakeStoreTest {
                 .rename(DESTINATION_FILE_SYSTEM, DIRECTORY_NAME);
 
         try {
-             dataLakeStore.moveDirectory(PARTITION_ID,
-                     FILE_SYSTEM_NAME, DIRECTORY_NAME, DESTINATION_FILE_SYSTEM);
+            dataLakeStore.moveDirectory(PARTITION_ID,
+                    FILE_SYSTEM_NAME, DIRECTORY_NAME, DESTINATION_FILE_SYSTEM);
         } catch (DataLakeStorageException ex) {
-           verify(dataLakeDirectoryClient).rename(DESTINATION_FILE_SYSTEM, DIRECTORY_NAME);
+            verify(dataLakeDirectoryClient).rename(DESTINATION_FILE_SYSTEM, DIRECTORY_NAME);
         } catch (Exception ex) {
             fail("should not get different error");
         }
+    }
+
+    @Test
+    public void shouldReturnFileNameListFromDirectory() {
+        PathItem pathItem1 = createPathItem("file1.txt");
+        PathItem pathItem2 = createPathItem("file2.txt");
+        PagedIterable<PathItem> pathItems = mock(PagedIterable.class);
+        Iterator<PathItem> pathItemIterator = mock(Iterator.class);
+
+        when(pathItems.iterator()).thenReturn(pathItemIterator);
+        when(pathItems.iterator().hasNext()).thenReturn(true).thenReturn(true).thenReturn(false);
+        when(pathItemIterator.next()).thenReturn(pathItem1).thenReturn(pathItem2);
+        when(dataLakeDirectoryClient.listPaths(true, false, null, null))
+                .thenReturn(pathItems);
+
+        List<String> fileNamesFromDirectory = dataLakeStore.getFileNamesFromDirectory(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME);
+
+        assertEquals(Arrays.asList("file1.txt", "file2.txt"), fileNamesFromDirectory);
+    }
+
+    @Test
+    public void shouldReturnEmptyFileNamesList_whenDirectoryIsEmpty() {
+
+        PagedIterable<PathItem> pathItems = mock(PagedIterable.class);
+        Iterator<PathItem> pathItemIterator = mock(Iterator.class);
+
+        when(pathItems.iterator()).thenReturn(pathItemIterator);
+        when(pathItems.iterator().hasNext()).thenReturn(false);
+        when(dataLakeDirectoryClient.listPaths(true, false, null, null))
+                .thenReturn(pathItems);
+
+        List<String> fileNamesFromDirectory = dataLakeStore.getFileNamesFromDirectory(PARTITION_ID, FILE_SYSTEM_NAME, DIRECTORY_NAME);
+
+        assertEquals(emptyList(), fileNamesFromDirectory);
+    }
+
+    private PathItem createPathItem(String fileName) {
+        return new PathItem("test-etag", null, 1, "test-group", false, DIRECTORY_NAME+"/"+fileName, "test-owner", "read");
     }
 
 }
