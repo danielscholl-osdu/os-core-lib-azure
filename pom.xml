@@ -36,7 +36,7 @@
     <maven.surefire.version>2.22.2</maven.surefire.version>
     <azure.appinsights.version>3.4.18</azure.appinsights.version>
     <azure.spring.boot.version>5.9.1</azure.spring.boot.version>
-    <lombok.version>1.18.28</lombok.version>
+    <lombok.version>1.18.34</lombok.version>
     <osdu.oscorecommon.version>2.0.0</osdu.oscorecommon.version>
     <azure-mgmt-eventgrid.version>1.0.0-beta-3</azure-mgmt-eventgrid.version>
     <azure-security-keyvault-keys.version>4.7.3</azure-security-keyvault-keys.version>

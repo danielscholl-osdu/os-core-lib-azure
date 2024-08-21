@@ -14,9 +14,11 @@
 
 package org.opengroup.osdu.azure.datalakestorage;
 
+import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.common.sas.SasProtocol;
 import com.azure.storage.file.datalake.DataLakeDirectoryClient;
 import com.azure.storage.file.datalake.DataLakeServiceClient;
+import com.azure.storage.file.datalake.models.PathItem;
 import com.azure.storage.file.datalake.models.UserDelegationKey;
 import com.azure.storage.file.datalake.sas.DataLakeServiceSasSignatureValues;
 import com.azure.storage.file.datalake.sas.FileSystemSasPermission;
@@ -29,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simpler interface to interact with Azure DataLake storage Gen2.
@@ -180,6 +184,36 @@ public class DataLakeStore {
         DataLakeDirectoryClient dataLakeDirectoryClient = createDataLakeDirectoryClient(dataPartitionId, directoryName, sourceContainerName);
         return dataLakeDirectoryClient.rename(destinationContainerName, directoryName);
     }
+
+    /**
+     * Get the File names from the given directory.
+     * @param dataPartitionId dataPartitionId
+     * @param containerName containerName
+     * @param directoryName directoryName
+     * @return the list of file names
+     */
+    public List<String> getFileNamesFromDirectory(final String dataPartitionId, final String containerName, final String directoryName) {
+        DataLakeDirectoryClient dataLakeDirectoryClient = createDataLakeDirectoryClient(dataPartitionId, directoryName, containerName);
+        PagedIterable<PathItem> pathItems = dataLakeDirectoryClient.listPaths(true, false, null, null);
+        return extractFileNameFromPath(pathItems);
+    }
+
+    /**
+     * Extract the file name alone from the full path of PathItem.
+     * @param pathItems PathItems
+     * @return the list of file names
+     */
+    private  List<String> extractFileNameFromPath(final PagedIterable<PathItem> pathItems) {
+        List<String> fileNames = new ArrayList<>();
+        for (PathItem pathItem : pathItems) {
+            if (!pathItem.isDirectory()) {
+                String[] fullPath = pathItem.getName().split("/");
+                fileNames.add(fullPath[1]);
+            }
+        }
+        return fileNames;
+    }
+
     /**
      * Log dependency.
      *
