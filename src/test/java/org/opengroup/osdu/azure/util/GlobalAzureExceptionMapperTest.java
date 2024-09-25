@@ -34,7 +34,7 @@ public class GlobalAzureExceptionMapperTest {
 
         ResponseEntity response = this.sut.handleCosmosdbException(exception);
 
-        assertEquals(503, response.getStatusCodeValue());
-        assertEquals("Service Unavailable", ((AppError) response.getBody()).getReason());
+        assertEquals(429, response.getStatusCodeValue());
+        assertEquals("Cosmos DB request rate is too large", ((AppError) response.getBody()).getReason());
     }
 }

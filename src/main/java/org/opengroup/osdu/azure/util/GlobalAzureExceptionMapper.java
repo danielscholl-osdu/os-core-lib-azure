@@ -43,7 +43,7 @@ public final class GlobalAzureExceptionMapper {
     @ExceptionHandler(RequestRateTooLargeException.class)
     protected ResponseEntity<Object> handleCosmosdbException(final RequestRateTooLargeException e) {
         return this.getErrorResponse(
-                new AppException(HttpStatus.SERVICE_UNAVAILABLE.value(), "Service Unavailable",
+            new AppException(HttpStatus.TOO_MANY_REQUESTS.value(), "Cosmos DB request rate is too large",
                         "Request rate is large. Please retry this request later", e));
     }
 
