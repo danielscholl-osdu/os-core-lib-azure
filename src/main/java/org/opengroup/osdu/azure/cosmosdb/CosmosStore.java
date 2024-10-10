@@ -19,6 +19,7 @@ import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.ConflictException;
 import com.azure.cosmos.implementation.NotFoundException;
+import com.azure.cosmos.implementation.RequestRateTooLargeException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
@@ -752,9 +753,13 @@ public class CosmosStore {
             CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).debug(String.format("UPSERT_ITEM with partition_key=%s", partitionKey));
         } catch (CosmosException e) {
             statusCode = e.getStatusCode();
-            String errorMessage = "Unexpectedly failed to put item into CosmosDB";
-            CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(errorMessage, e);
-            throw new AppException(500, errorMessage, e.getMessage(), e);
+            if (statusCode == HttpStatus.SC_TOO_MANY_REQUESTS) {
+                throw new RequestRateTooLargeException();
+            } else {
+                String errorMessage = "Unexpectedly failed to put item into CosmosDB";
+                CoreLoggerFactory.getInstance().getLogger(LOGGER_NAME).warn(errorMessage, e);
+                throw new AppException(500, errorMessage, e.getMessage(), e);
+            }
         } finally {
             final long timeTaken = System.currentTimeMillis() - start;
             final String dependencyTarget = DependencyLogger.getCosmosDependencyTarget(cosmosDBName, collection);
