@@ -16,20 +16,50 @@ package org.opengroup.osdu.azure.util;
 
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenRequestContext;
-import com.azure.identity.implementation.IdentityClient;
-import com.azure.identity.implementation.IdentityClientBuilder;
+import com.azure.identity.DefaultAzureCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 
 import org.opengroup.osdu.core.common.model.http.AppException;
 
 /**
- *  Class to generate the AAD authentication tokens.
+ * Class to generate the AAD authentication tokens using DefaultAzureCredential.
+ *
+ * DefaultAzureCredential tries the following authentication methods in order:
+ * 1. Environment Credentials (service principal credentials in environment variables)
+ * 2. Workload Identity Credentials (when running in AKS with Workload Identity)
+ * 3. Managed Identity Credentials (including Pod Identity)
+ * 4. Azure CLI Credentials (for local development)
+ * 5. Visual Studio Code Credentials (for local development)
+ * 6. Azure PowerShell Credentials (for local development)
+ * 7. Interactive Browser Credentials (for local development)
+ *
+ * For production deployments, configure one of:
+ * - Workload Identity (recommended for AKS)
+ * - Managed Identity/Pod Identity (legacy approach for AKS)
+ * - Environment Variables (for non-AKS scenarios)
  */
 public final class AzureServicePrincipal {
 
     private static final int ERROR_STATUS_CODE = 500;
     private static final String ERROR_REASON = "Received empty token";
-    private static final String ERROR_MESSAGE_SPN = "SPN client returned null token";
-    private static final String ERROR_MESSAGE_MSI = "MSI client returned null token";
+
+    /**
+     * Gets a token using DefaultAzureCredential which supports multiple authentication methods.
+     * @param scopes The scopes to request the token for
+     * @return Authentication token
+     */
+    public String getToken(final String... scopes) {
+        TokenRequestContext request = new TokenRequestContext();
+        request.addScopes(scopes);
+
+        DefaultAzureCredential credential = getDefaultAzureCredential();
+        AccessToken token = credential.getToken(request).block();
+
+        if (token != null && token.getToken() != null) {
+            return token.getToken();
+        }
+        throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, "Failed to obtain token from DefaultAzureCredential");
+    }
 
     /**
      * @param sp_id             AZURE CLIENT ID
@@ -39,21 +69,7 @@ public final class AzureServicePrincipal {
      * @return                  AUTHENTICATION TOKEN
      */
     public String getIdToken(final String sp_id, final String sp_secret, final String tenant_id, final String app_resource_id) {
-
-        IdentityClientBuilder identityClientBuilder = createIdentityClientBuilder();
-        IdentityClient identityClientSPN = identityClientBuilder.tenantId(tenant_id)
-                .clientId(sp_id)
-                .clientSecret(sp_secret)
-                .build();
-
-        TokenRequestContext requestContextSPN = new TokenRequestContext();
-        requestContextSPN.addScopes(app_resource_id.concat("/.default"));
-        AccessToken tokenSpnCreds = identityClientSPN.authenticateWithConfidentialClient(requestContextSPN).block();
-
-        if (tokenSpnCreds != null && tokenSpnCreds.getToken() != null) {
-            return tokenSpnCreds.getToken();
-        }
-        throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, ERROR_MESSAGE_SPN);
+        return getToken(app_resource_id.concat("/.default"));
     }
 
     /**
@@ -61,24 +77,14 @@ public final class AzureServicePrincipal {
      * @return AUTHENTICATION TOKEN
      */
     public String getMSIToken() {
-
-        IdentityClientBuilder identityClientBuilder = createIdentityClientBuilder();
-        IdentityClient identityClientMSI = identityClientBuilder.build();
-
-        TokenRequestContext requestContextMSI = new TokenRequestContext();
-        requestContextMSI.addScopes("https://management.azure.com/");
-        AccessToken tokenMsi =  identityClientMSI.authenticateToIMDSEndpoint(requestContextMSI).block();
-
-        if (tokenMsi != null && tokenMsi.getToken() != null) {
-            return tokenMsi.getToken();
-        }
-        throw new AppException(ERROR_STATUS_CODE, ERROR_REASON, ERROR_MESSAGE_MSI);
+        return getToken("https://management.azure.com/");
     }
 
     /**
-     * @return IdentityClientBuilder
+     * Creates and returns a new DefaultAzureCredential instance.
+     * @return DefaultAzureCredential configured with default settings
      */
-    IdentityClientBuilder createIdentityClientBuilder() {
-        return new IdentityClientBuilder();
+    protected DefaultAzureCredential getDefaultAzureCredential() {
+        return new DefaultAzureCredentialBuilder().build();
     }
 }

@@ -1,14 +1,24 @@
+// Copyright © Microsoft Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package org.opengroup.osdu.azure.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.azure.security.keyvault.secrets.SecretClient;
 import org.apache.http.HttpStatus;
-import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
-import org.opengroup.osdu.azure.di.PodIdentityConfiguration;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import org.opengroup.osdu.core.common.model.search.IdToken;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +27,6 @@ import jakarta.inject.Named;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.opengroup.osdu.azure.util.AuthUtils.getClientSecret;
 
 /**
  * Azure Service Principle token service.
@@ -39,13 +48,6 @@ public class AzureServicePrincipleTokenService {
     @Named("APP_DEV_SP_TENANT_ID")
     private String tenantId;
 
-    @Autowired
-    private PodIdentityConfiguration podIdentityConfiguration;
-    @Autowired
-    private AzureActiveDirectoryConfiguration aadConfiguration;
-    @Autowired
-    private SecretClient sc;
-
     private final AzureServicePrincipal azureServicePrincipal = new AzureServicePrincipal();
 
     private Map<String, Object> tokenCache = new HashMap<>();
@@ -60,25 +62,10 @@ public class AzureServicePrincipleTokenService {
             if (!IdToken.refreshToken(cachedToken)) {
                 return cachedToken.getTokenValue();
             }
-            if (!podIdentityConfiguration.getIsEnabled()) {
-                try {
-                    accessToken = this.azureServicePrincipal.getIdToken(clientID, clientSecret, tenantId, aadClientId);
-                } catch (AppException e) {
-                    if (e.getError().getCode() != HttpStatus.SC_UNAUTHORIZED) {
-                        throw e;
-                    }
 
-                    String newClientSecret = getClientSecret(aadConfiguration, sc);
-                    if (clientSecret.equals(newClientSecret)) {
-                        throw e;
-                    } else {
-                        accessToken = this.azureServicePrincipal.getIdToken(clientID, newClientSecret, tenantId, aadClientId);
-                        clientSecret = newClientSecret;
-                    }
-                }
-            } else {
-                accessToken = this.azureServicePrincipal.getMSIToken();
-            }
+            // Use DefaultAzureCredential which will automatically handle all authentication scenarios
+            accessToken = this.azureServicePrincipal.getToken(aadClientId + "/.default");
+
             IdToken idToken = IdToken.builder()
                     .tokenValue(accessToken)
                     .expirationTimeMillis(JWT.decode(accessToken).getExpiresAt().getTime())
