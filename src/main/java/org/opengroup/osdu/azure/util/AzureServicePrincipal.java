@@ -77,7 +77,7 @@ public final class AzureServicePrincipal {
      * @return AUTHENTICATION TOKEN
      */
     public String getMSIToken() {
-        return getToken("https://management.azure.com/");
+        return getToken("https://management.azure.com/.default");
     }
 
     /**
