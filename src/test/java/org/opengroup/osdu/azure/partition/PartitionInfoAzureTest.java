@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opengroup.osdu.core.common.partition.Property;
+import org.opengroup.osdu.azure.logging.CoreLoggerFactory;
+import org.opengroup.osdu.azure.logging.ICoreLogger;
 
 @ExtendWith(MockitoExtension.class)
 public class PartitionInfoAzureTest {
@@ -19,6 +21,12 @@ public class PartitionInfoAzureTest {
     private SecretClient secretClient;
 
     private PartitionInfoAzure partitionInfoAzure;
+
+    @Mock
+    private ICoreLogger mockLogger;
+
+    @Mock
+    private CoreLoggerFactory mockLoggerFactory;
 
     private static final String BLOB_ENDPOINT_SECRET = "opendes-storage-blob-endpoint";
     private static final String HIERARCHY_BLOB_ENDPOINT_SECRET = "opendes-hierarchical-storage-blob-endpoint";
@@ -28,6 +36,9 @@ public class PartitionInfoAzureTest {
 
     @BeforeEach
     public void setup() {
+        CoreLoggerFactory.resetFactory();
+        CoreLoggerFactory.getInstance();
+
         partitionInfoAzure = new PartitionInfoAzure();
         partitionInfoAzure.configureSecretClient(secretClient);
     }
