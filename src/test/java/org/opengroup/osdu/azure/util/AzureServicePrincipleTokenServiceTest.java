@@ -13,10 +13,11 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.opengroup.osdu.azure.di.AzureActiveDirectoryConfiguration;
 import org.opengroup.osdu.azure.di.PodIdentityConfiguration;
+import org.opengroup.osdu.azure.di.WorkloadIdentityConfiguration;
 import org.opengroup.osdu.core.common.model.http.AppException;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 
@@ -41,6 +42,9 @@ public class AzureServicePrincipleTokenServiceTest {
     @Mock
     private Map<String, Object> tokenCache;
 
+    @Mock
+    private WorkloadIdentityConfiguration workloadIdentityConfiguration;
+
     @InjectMocks
     private AzureServicePrincipleTokenService azureServicePrincipleTokenService;
 
@@ -52,17 +56,28 @@ public class AzureServicePrincipleTokenServiceTest {
     @Test
     public void testGetAuthorizationToken_Error() {
         when(podIdentityConfiguration.getIsEnabled()).thenReturn(false);
-        when(this.azureServicePrincipal.getIdToken(any(), any(), any(), any())).thenThrow(new AppException(HttpStatus.SC_NOT_FOUND, any(), any()));
+        when(workloadIdentityConfiguration.getIsEnabled()).thenReturn(false);
+        when(this.azureServicePrincipal.getIdToken(
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()
+        )).thenThrow(new AppException(HttpStatus.SC_NOT_FOUND, "error", "message"));
 
         assertThrows(AppException.class, () -> azureServicePrincipleTokenService.getAuthorizationToken());
     }
 
     @Test
     public void should_throw_AppException_if_both_client_secret_equals() {
-        when(!podIdentityConfiguration.getIsEnabled()).thenReturn(false);
+        when(podIdentityConfiguration.getIsEnabled()).thenReturn(false);
+        when(workloadIdentityConfiguration.getIsEnabled()).thenReturn(false);
         when(aadConfiguration.getClientSecret()).thenReturn(clientSecret);
-        when(azureServicePrincipal.getIdToken(any(), any(), any(), any()))
-                .thenThrow(new AppException(HttpStatus.SC_UNAUTHORIZED, any(), any()));
+        when(azureServicePrincipal.getIdToken(
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()
+        )).thenThrow(new AppException(HttpStatus.SC_UNAUTHORIZED, "error", "message"));
 
         assertThrows(AppException.class, () -> azureServicePrincipleTokenService.getAuthorizationToken());
     }
