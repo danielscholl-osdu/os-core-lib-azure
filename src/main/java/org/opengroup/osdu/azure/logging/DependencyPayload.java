@@ -46,6 +46,6 @@ public final class DependencyPayload {
 
     @Override
     public String toString() {
-        return String.format("{\"name\": \"%s\", \"data\": \"%s\", \"duration\": %d, \"resultCode\": \"%s\", \"success\": %s}", name, data, duration.getNano(), resultCode, success);
+        return String.format("{\"name\": \"%s\", \"data\": \"%s\", \"duration\": %d, \"resultCode\": \"%s\", \"success\": %s}", name, data, duration.toNanos(), resultCode, success);
     }
 }
