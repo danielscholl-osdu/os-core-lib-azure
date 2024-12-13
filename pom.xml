@@ -44,13 +44,14 @@
 
     <osdu.oscorecommon.version>3.3.0</osdu.oscorecommon.version>
 
+    <spring-boot-dependencies.version>3.3.5</spring-boot-dependencies.version>
     <spring-framework.version>6.2.0</spring-framework.version>
     <azure-sdk-bom.version>1.2.30</azure-sdk-bom.version>
     <azure-spring-boot.version>5.18.0</azure-spring-boot.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.7.0</springdoc-openapi-starter-webmvc-ui.version>
 
     <microsoft-graph.version>6.23.0</microsoft-graph.version>
-    <azure.appinsights.version>3.5.4</azure.appinsights.version>
+    <azure.appinsights.version>3.6.2</azure.appinsights.version>
     <azure-servicebus.version>3.6.7</azure-servicebus.version>
     <azure-eventgrid.version>1.4.0</azure-eventgrid.version>
     <azure-mgmt-eventgrid.version>1.0.0-beta-4</azure-mgmt-eventgrid.version>
@@ -62,7 +63,7 @@
     <json.version>20231013</json.version>
     <log4j-slf4j-impl.version>2.24.2</log4j-slf4j-impl.version>
     <resilience4j.version>2.0.0</resilience4j.version>
-    <redisson.version>3.40.0</redisson.version>
+    <redisson.version>3.40.2</redisson.version>
 
     <!-- Plugin Versions -->
     <surefire-plugin.version>2.22.2</surefire-plugin.version>
@@ -100,6 +101,13 @@
           <groupId>org.springdoc</groupId>
           <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
           <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot-dependencies.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.opengroup.osdu</groupId>
@@ -233,6 +241,12 @@
       <artifactId>azure-servicebus</artifactId>
       <version>${azure-servicebus.version}</version>
     </dependency>
+    <!-- azure-servicebus Fix CVE-2024-53990 -->
+      <dependency>
+        <groupId>org.asynchttpclient</groupId>
+        <artifactId>async-http-client</artifactId>
+        <version>3.0.1</version>
+      </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-eventgrid</artifactId>
