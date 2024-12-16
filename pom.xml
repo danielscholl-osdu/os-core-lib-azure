@@ -44,8 +44,11 @@
 
     <osdu.oscorecommon.version>3.3.0</osdu.oscorecommon.version>
 
-    <spring-boot-dependencies.version>3.3.5</spring-boot-dependencies.version>
+    <!-- Spring Boot Framework 6.2.0 compatable with Spring Boot 3.4.0 -->
+    <!-- https://spring.io/blog/2024/11/14/spring-framework-6-2-0-available-now -->
     <spring-framework.version>6.2.0</spring-framework.version>
+    <spring-boot-dependencies.version>3.4.0</spring-boot-dependencies.version>
+
     <azure-sdk-bom.version>1.2.30</azure-sdk-bom.version>
     <azure-spring-boot.version>5.18.0</azure-spring-boot.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.7.0</springdoc-openapi-starter-webmvc-ui.version>
@@ -64,11 +67,15 @@
     <log4j-slf4j-impl.version>2.24.2</log4j-slf4j-impl.version>
     <resilience4j.version>2.0.0</resilience4j.version>
     <redisson.version>3.40.2</redisson.version>
+    <guava.version>33.3.1-jre</guava.version>
 
     <!-- Plugin Versions -->
     <surefire-plugin.version>2.22.2</surefire-plugin.version>
     <jacoco-plugin.version>0.8.8</jacoco-plugin.version>
     <checkstyle-plugin.version>3.1.0</checkstyle-plugin.version>
+
+    <!-- Security fixes -->
+    <lettuce.version>6.5.1.RELEASE</lettuce.version>
   </properties>
 
 
@@ -117,7 +124,17 @@
         <scope>import</scope>
       </dependency>
       <!-- End of BOMs -->
+      <!-- Dependencies, after the BOMs -->
+      <dependency>
+          <groupId>io.lettuce</groupId>
+          <artifactId>lettuce-core</artifactId>
+          <version>${lettuce.version}</version>
+          <!-- Overriding version to fix GHSA-q4h9-7rxj-7gx2
+              Spring Boot 3.4.0 uses lettuce-core 6.4.1 which is vulnerable to Redis Command Injection -->
+      </dependency>
     </dependencies>
+
+
   </dependencyManagement>
 
   <dependencies>
@@ -242,11 +259,11 @@
       <version>${azure-servicebus.version}</version>
     </dependency>
     <!-- azure-servicebus Fix CVE-2024-53990 -->
-      <dependency>
-        <groupId>org.asynchttpclient</groupId>
-        <artifactId>async-http-client</artifactId>
-        <version>3.0.1</version>
-      </dependency>
+    <dependency>
+      <groupId>org.asynchttpclient</groupId>
+      <artifactId>async-http-client</artifactId>
+      <version>3.0.1</version>
+    </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>azure-eventgrid</artifactId>
@@ -262,6 +279,23 @@
       <groupId>com.microsoft.azure.eventgrid.v2020_04_01_preview</groupId>
       <artifactId>azure-mgmt-eventgrid</artifactId>
       <version>${azure-mgmt-eventgrid.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.microsoft.azure</groupId>
+          <artifactId>azure-client-runtime</artifactId>
+        </exclusion>
+        <!-- Add this new exclusion to fix Guava vuln CVE-2018-10237 -->
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- Add this new dependency to fix Guava vuln CVE-2018-10237 -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
     </dependency>
     <!-- End Azure Dependencies -->
 
