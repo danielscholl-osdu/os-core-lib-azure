@@ -46,8 +46,8 @@
 
     <!-- Spring Boot Framework 6.2.0 compatable with Spring Boot 3.4.0 -->
     <!-- https://spring.io/blog/2024/11/14/spring-framework-6-2-0-available-now -->
-    <spring-framework.version>6.2.0</spring-framework.version>
-    <spring-boot-dependencies.version>3.4.0</spring-boot-dependencies.version>
+    <spring-framework.version>6.2.1</spring-framework.version>
+    <spring-boot-dependencies.version>3.4.1</spring-boot-dependencies.version>
 
     <azure-sdk-bom.version>1.2.30</azure-sdk-bom.version>
     <azure-spring-boot.version>5.18.0</azure-spring-boot.version>
