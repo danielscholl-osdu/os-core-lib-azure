@@ -49,8 +49,8 @@
     <spring-framework.version>6.2.1</spring-framework.version>
     <spring-boot-dependencies.version>3.4.1</spring-boot-dependencies.version>
 
-    <azure-sdk-bom.version>1.2.30</azure-sdk-bom.version>
-    <azure-spring-boot.version>5.18.0</azure-spring-boot.version>
+    <azure-sdk-bom.version>1.2.31</azure-sdk-bom.version>
+    <azure-spring-boot.version>5.19.0</azure-spring-boot.version>
     <springdoc-openapi-starter-webmvc-ui.version>2.7.0</springdoc-openapi-starter-webmvc-ui.version>
 
     <microsoft-graph.version>6.23.0</microsoft-graph.version>
@@ -76,6 +76,7 @@
 
     <!-- Security fixes -->
     <lettuce.version>6.5.1.RELEASE</lettuce.version>
+    <netty.version>4.1.118.Final</netty.version>
   </properties>
 
 
@@ -132,9 +133,24 @@
           <!-- Overriding version to fix GHSA-q4h9-7rxj-7gx2
               Spring Boot 3.4.0 uses lettuce-core 6.4.1 which is vulnerable to Redis Command Injection -->
       </dependency>
+      <!-- Security fixes -->
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler</artifactId>
+        <version>${netty.version}</version>
+        <!-- Overriding version to fix CVE-2024-24970
+            Netty before 4.1.108 is vulnerable to HTTP Request Smuggling.
+            This could lead to cache poisoning, security bypass, and request forgery. -->
+      </dependency>
+      <dependency>
+        <groupId>net.minidev</groupId>
+        <artifactId>json-smart</artifactId>
+        <version>2.5.2</version>
+        <!-- Overriding version to fix CVE-2024-57699
+            json-smart before 2.5.2 is vulnerable to Denial of Service (DoS) -->
+      </dependency>
+      <!-- Security fixes -->
     </dependencies>
-
-
   </dependencyManagement>
 
   <dependencies>
