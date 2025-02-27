@@ -3,8 +3,15 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <servers>
+        <!-- For downloading dependencies -->
         <server>
             <id>community-maven-via-job-token</id>
+            <username>${env.MAVEN_USERNAME}</username>
+            <password>${env.MAVEN_TOKEN}</password>
+        </server>
+        <!-- For distribution management -->
+        <server>
+            <id>gitlab-server</id>
             <username>${env.MAVEN_USERNAME}</username>
             <password>${env.MAVEN_TOKEN}</password>
         </server>
@@ -12,10 +19,7 @@
 
     <profiles>
         <profile>
-            <id>opengroup-maven</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
+            <id>opengroup</id>
             <repositories>
                 <repository>
                     <id>community-maven-via-job-token</id>
@@ -30,5 +34,8 @@
             </repositories>
         </profile>
     </profiles>
-</settings>
 
+    <activeProfiles>
+        <activeProfile>opengroup</activeProfile>
+    </activeProfiles>
+</settings>
