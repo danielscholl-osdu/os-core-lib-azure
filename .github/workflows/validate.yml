@@ -42,7 +42,11 @@ jobs:
   java-build:
     name: "🔨 Java Build"
     needs: check-repo-state
-    if: needs.check-repo-state.outputs.is_initialized == 'true' && needs.check-repo-state.outputs.is_java_repo == 'true'
+    # Modified condition to exclude Dependabot PRs
+    if: |
+      needs.check-repo-state.outputs.is_initialized == 'true' && 
+      needs.check-repo-state.outputs.is_java_repo == 'true' &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     outputs:
       is_java_project: ${{ steps.build.outputs.is_java_project }}
@@ -147,8 +151,11 @@ jobs:
           ITEMS=$(echo "$ITEMS" | jq '. + ["✓ No Merge Conflicts"]')
           ITEMS=$(echo "$ITEMS" | jq '. + ["✓ Branch is Up-to-date"]')
           
-          # Add initialization and build status
-          if [[ "${{ needs.check-repo-state.outputs.is_initialized }}" == "true" ]]; then
+          # Handle Dependabot PRs differently
+          if [[ "${{ github.actor }}" == "dependabot[bot]" ]]; then
+            ITEMS=$(echo "$ITEMS" | jq '. + ["ℹ️ Dependabot Build Handled by dependabot-validation.yml"]')
+          # For non-Dependabot PRs, report build status
+          elif [[ "${{ needs.check-repo-state.outputs.is_initialized }}" == "true" ]]; then
             if [[ "${{ needs.check-repo-state.outputs.is_java_repo }}" == "true" ]]; then
               if [[ "${{ needs.java-build.result }}" == "success" ]]; then
                 ITEMS=$(echo "$ITEMS" | jq '. + ["✓ Java Build Successful"]')
@@ -160,15 +167,6 @@ jobs:
             fi
           else
             ITEMS=$(echo "$ITEMS" | jq '. + ["ℹ️ Repository Not Yet Initialized"]')
-          fi
-
-          # Add Dependabot specific status if applicable
-          if [[ "${{ github.actor }}" == "dependabot[bot]" ]]; then
-            if [[ "${{ needs.java-build.result }}" == "success" ]]; then
-              ITEMS=$(echo "$ITEMS" | jq '. + ["✅ Dependency Update Build Successful"]')
-            else
-              ITEMS=$(echo "$ITEMS" | jq '. + ["❌ Dependency Update Build Failed"]')
-            fi
           fi
 
           # Set output with proper JSON escaping
