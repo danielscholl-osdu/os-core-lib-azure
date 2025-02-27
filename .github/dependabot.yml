@@ -71,4 +71,6 @@ updates:
         patterns:
           - "*"
         update-types:
-          - "security"
+          - "patch"
+          - "minor"
+          - "major"
