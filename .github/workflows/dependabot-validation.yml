@@ -4,9 +4,6 @@ on:
   pull_request:
     branches: [main, fork_integration, fork_upstream]
 
-# Only run this workflow for Dependabot PRs
-if: github.actor == 'dependabot[bot]'
-
 permissions:
   contents: read
   pull-requests: write
@@ -14,6 +11,7 @@ permissions:
 
 jobs:
   check-repo-state:
+    if: github.actor == 'dependabot[bot]'
     name: "🔍 Check Repository State"
     runs-on: ubuntu-latest
     outputs:
