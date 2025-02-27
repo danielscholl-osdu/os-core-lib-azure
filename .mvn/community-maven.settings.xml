@@ -1,4 +1,7 @@
-<settings>
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
 	<profiles>
 		<profile>
 			<!-- This profile uses the CI-Token to authenticate with the server, and is the default case -->
@@ -9,6 +12,18 @@
 			<properties>
 				<gitlab-server>community-maven-via-job-token</gitlab-server>
 			</properties>
+			<repositories>
+				<repository>
+					<id>community-maven-via-job-token</id>
+					<url>https://community.opengroup.org/api/v4/groups/17/-/packages/maven</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
 		</profile>
 
 		<profile>
@@ -17,13 +32,25 @@
 			     based authentication -->
 			<id>GitLab-Authenticate-With-Private-Token</id>
 			<activation>
-			<property>
-				<name>env.COMMUNITY_MAVEN_TOKEN</name>
-			</property>
+				<property>
+					<name>env.COMMUNITY_MAVEN_TOKEN</name>
+				</property>
 			</activation>
 			<properties>
 				<gitlab-server>community-maven-via-private-token</gitlab-server>
 			</properties>
+			<repositories>
+				<repository>
+					<id>community-maven-via-private-token</id>
+					<url>https://community.opengroup.org/api/v4/groups/17/-/packages/maven</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
 		</profile>
 	</profiles>
 
@@ -38,6 +65,9 @@
 					</property>
 				</httpHeaders>
 			</configuration>
+			<!-- GitHub Actions authentication fallback -->
+			<username>${env.MAVEN_USERNAME}</username>
+			<password>${env.MAVEN_TOKEN}</password>
 		</server>
 
 		<server>
@@ -50,6 +80,9 @@
 					</property>
 				</httpHeaders>
 			</configuration>
+			<!-- GitHub Actions authentication fallback -->
+			<username>${env.MAVEN_USERNAME}</username>
+			<password>${env.MAVEN_TOKEN}</password>
 		</server>
 	</servers>
 </settings>

@@ -50,9 +50,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Setup Maven Settings
+        run: |
+          mkdir -p ~/.m2
+          cp .mvn/community-maven.settings.xml ~/.m2/settings.xml
+        
       - name: "Run Java Build"
         id: build
         uses: ./.github/actions/java-build
+        env:
+          MAVEN_USERNAME: ${{ secrets.OPENGROUP_MAVEN_USERNAME }}
+          MAVEN_TOKEN: ${{ secrets.OPENGROUP_MAVEN_TOKEN }}
         with:
           generate_coverage: ${{ github.event_name == 'pull_request' }}
 
